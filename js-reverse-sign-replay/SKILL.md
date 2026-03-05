@@ -5,6 +5,13 @@ description: Rebuild and replay JavaScript signature and encryption parameters s
 
 # JS Reverse Sign Replay
 
+## Specialized Triggers
+Use this skill with priority when tasks involve:
+- Mixed parameter chains across query, body, header, and cookie.
+- Async sign providers or VM-interpreted signing boundaries.
+- Protocol-encoded fields (protobuf/binary frame payloads) before or after crypto.
+- Fast-changing token families that require robust regression and diff diagnostics.
+
 ## Workflow
 1. Lock a reproducible sample. Save one known-good request input/output pair.
 2. Split field sources. Classify fields as static, deterministic dynamic, random, and server-coupled.
@@ -14,12 +21,17 @@ description: Rebuild and replay JavaScript signature and encryption parameters s
 6. Validate against baseline. Compare every intermediate stage and final parameter string.
 7. Ship a regression harness. Provide repeatable test vectors for future site updates.
 
+## Advanced Notes
+- Stage checkpoints are mandatory for diagnosis; final-value-only checks are insufficient.
+- Keep async boundaries explicit (`await`/callback stage output snapshots).
+- Separate offline-replay-capable fields from server-coupled challenge fields.
+
 ## Preferred Deliverable Structure
-- `input_case`: fixed payload and context values.
+- `input_contract`: fixed payload and context values.
 - `stages`: list of transformation functions and outputs.
 - `final_sign`: final token/cookie/header value.
 - `request_builder`: code that assembles the request from replay outputs.
-- `regression`: pass/fail report for baseline and one variation case.
+- `regression`: pass/fail report for baseline and one controlled variation input.
 
 ## Replay Rules
 - Keep algorithm code unchanged unless deobfuscation is required for readability.
@@ -28,5 +40,6 @@ description: Rebuild and replay JavaScript signature and encryption parameters s
 - Inject clock/random providers so tests can freeze values.
 
 ## Read Next
-Read [references/playbook.md](references/playbook.md) for replay rules. Read [references/case-corpus.md](references/case-corpus.md) for bundled 66-case examples and full ID coverage.
+Read [references/playbook.md](references/playbook.md) for replay rules.
+
 

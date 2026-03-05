@@ -1,41 +1,81 @@
 # Env and Antidebug Playbook
 
-## High-Frequency Coverage from 66 Cases
-- Env-shim overlap: 26/66
-- Anti-debug overlap: 14/66
-- Risk-control overlap: 9/66
-- Strong overlap with hook and token/cookie chains.
+## Scope
+- Neutralize anti-debug blockers without breaking business logic.
+- Rebuild only the runtime surface actually touched by the target chain.
+- Keep risk-control, token lifecycle, and replay context consistent.
 
-## Full Case Coverage (Not Representative Only)
-- Anti-debug full set: 11, 15, 30, 31, 32, 33, 35, 38, 43, 45, 54, 55, 62, 64
-- Environment replay full set: 6, 7, 12, 17, 25, 28, 29, 30, 33, 37, 38, 39, 42, 43, 44, 45, 51, 52, 53, 54, 55, 56, 58, 64, 65, 66
-- Risk-control/captcha full set: 12, 13, 36, 48, 53, 54, 55, 60, 64
+## Core Discipline
+- Patch predicates first, not whole subsystems.
+- Add shims from first-fault evidence, never from speculation.
+- Keep every hook reversible with explicit toggle flags.
+- Prove minimality by removing non-essential patches after success.
 
-## Fast Representative Cases
-- Anti-debug focus: 11, 15, 30, 31, 32, 35
-- Environment-heavy replay: 33, 39, 42, 44, 52, 56, 58
-- Risk-control and captcha overlap: 48, 53, 54, 55, 60, 64
+## Triage Matrix
+Classify blockers before patching:
+1. Execution blockers: infinite `debugger`, timer traps, dead loops.
+2. Integrity blockers: native checks, source hash checks, descriptor checks.
+3. Environment blockers: missing browser APIs or wrong object shape.
+4. Risk blockers: cookie/token acquisition, captcha voucher coupling, fingerprint drift.
 
-## Anti-Debug Pattern Table
-- Dynamic debugger payload: `Function('debugger')()` or constructor variants.
-- Timer loop traps: repetitive checks in `setTimeout`/`setInterval` branches.
-- DevTools detection: viewport gap checks, `toString` traps, console getter traps.
-- Integrity checks: function source checksum or native-string checks.
+## Patch Order
+1. Stop hard execution blockers (`Function` constructor payloads, timer traps).
+2. Stabilize call-chain visibility (controlled logging and breakpoint gates).
+3. Patch integrity checks with narrow branch-level edits.
+4. Add minimal environment shims.
+5. Validate risk-token flow and session consistency.
 
-## Environment Shim Checklist
-1. Record the first runtime exception stack.
-2. Add only the exact missing symbol or property.
-3. Match value type and object shape, not just key existence.
-4. Re-run and repeat until the target chain passes.
-5. Remove unused shims and verify output remains stable.
+## Practical Hook Anchors
+- `Function.prototype.constructor` and dynamic `debugger` payload generation.
+- `setTimeout` and `setInterval` trap callbacks with suspicious cadence.
+- `Object.defineProperty(document, 'cookie', ...)` for cookie lineage capture.
+- `JSON.stringify` or serializer hooks when body signing happens pre-transport.
 
-## Risk-Control Focus
-- Validate device id / fingerprint fields are consistent during one run.
-- Keep session-bound identifiers stable when replaying requests.
-- Separate captcha/token acquisition from core signature replay.
+## Injection Channels
+- Browser extension content scripts.
+- Userscript managers (for page-context hooks).
+- Proxy/plugin injection (for pre-page script insertion).
 
-## Common Failure Patterns
-- Overwriting global prototypes permanently and breaking unrelated logic.
-- Mocking fields with wrong type (string vs function/object).
-- Solving anti-debug but ignoring subsequent risk-control token steps.
-- Building huge all-in-one shims instead of minimal, testable patches.
+Choose the least invasive channel that still gives deterministic execution control.
+
+## Environment Reconstruction Rules
+- Start from minimum browser set: `window`, `document`, `navigator`, `location`, `screen`, storage, `atob`/`btoa`, crypto adapter.
+- Match descriptors and value types, not only property names.
+- Keep deterministic providers injectable (`Date.now`, random source, timezone/locale formatting).
+- Avoid broad `window = global` style rewrites unless target loader requires it.
+
+## JSVMP and VM-Like Targets
+- Inspect VM code touchpoints first; do not start with full proxy environment.
+- Prefer instrumentation of VM boundary values over blind global patching.
+- Gate logs by request condition or token marker to prevent console floods and hangs.
+- Keep XHR/fetch breakpoints active while instrumenting VM internals to preserve call-chain alignment.
+
+## Risk-Control Integration
+- Separate `core_sign_lane` and `risk_token_lane`.
+- Treat captcha outputs (for example voucher-like fields) as independent state artifacts.
+- Keep session-bound identifiers stable within one replay run.
+- Record token validity boundaries: ttl, binding fields, origin scope.
+
+## RS-Style Defensive Stacks (Heuristic Only)
+- Cookie prefix patterns and port-derived hints can suggest generation family.
+- Entry tuple markers in obfuscated dispatchers can accelerate navigation.
+- These are acceleration hints, not proof; always confirm with runtime call-chain evidence.
+
+## Failure Diagnostics
+- Correct hook, wrong output: upstream normalization or descriptor mismatch.
+- Intermittent pass/fail: unstable timestamp/random/session context.
+- Hook works but downstream rejects: risk-token lane not synchronized.
+- Page runs slower or breaks globally: overpatching or broad prototype mutation.
+
+## Output Contract
+- `patch_inventory`: hook, intent, toggle, blast radius.
+- `environment_manifest`: mocked fields, types, descriptors, and rationale.
+- `evidence_log`: stack trace or runtime symptom that justified each patch.
+- `risk_state_notes`: token lifecycle and coupling assumptions.
+- `replay_proof`: deterministic parameter output under minimal patch set.
+
+## Quality Gate
+Accept only when all are true:
+- Minimal patch set reproduces target output.
+- Removing any non-essential patch keeps correctness unchanged.
+- Risk-token state assumptions are explicit and verified.

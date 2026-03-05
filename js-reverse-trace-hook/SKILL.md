@@ -5,6 +5,13 @@ description: Locate parameter generation paths and request trigger chains in Jav
 
 # JS Reverse Trace Hook
 
+## Specialized Triggers
+Use this skill with priority when tasks involve:
+- Search cannot directly locate parameter generation code.
+- Dynamic fields are spread across headers/cookies/body and share hidden dependencies.
+- WebSocket or protocol payload chains require transport-to-builder tracing.
+- Obfuscated or VM-like bundles need loader-first navigation before algorithm extraction.
+
 ## Workflow
 1. Lock the target request first. Record URL, method, headers, body fields, and response markers.
 2. Isolate dynamic fields. Mark which fields change per request and which fields stay static.
@@ -13,6 +20,11 @@ description: Locate parameter generation paths and request trigger chains in Jav
 5. Hook key functions minimally. Capture input/output of parameter builders without rewriting the whole bundle.
 6. Confirm the final source of truth. Verify the exact function and upstream fields that decide the target parameter.
 7. Deliver reproducible notes. Output a concise call-chain map and one verified extraction/replay snippet.
+
+## Advanced Notes
+- Use layered entry strategy: transport breakpoints -> DOM events -> serializer hooks -> cookie hooks.
+- For loader-heavy bundles, recover module loader first, then chase target function.
+- Gate instrumentation logs by target marker to avoid noise and false chain selection.
 
 ## Quick Hook Snippets
 Use these snippets as temporary probes. Remove or gate them after locating the chain.
@@ -48,5 +60,6 @@ Always produce these artifacts:
 - Minimal proof script: one runnable snippet that logs or reproduces the target param.
 
 ## Read Next
-Read [references/playbook.md](references/playbook.md) for workflow rules. Read [references/case-corpus.md](references/case-corpus.md) for bundled 66-case examples and full ID coverage.
+Read [references/playbook.md](references/playbook.md) for workflow rules.
+
 
