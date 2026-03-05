@@ -1,0 +1,4 @@
+interface:
+  display_name: "JS Reverse Env and Antidebug"
+  short_description: "Bypass anti-debug and build minimal runtime shims"
+  default_prompt: "Neutralize anti-debug checks, add minimal environment mocks, and prove stable parameter replay."
