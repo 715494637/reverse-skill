@@ -1,0 +1,3 @@
+interface:
+  display_name: "JSR Deobf & Lifting"
+  short_description: "Lift AST/JSVMP/WASM obfuscated logic into readable semantics"

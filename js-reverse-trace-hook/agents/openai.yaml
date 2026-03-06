@@ -1,4 +1,0 @@
-interface:
-  display_name: "JS Reverse Trace and Hook"
-  short_description: "Trace request chains and hook parameter builders"
-  default_prompt: "Locate the request call chain, hook key builders, and return a minimal reproducible extraction snippet."

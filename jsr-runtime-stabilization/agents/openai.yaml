@@ -1,0 +1,3 @@
+interface:
+  display_name: "JSR Runtime Stabilization"
+  short_description: "Stabilize anti-debug and environment-sensitive reverse execution"

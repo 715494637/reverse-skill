@@ -1,4 +1,0 @@
-interface:
-  display_name: "JS Reverse Sign Replay"
-  short_description: "Replay AES RSA MD5 token sign chains reliably"
-  default_prompt: "Extract and rebuild the full sign pipeline and provide regression-tested replay code."

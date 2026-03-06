@@ -1,0 +1,3 @@
+interface:
+  display_name: "JSR Transport & Protocol"
+  short_description: "Reverse WebSocket/protobuf/header protocol contracts"
