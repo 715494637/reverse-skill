@@ -1,32 +1,15 @@
 # Challenge and Issued-State Matrix
 
-## Issued Public Key or Timestamp Login
-- Typical issued state: public key, `rsatimestamp`, nonce, login session id.
-- Local stage: plaintext normalization, hybrid crypto, final assembly.
-- Common mistake: replaying the encryption routine without refreshing the issued key or timestamp.
+| Flow Shape | Typical Issued State | Local Stage | Common Misread |
+|---|---|---|---|
+| Issued public key or timestamp login | Public key, `rsatimestamp`, nonce, login session id | Plaintext normalization, hybrid crypto, final assembly | Replaying crypto without refreshing the issued key or timestamp |
+| Captcha or verify-then-submit | `challenge`, `verifyId`, request id, shuffle, asset metadata, verify token | Trajectory pack, collect data, encrypt or sign payload, submit assembly | Treating submit parameters as standalone |
+| WAF or sensor token | Issue id, challenge output, renewal cookie, dynamic iv or etag-like value | Sensor collection, compression, encoding, signing, final header or cookie write | Cloning the current token without modeling refresh |
+| Blackbox or fingerprint header | Bootstrap config, profile id, version, partner id, challenge-bound nonce | Profile collection, hash or encode stage, final write | Assuming one crypto helper owns the whole output |
+| Multi-request header or nonce coupling | Request id, anti-replay nonce, one-time token, per-request iv | Canonicalization, concat, sign, final header write | Replaying the same header across requests |
 
-## Captcha or Verify-Then-Submit Flow
-- Typical issued state: `challenge`, `verifyId`, request id, shuffle, image or asset metadata, verify token.
-- Local stage: trajectory pack, collect data, encrypt or sign payload, submit assembly.
-- Common mistake: treating submit parameters as standalone when the server validates prior challenge lineage.
-
-## WAF or Sensor Token Flow
-- Typical issued state: issue id, challenge script output, renewal cookie, dynamic iv or etag-like value.
-- Local stage: sensor collection, compression, encoding, signing, final header or cookie write.
-- Common mistake: cloning the current token without modeling how it is refreshed or contextualized.
-
-## Blackbox or Fingerprint Header Flow
-- Typical issued state: bootstrap config, profile id, version, partner id, challenge-bound nonce.
-- Local stage: profile collection, hash or encode stage, final header, cookie, or hidden-field write.
-- Common mistake: assuming one crypto function owns the whole output instead of a collected profile plus encoding stage.
-
-## Multi-Request Header or Nonce Coupling
-- Typical issued state: request id, anti-replay nonce, one-time token, per-request iv.
-- Local stage: request-body canonicalization, concat, sign, final header write.
-- Common mistake: replaying the same header across requests when the server validates sequence or freshness.
-
-## Renewal Tests
+## Renewal Standard
 - Baseline request passes.
-- Variant input request passes.
-- Repeated request after expiry or reuse is explained.
-- Refresh path or reissue path is explicit.
+- Variant request passes.
+- Expiry, reuse, or renewal behavior is explained.
+- Refresh path is explicit when required.

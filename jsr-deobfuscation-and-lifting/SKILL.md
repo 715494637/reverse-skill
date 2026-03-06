@@ -37,7 +37,7 @@ It does not own end-to-end replay delivery or broad cosmetic cleanup that does n
 - Semantic-equivalence evidence
 
 ## Read Next
-- Read [../shared-references/jsreverser-mcp-routing.md](../shared-references/jsreverser-mcp-routing.md).
+- Read [../jsr-shared-references/jsreverser-mcp-routing.md](../jsr-shared-references/jsreverser-mcp-routing.md).
 - Read [references/playbook.md](references/playbook.md).
 - Read [references/entry-recovery-matrix.md](references/entry-recovery-matrix.md).
 - Read [references/knowledge-distilled.md](references/knowledge-distilled.md).

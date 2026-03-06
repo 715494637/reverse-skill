@@ -37,7 +37,7 @@ It does not own runtime patching, large-scale deobfuscation, replay delivery, or
 - Minimal reproducible trace evidence
 
 ## Read Next
-- Read [../shared-references/jsreverser-mcp-routing.md](../shared-references/jsreverser-mcp-routing.md).
+- Read [../jsr-shared-references/jsreverser-mcp-routing.md](../jsr-shared-references/jsreverser-mcp-routing.md).
 - Read [references/playbook.md](references/playbook.md).
 - Read [references/writer-boundary-matrix.md](references/writer-boundary-matrix.md).
 - Read [references/knowledge-distilled.md](references/knowledge-distilled.md).

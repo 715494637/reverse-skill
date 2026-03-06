@@ -1,10 +1,10 @@
-﻿# Distilled Knowledge Refinement Implementation Plan
+# Distilled Knowledge Refinement Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Turn the 5 `knowledge-distilled.md` files into compact, high-value judgment references and extract repeated JSReverser-MCP routing rules into one shared reference.
 
-**Architecture:** Keep `playbook.md` as the execution layer and rewrite `knowledge-distilled.md` as the judgment layer. Each distilled file should focus on non-obvious decisions, common misreads, and evidence standards. Shared MCP routing rules that repeat across skills should move into one `shared-references/jsreverser-mcp-routing.md` file and be linked from the active skills.
+**Architecture:** Keep `playbook.md` as the execution layer and rewrite `knowledge-distilled.md` as the judgment layer. Each distilled file should focus on non-obvious decisions, common misreads, and evidence standards. Shared MCP routing rules that repeat across skills should move into one `jsr-shared-references/jsreverser-mcp-routing.md` file and be linked from the active skills.
 
 **Tech Stack:** Markdown skill references, active `jsr-*` skills, shared repo/runtime skill trees, JSReverser-MCP tool vocabulary.
 
@@ -31,7 +31,7 @@
 ### Task 2: Add one shared JSReverser-MCP routing reference
 
 **Files:**
-- Create: `E:\ai code web\AI reverse\reverse-skill\shared-references\jsreverser-mcp-routing.md`
+- Create: `E:\ai code web\AI reverse\reverse-skill\jsr-shared-references\jsreverser-mcp-routing.md`
 
 **Step 1:** Capture only the cross-skill routing rules that are repeated and stable.
 
