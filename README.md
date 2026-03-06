@@ -1,22 +1,16 @@
 ﻿# reverse-skill
 
-面向 Web JS 逆向交付的少而强 skill 仓库。
-
-目标是把能够跨站迁移、稳定复用、最终落成脚本交付的逆向判断方法与操作路径，沉淀为可调用的 skill 体系。
-
-这里不保留案例堆积；只有经提炼后仍能提升定位效率、判断质量和交付成功率的知识，才会进入 skill。
+面向 Web JS 逆向的 AI skills 仓库。
 
 ## 安装方式
 
-### 1. 先准备 JSReverser-MCP
+### 1. 安装 JSReverser-MCP
 
-这套 skill 默认按 `JSReverser-MCP` 的工具路由工作。开始使用前，先确保你的客户端里已经有一个可正常调用的 `JSReverser-MCP` 服务。
+[JSReverser-MCP](https://github.com/NoOne-hub/JSReverser-MCP)
 
-本仓库内已附带一个常用实现目录：`JSReverser-MCP/`。
+### 2. 安装 jsr skills
 
-### 2. 把 skill 安装到你的客户端
-
-将以下目录完整复制到客户端的 skills 根目录，保持原有目录名不变：
+将以下目录完整复制到客户端的 skills 根目录
 
 - `jsr-trace-and-locate`
 - `jsr-runtime-stabilization`
@@ -32,15 +26,10 @@
 | `Codex` | `%USERPROFILE%\.codex\skills\` |
 | `Claude Code` | `%USERPROFILE%\.claude\skills\` |
 
-如果你同时使用 `Codex` 和 `Claude Code`，可以两边都放同一套目录。
-
-`jsr-shared-references` 不是独立 skill，但属于必需依赖；如果漏掉它，5 个 active skill 内的共享路由引用会失效。
-
 ![安装示例](image.png)
 
 ## 推荐使用方式
-
-最推荐的方式不是手动挑 skill，而是直接按“全程自动交付”下任务，让模型结合 `JSReverser-MCP` 自动完成探索、定位、判定、交付与审查。
+将这段话发给AI
 
 ```text
 使用：jsreverse mcp
@@ -79,7 +68,7 @@ $jsr-trace-and-locate 这个接口的 x-sign 在请求头里，按 writer bounda
 | `jsr-signature-and-replay` | `analyze_target`、`hook_function`、`list_network_requests`、`get_network_request` | 需要把动态值做成稳定脚本，并区分本地计算与服务端发放状态 |
 | `jsr-transport-and-protocol` | `list_websocket_connections`、`analyze_websocket_messages`、`get_websocket_messages` | 需要分析长连接、帧结构、心跳、续期、序号与协议状态 |
 
-共享路由与起手原则集中在 [jsr-shared-references/jsreverser-mcp-routing.md](jsr-shared-references/jsreverser-mcp-routing.md)。
+共享路由与起手原则集中在 [jsr-shared-references/jsr-mcp-routing.md](jsr-shared-references/jsr-mcp-routing.md)。
 
 ## 当前知识库状态
 

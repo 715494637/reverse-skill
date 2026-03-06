@@ -4,7 +4,7 @@
 
 **Goal:** Tighten the matrix layer so it contains only high-value discriminators, add the missing protocol matrix, and align the README with the now-stable four-layer skill structure.
 
-**Architecture:** Keep `jsr-shared-references/jsreverser-mcp-routing.md` as the cross-skill routing layer, `playbook.md` as the execution layer, `knowledge-distilled.md` as the judgment layer, and `*-matrix.md` as the boundary-selection layer. Rewrite matrices into denser tables or bullet blocks with anchor, proves, and common misread only. Add `protocol-state-matrix.md` so transport matches the other four skills.
+**Architecture:** Keep `jsr-shared-references/jsr-mcp-routing.md` as the cross-skill routing layer, `playbook.md` as the execution layer, `knowledge-distilled.md` as the judgment layer, and `*-matrix.md` as the boundary-selection layer. Rewrite matrices into denser tables or bullet blocks with anchor, proves, and common misread only. Add `protocol-state-matrix.md` so transport matches the other four skills.
 
 **Tech Stack:** Markdown docs, repo/runtime skill trees, JSReverser-MCP workflow vocabulary.
 

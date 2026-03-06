@@ -37,7 +37,7 @@ It does not own locating unknown algorithms, deobfuscating whole bundles, or des
 - Stable rerun proof
 
 ## Read Next
-- Read [../jsr-shared-references/jsreverser-mcp-routing.md](../jsr-shared-references/jsreverser-mcp-routing.md).
+- Read [../jsr-shared-references/jsr-mcp-routing.md](../jsr-shared-references/jsr-mcp-routing.md).
 - Read [references/playbook.md](references/playbook.md).
 - Read [references/anti-bot-surface-matrix.md](references/anti-bot-surface-matrix.md).
 - Read [references/knowledge-distilled.md](references/knowledge-distilled.md).
