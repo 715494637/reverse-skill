@@ -1,30 +1,22 @@
 # Distilled Reverse Knowledge: Transport and Protocol
 
-## Fifteen Core Principles
-1. When the server still rejects correct-looking fields, suspect protocol before crypto.
-2. Model the system by layers: connection, session, envelope, payload.
-3. Recover handshake contracts before business message details.
-4. Separate envelope fields from payload fields immediately.
-5. Recover sequencing rules: heartbeat, retry, reconnect, renewal, idempotency.
-6. Locate serialization and deserialization boundaries precisely.
-7. Rebuild protocol-correct order before field-level fine tuning.
-8. Treat header choreography as part of protocol state, not decoration.
-9. For protobuf, trust field numbers and types over display names.
-10. Validate session continuity, not just single-message acceptance.
-11. Distinguish transport encryption from business-field encryption.
-12. Reject replay attempts that ignore server-side sequence expectations.
-13. Localize every failure to one layer before patching anything.
-14. Keep transport parsers and business handlers separate.
-15. Protocol reverse is incomplete until sustained interaction works, not just handshake success.
+## Core Judgments
+- Correct-looking business fields can still fail when the protocol layer is wrong.
+- Handshake, heartbeat, renewal, and sequence rules are protocol state, not request noise.
+- Envelope fields must be separated from payload fields immediately.
+- For protobuf flows, field numbers and wire types outrank display names.
+- One accepted first frame proves almost nothing about sustained protocol correctness.
+- Serialization and deserialization boundaries are more valuable than raw payload dumps.
+- Transport encryption and business-field encryption should be treated as separate problems.
 
-## Protocol Probe Anchors
-- Handshake URL, query, headers, cookies, and negotiated ids
-- `WebSocket.send` and receive wrappers
-- Protobuf serialize and parse boundaries
-- Envelope builders distinct from business payload builders
-- Heartbeat, renewal, reconnect, and counter logic
+## Common Misreads
+- Blaming crypto when the real break is heartbeat, reconnect, counter drift, or renewal.
+- Inspecting raw WebSocket payloads before grouping message families.
+- Trusting decoded field names without proving schema position and type.
+- Calling handshake success a protocol win before sustained business traffic works.
 
-## Protocol Exit Gate
-- Handshake passes.
-- Sustained business messages pass.
-- Failures can be mapped back to a single layer.
+## Evidence Standard
+- One explicit handshake contract.
+- One classified set of frame or message families.
+- One mapped serializer or parser boundary.
+- One replay sequence that works beyond the first accepted message.

@@ -1,36 +1,22 @@
 # Distilled Reverse Knowledge: Trace and Locate
 
-## Fifteen Core Principles
-1. Begin from request sinks, not random utility functions.
-2. Treat send-time values as symptoms; treat builder functions as causes.
-3. When the sink class is known, probe the writer boundary before crypto internals.
-4. Walk stacks upward until input constraints become explicit.
-5. Trust dataflow over variable names and file names.
-6. Probe minimally; every hook must answer a specific question.
-7. Prefer deterministic input-output logging over broad console spam.
-8. Choose the least-distorting observation mode that still answers the question.
-9. If local stepping changes timing or triggers anti-debug, switch to injected logging or remote CDP-style observation.
-10. For header and cookie targets, trust the writer more than the final request snapshot.
-11. For worker-backed targets, recover the message boundary before worker internals.
-12. Distinguish true source functions from wrapper, cache, and retry layers.
-13. Do not accept a chain map that lacks upstream dependency fields.
-14. Do not accept a source function that only works inside one page state by accident.
-15. Deliver one chain map and one minimal locator snippet, or tracing is incomplete.
+## Core Judgments
+- If the sink class is known, the writer boundary outranks helper-name search.
+- A network snapshot proves the field exists; it does not prove where it was born.
+- The first function touching the final value is often a serializer or wrapper, not the builder.
+- Header, cookie, and storage-backed fields are often materialized later than body fields.
+- Cache, retry, and transport wrappers are noise until they change the dependency set.
+- Worker-returned values should be traced from the message boundary inward, not from random worker internals.
+- A chain map is incomplete until it names upstream dependencies, not just intermediate helpers.
 
-## High-Value Hook Priorities
-- JSON body canonicalization: `JSON.stringify`
-- Multipart body assembly: `FormData.prototype.append`
-- Query or form encoding: `URLSearchParams.prototype.append`
-- Header write: `XMLHttpRequest.prototype.setRequestHeader`, `Headers.prototype.set`
-- Cookie write: `document.cookie` setter via `Object.defineProperty`
-- Storage relay: `localStorage.setItem`, `sessionStorage.setItem`
-- Framed or binary payload: `WebSocket.send`, protobuf encode or decode boundary
-- Off-main-thread logic: `Worker`, `postMessage`, `importScripts`
-- Hidden bundle entry: webpack loader or module export surface
-- Remote observation: CDP breakpoint plus evaluate when DevTools stepping distorts behavior
+## Common Misreads
+- Searching `sign`, `encrypt`, or hash helpers before proving the writer surface.
+- Treating `JSON.stringify`, `FormData`, or fetch wrappers as the source-of-truth function.
+- Stopping at the request sender without naming the upstream builder.
+- Accepting a one-off path that only works under one lucky page state.
 
-## Exit Signals
-- One verified chain: entry -> builder -> writer.
-- One chosen writer boundary with justification.
-- One minimal probe or snippet that reproduces the finding.
-- One list of context-sensitive dependencies.
+## Evidence Standard
+- One stable request fingerprint.
+- One verified path: entry -> builder -> writer.
+- One explicit dependency list.
+- One minimal reproducible probe or locator snippet.

@@ -1,31 +1,22 @@
 # Distilled Reverse Knowledge: Runtime Stabilization
 
-## Fifteen Core Principles
-1. Assume execution-semantic mismatch before assuming crypto failure.
-2. Classify failures first: anti-debug, missing API, fingerprint mismatch, or non-determinism.
-3. Neutralize blocking anti-debug loops before adding environment shims.
-4. Build the smallest runtime that satisfies the proven call stack.
-5. Link every patch to one observed failure or stack frame.
-6. Freeze time, random, and device identifiers before comparing outputs.
-7. Prefer structural fidelity over cosmetic browser imitation.
-8. Never patch fields you cannot justify with evidence.
-9. Remove non-essential patches after success to detect overpatching.
-10. Validate intermediate stages, not only final sign or token output.
-11. Keep all patches reversible and separately switchable.
-12. Treat environment snapshots and live runtime values as different classes of data.
-13. Separate anti-debug bypass from fingerprint spoofing in your reasoning.
-14. Reject one-off success that cannot be reproduced under fixed inputs.
-15. End stabilization only when the core chain survives with minimal patches.
+## Core Judgments
+- Browser success plus local failure usually means runtime mismatch before it means crypto failure.
+- Anti-debug blockers must be neutralized before environment patching can be trusted.
+- Session or challenge state is a different problem from missing globals or headless markers.
+- Overpatching hides the true dependency set and creates fake success.
+- Time, random, and device-like values belong in deterministic providers, not scattered patches.
+- Prototype-level reads should be fixed at the prototype boundary only when the stack proves that path.
+- A stabilization result is not real until the core chain reruns under fixed inputs.
 
-## High-Value Runtime Signals
-- Dynamic `debugger` generation through `Function` or `constructor`
-- Timer traps through `setInterval` or `setTimeout`
-- DevTools detection through viewport or outer and inner size checks
-- Tamper probes using `toString`, console behavior, or performance APIs
-- Fingerprint surfaces under navigator, screen, canvas, storage, time, and random providers
-- Remote CDP instrumentation when local stepping triggers anti-debug
+## Common Misreads
+- Patching `window`, `document`, and `navigator` in bulk before locating the first blocking read.
+- Mixing anti-debug bypass, fingerprint spoofing, and session restoration into one undifferentiated patch pile.
+- Treating one successful run under uncontrolled inputs as stable.
+- Restoring login state and calling that a runtime fix when the real issue is elsewhere.
 
-## Stable Runtime Gate
-- Same input gives the same intermediate outputs.
-- Patch inventory maps one-to-one to failures.
+## Evidence Standard
+- One blocking path is named and neutralized.
+- One minimal environment manifest is explicit.
+- Fixed inputs now reproduce stable intermediate outputs.
 - Removing non-critical patches does not break the core path.

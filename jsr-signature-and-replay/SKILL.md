@@ -38,6 +38,7 @@ It does not own locating unknown generation paths, broad runtime patching beyond
 - Regression report
 
 ## Read Next
+- Read [../shared-references/jsreverser-mcp-routing.md](../shared-references/jsreverser-mcp-routing.md).
 - Read [references/playbook.md](references/playbook.md).
 - Read [references/challenge-state-matrix.md](references/challenge-state-matrix.md).
 - Read [references/knowledge-distilled.md](references/knowledge-distilled.md).

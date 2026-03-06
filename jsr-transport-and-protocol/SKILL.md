@@ -36,5 +36,6 @@ It does not own generic sign replay once the protocol contract is already stable
 - Replay sequence proof
 
 ## Read Next
+- Read [../shared-references/jsreverser-mcp-routing.md](../shared-references/jsreverser-mcp-routing.md).
 - Read [references/playbook.md](references/playbook.md).
 - Read [references/knowledge-distilled.md](references/knowledge-distilled.md).
