@@ -32,3 +32,6 @@ __pycache__/
 .venv/
 venv/
 
+# Local nested repositories
+JSReverser-MCP/
+
