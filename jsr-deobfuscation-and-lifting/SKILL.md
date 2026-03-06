@@ -19,6 +19,11 @@ It does not own end-to-end replay delivery or broad cosmetic cleanup that does n
 4. Lift critical logic into named semantic stages.
 5. Validate lifted stages against original runtime outputs.
 
+## Preferred JSReverser-MCP Path
+- Default entry: use `collect_code`, `search_in_sources`, `get_script_source`, and `understand_code` to recover the outer execution container before touching inner logic.
+- Escalate: use `deobfuscate_code`, `trace_function`, and `hook_function` to confirm live bridges across webpack loaders, workers, VM shells, or JS-WASM boundaries. Move to breakpoints only when opcode state, bridge values, or dispatch locals remain hidden from static and hook views.
+- Required evidence: the true protected entry path is explicit, critical logic is lifted into named semantic stages, and original versus lifted outputs still match on the replay-critical path.
+
 ## Exit Gate
 - The critical path is explainable in semantic stages.
 - The true protected entry path is explicit.

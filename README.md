@@ -4,8 +4,6 @@
 
 ## 当前技能
 
-当前保留 5 个核心 skill，用更少的分类覆盖高频 Web JS reverse 场景：
-
 | Skill | 用途 | 典型触发场景 |
 |---|---|---|
 | `jsr-trace-and-locate` | 在未知链路下定位 `sign/token/cookie/header` 的真实写入边界 | 只知道字段出现在请求里，但不知道是谁写进去的 |
@@ -14,7 +12,21 @@
 | `jsr-signature-and-replay` | 重建签名/令牌生成链，并交付可验证的离线调用脚本 | 已找到算法位置，但离线重放不稳定，或存在 challenge / issued state 依赖 |
 | `jsr-transport-and-protocol` | 分析 WebSocket / protobuf / 握手 / 心跳 / 续期 / 重连 的协议状态机 | 第一包能过，后续全挂；状态迁移条件不明 |
 
+## Skill x JSReverser-MCP 映射
+
+| Skill | MCP 默认入口 | 需要升级时 | 交付焦点 |
+|---|---|---|---|
+| `jsr-trace-and-locate` | `analyze_target` -> `create_hook` / `inject_hook` / `get_hook_data` | `hook_function` / `trace_function` 仍不足时，再上 `break_on_xhr` / `get_request_initiator` / `set_breakpoint_on_text` | 写入边界、builder 链、可复现定位证据 |
+| `jsr-runtime-stabilization` | `check_browser_health` -> `list_console_messages` / `get_storage` / `evaluate_script` | 明确存在浏览器差异时，再上 `inject_stealth` / `set_user_agent` / 会话态恢复 | 最小补环境清单、反调试拆法、稳定复跑证据 |
+| `jsr-deobfuscation-and-lifting` | `collect_code` -> `search_in_sources` / `get_script_source` / `understand_code` | 静态阅读不够时，再上 `deobfuscate_code` / `trace_function` / `hook_function` | 入口恢复、语义阶段、等价性证据 |
+| `jsr-signature-and-replay` | `analyze_target` -> Hook 采样 -> `list_network_requests` / `get_network_request` | challenge / renewal / 登录态耦合时，再上 `save_session_state` / `restore_session_state` | 可运行的 Python 重放脚本，明确 issued state 与纯算边界 |
+| `jsr-transport-and-protocol` | `list_websocket_connections` -> `analyze_websocket_messages` -> `get_websocket_messages` | 只看帧仍不够时，再上 `create_hook` / `hook_function` / 断点看序列化边界 | 握手规则、消息分组、持续交互可重放证据 |
+
 ## 安装方式
+
+### 前置准备
+
+在你的工具中安装[JSReverser-MCP](https://github.com/NoOne-hub/JSReverser-MCP)
 
 ### 目录位置
 

@@ -1,20 +1,26 @@
 # Playbook
 
-## Probe Matrix
-- Handshake rejection: capture URL, query, headers, cookies, subprotocol, and any negotiated ids.
-- Frame rejection: probe `WebSocket.send`, receive wrappers, protobuf serialize or parse boundaries, and envelope builders.
-- Session drift: track heartbeat, renewals, counters, reconnect rules, and idempotency markers.
-- Mixed transport and business crypto: separate envelope signing from payload encryption before patching anything.
-- Hidden parser or builder inside bundle or worker: recover the module or worker entry before inferring protocol semantics.
+## Default MCP Chain
+1. Start with `list_websocket_connections` and run `analyze_websocket_messages` before opening raw payload detail.
+2. Use `get_websocket_messages` to group frame types and separate handshake, heartbeat, renewal, and business traffic.
+3. Use `list_network_requests` and `get_network_request` to recover the HTTP-side handshake and header contract.
+4. Use `create_hook` on `websocket`, `fetch`, or `xhr`, plus `hook_function` around serializer or parser boundaries, before stepping through frame logic.
 
-## Protocol Recovery Order
-1. Reconstruct handshake rules.
-2. Separate connection, session, envelope, and business payload layers.
-3. Recover field numbers and types before trusting display names in protobuf flows.
-4. Rebuild parser and builder against captured traffic.
-5. Validate sustained interaction, not just the first accepted frame.
+## Protocol Boundary Matrix
+- Handshake contract: URL, query, headers, cookies, negotiated ids, subprotocol, and bootstrap responses.
+- Connection state: heartbeat, renewal, reconnect, expiry, counter drift, and idempotency markers.
+- Envelope layer: opcode, type id, wrapper fields, compression, checksum, or outer sign.
+- Business payload: protobuf field numbers, message schema, and decoded body semantics.
+- Hidden owner: bundled module, worker, parser, or serializer that actually owns the frame boundary.
 
-## Failure Smells
-- One accepted frame followed by rejection usually means sequence, counter, or renewal drift.
-- Correct payload with wrong envelope usually means a protocol-layer bug, not a business-field bug.
-- Replaying captured frames verbatim without session-state repair rarely scales.
+## Escalation Rule
+- Classify message groups before inspecting full payload content.
+- Prove serializer and parser boundaries before stepping through frame locals.
+- Escalate to breakpoints only when message fields still depend on hidden locals or opaque binary transforms.
+- Do not treat one accepted first frame as protocol success.
+
+## Done Criteria
+- Handshake rules are explicit.
+- Message groups or frame families are classified.
+- Serialization boundaries are mapped.
+- Replay succeeds beyond the first accepted message.

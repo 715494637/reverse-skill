@@ -19,6 +19,11 @@ It does not own locating unknown algorithms, deobfuscating whole bundles, or des
 4. Freeze time, random, and device-like identifiers before comparing outputs.
 5. Remove non-essential patches and verify that the core chain still runs.
 
+## Preferred JSReverser-MCP Path
+- Default entry: use `check_browser_health`, `list_console_messages`, `get_storage`, and `evaluate_script` to classify blockers before patching. If the target is login-gated, capture state with `save_session_state` and replay it with `restore_session_state`.
+- Escalate: prefer `inject_stealth`, `set_user_agent`, hook-based inspection, or minimal runtime probes before broad environment spoofing. Use breakpoints only when hidden state mutation or anti-debug branches cannot be explained from hook or console evidence.
+- Required evidence: the blocking anti-debug path is neutralized, the minimal environment manifest is explicit, and fixed inputs now reproduce stable intermediate outputs.
+
 ## Exit Gate
 - Anti-debug blockers no longer prevent observation or execution.
 - The core path runs under a minimal environment manifest.

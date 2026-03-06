@@ -19,6 +19,11 @@ It does not own runtime patching, large-scale deobfuscation, replay delivery, or
 4. Walk the stack upward until the builder and dependency sources are explicit.
 5. Confirm the source-of-truth function with minimal reproducible evidence.
 
+## Preferred JSReverser-MCP Path
+- Default entry: use `analyze_target` when page state is still unclear, then prefer `create_hook` + `inject_hook` + `get_hook_data` on the nearest request writer surface such as `fetch`, `xhr`, `websocket`, header setters, or known sink helpers.
+- Escalate: use `hook_function` or `trace_function` before breakpoints. Move to `break_on_xhr`, `get_request_initiator`, `set_breakpoint_on_text`, or `evaluate_on_callframe` only when hook evidence still cannot prove the builder-to-writer chain.
+- Required evidence: one stable request fingerprint, one verified stack from trigger to writer, and one named builder function that survives rerun.
+
 ## Exit Gate
 - The final writer boundary and builder function are both proven.
 - The call chain from request entry to assignment is mapped.

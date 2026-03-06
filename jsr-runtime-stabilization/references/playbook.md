@@ -1,21 +1,26 @@
 # Playbook
 
-## Anti-Debug Matrix
-- Dynamic `debugger` construction through `Function` or `constructor`: intercept the dynamic-function path rather than patching unrelated logic.
-- Timer traps through `setInterval` or `setTimeout`: neutralize the proven callback path, not global timing behavior.
-- DevTools open-state checks through viewport or outer and inner size mismatches: patch only the observed dimensions.
-- `toString`, console, or performance probes: preserve native-looking behavior before spoofing returned values.
-- Main-thread lockout with usable browser traffic: move observation to remote CDP control or early injected hooks.
+## Default MCP Chain
+1. Run `check_browser_health` and inspect `list_console_messages` before patching anything.
+2. Use `evaluate_script` and `get_storage` to classify missing globals, anti-debug branches, fingerprint reads, or session-state dependence.
+3. If the target is login-gated or challenge-gated, persist state with `save_session_state` and resume with `restore_session_state`.
+4. Apply only targeted runtime help such as `inject_stealth` or `set_user_agent` after one concrete mismatch is proven.
 
-## Environment Patch Triage
-- Missing global object: create the smallest shell that satisfies the stack.
-- Missing prototype method or getter: patch the prototype, not one instance.
-- Fingerprint reads: satisfy only touched properties such as navigator, screen, canvas, storage, or timing.
-- Headless markers: patch only fields proven by logs or proxy traces.
+## Blocking Surface Matrix
+- Anti-debug loop: dynamic `debugger`, timer trap, console probe, or DevTools-open check.
+- Missing runtime object: `window`, `document`, `navigator`, `crypto`, storage, or event surfaces.
+- Fingerprint mismatch: navigator, screen, timing, canvas, language, or headless markers.
+- Session-state gap: cookie, storage, challenge token, nonce, or issued browser state.
+- Non-determinism: time, random, device-like ids, or rotation counters.
 
-## Stabilization Loop
-1. Capture the first failing stack or access trace.
-2. Bypass blocking anti-debug logic.
-3. Add one minimal patch for one observed failure.
-4. Freeze time, random, and device-like IDs before comparing outputs.
-5. Remove non-critical patches after success to detect overpatching.
+## Escalation Rule
+- Neutralize the blocking anti-debug path before broad environment spoofing.
+- Patch one proven surface at a time; avoid whole-browser imitation.
+- Prefer stealth injection, user-agent correction, or state restore before custom patch piles.
+- Escalate to breakpoints only when hidden state mutation cannot be explained from console, hook, or runtime probes.
+
+## Done Criteria
+- The blocking path is neutralized.
+- The minimal environment manifest is explicit.
+- Fixed inputs now reproduce stable intermediate outputs.
+- Overpatching has been trimmed back to the smallest working set.
