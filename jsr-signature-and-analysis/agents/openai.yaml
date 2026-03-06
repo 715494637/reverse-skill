@@ -1,0 +1,3 @@
+interface:
+  display_name: "JSR Signature & Analysis"
+  short_description: "Analyze deterministic signature stages, state dependencies, and verification evidence"

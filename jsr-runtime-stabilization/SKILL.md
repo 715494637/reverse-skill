@@ -12,7 +12,7 @@ This skill is for authorized debugging, compatibility analysis, and runtime-diff
 
 ## Scope Boundary
 This skill owns debug-friction diagnosis, minimal environment manifests, deterministic providers, and runtime-difference analysis.
-It does not own locating unknown algorithms, deobfuscating whole bundles, or designing a final automation pipeline beyond making the chain understandable and reproducible.
+It does not own locating unknown algorithms, deobfuscating whole bundles, or designing an automation pipeline beyond making the chain understandable and reproducible.
 
 ## Workflow
 1. Classify the failure: debug friction, missing object, fingerprint mismatch, state mismatch, or non-determinism.
@@ -23,7 +23,9 @@ It does not own locating unknown algorithms, deobfuscating whole bundles, or des
 
 ## Preferred JSReverser-MCP Path
 - Default entry: use `check_browser_health`, `list_console_messages`, `get_storage`, and `evaluate_script` to classify blockers before patching. If the target depends on prior browser state, record it with `save_session_state` and review it with `restore_session_state`.
-- Escalate: prefer hook-based inspection, minimal runtime probes, or focused `set_user_agent` checks before broad environment simulation. Use breakpoints only when hidden state mutation or guard branches cannot be explained from hook or console evidence.
+- Escalate: use `inspect_object` or focused hook-based inspection before broad runtime simulation. Use `inject_preload_script` when the mismatch appears before normal page hooks can be installed. Consider `set_user_agent` only for a named mismatch, and use breakpoints only when hidden state mutation or guard branches cannot be explained from hook or console evidence.
+- Valuable add-ons: use `record_reverse_evidence` to map evidence to each minimal patch, and `export_session_report` when the runtime diagnosis should be handed to another skill.
+- Avoid first: do not start with `inject_stealth`, `set_user_agent`, breakpoint tools, or broad environment simulation before naming one concrete mismatch.
 - Required evidence: the blocking path is explained, the minimal environment manifest is explicit, and fixed inputs now reproduce stable intermediate outputs.
 
 ## Exit Gate

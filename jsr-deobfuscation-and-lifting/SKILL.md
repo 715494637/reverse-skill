@@ -6,11 +6,11 @@ description: Use when obfuscated JavaScript, AST transforms, JSVMP, or WASM bloc
 # JSR Deobfuscation and Lifting
 
 ## Overview
-Turn unreadable obfuscation, AST tricks, VM dispatch, worker packing, and WASM bridges into readable semantic stages on the replay-critical path.
+Turn unreadable obfuscation, AST tricks, VM dispatch, worker packing, and WASM bridges into readable semantic stages on the critical analysis path.
 
 ## Scope Boundary
 This skill owns execution-container recovery, transform planning, VM or WASM semantic recovery, and equivalence checks on the critical path.
-It does not own end-to-end replay delivery or broad cosmetic cleanup that does not improve recoverable semantics.
+It does not own end-to-end automation delivery or broad cosmetic cleanup that does not improve recoverable semantics.
 
 ## Workflow
 1. Recover the outer execution container first: webpack loader, worker bootstrap, VM shell, or JS-WASM bridge.
@@ -21,14 +21,16 @@ It does not own end-to-end replay delivery or broad cosmetic cleanup that does n
 
 ## Preferred JSReverser-MCP Path
 - Default entry: use `collect_code`, `search_in_sources`, `get_script_source`, and `understand_code` to recover the outer execution container before touching inner logic.
-- Escalate: use `deobfuscate_code`, `trace_function`, and `hook_function` to confirm live bridges across webpack loaders, workers, VM shells, or JS-WASM boundaries. Move to breakpoints only when opcode state, bridge values, or dispatch locals remain hidden from static and hook views.
-- Required evidence: the true protected entry path is explicit, critical logic is lifted into named semantic stages, and original versus lifted outputs still match on the replay-critical path.
+- Escalate: use `collection_diff` when challenge state, lazy chunks, or worker startup may change the loaded script set. Use `deobfuscate_code`, `trace_function`, `hook_function`, or `inspect_object` only after the outer container is narrowed. Move to breakpoints only when opcode state, bridge values, or dispatch locals remain hidden from static and hook views. Use `inject_preload_script` only when early bootstrap behavior must be observed before normal hooks.
+- Valuable add-ons: use `record_reverse_evidence` to capture transform steps and semantic checkpoints, and `export_session_report` when lifted logic should be handed to later locate, signature, or protocol work.
+- Avoid first: do not start with `deobfuscate_code`, breakpoint tools, or crypto classification before the outer container and critical entry are explicit.
+- Required evidence: the actual execution entry is explicit, critical logic is lifted into named semantic stages, and original versus lifted outputs still match on the critical analysis path.
 
 ## Exit Gate
 - The critical path is explainable in semantic stages.
-- The true protected entry path is explicit.
+- The actual execution entry is explicit.
 - Pre-transform and post-transform outputs still match.
-- Recovered logic can feed replay, tracing, or protocol work directly.
+- Recovered logic can feed later locate, stage-analysis, or protocol work directly.
 
 ## Output Contract
 - Execution-container diagnosis

@@ -1,14 +1,14 @@
 ---
-name: jsr-signature-and-replay
+name: jsr-signature-and-analysis
 description: Use when dynamic request fields need stage-by-stage analysis, with clear separation between local computation, prior state dependencies, and reproducible verification evidence.
 ---
 
-# JSR Signature and Replay
+# JSR Signature and Analysis
 
 ## Overview
 Analyze dynamic request fields as deterministic stages, while explicitly separating locally reproducible logic from prior state dependencies and request-chain preconditions.
 
-This skill is intended for authorized analysis, debugging, and dependency modeling. It prioritizes mechanism explanation, stage boundaries, and controlled verification notes over direct automation deliverables.
+This skill is intended for authorized analysis, debugging, and dependency modeling. It prioritizes mechanism explanation, stage boundaries, and controlled verification notes over automation deliverables.
 
 ## Scope Boundary
 This skill owns stage decomposition, dependency injection design, prior-state modeling, and reproducible evidence collection.
@@ -23,7 +23,9 @@ It does not own locating unknown generation paths, broad runtime patching beyond
 
 ## Preferred JSReverser-MCP Path
 - Default entry: use `analyze_target` to fix one known sample chain, then use `create_hook` + `inject_hook`, `hook_function`, `list_network_requests`, and `get_network_request` to separate prior-state inputs from local computation.
-- Escalate: if the target depends on login, prior challenge, or renewal state, record browser state with `save_session_state` and `restore_session_state` before extracting local stages. Use breakpoints only when state dependencies and local stages remain entangled after sampling.
+- Escalate: if the target depends on login, prior challenge, or renewal state, record browser state with `save_session_state` and `restore_session_state` before extracting local stages. Use `inspect_object` when builder carriers or staged inputs remain unclear. Use `inject_preload_script` only when stage dependencies are created before normal page hooks can observe them. Use breakpoints only when state dependencies and local stages remain entangled after sampling.
+- Valuable add-ons: use `record_reverse_evidence` to preserve stage boundaries, dependency lists, and baseline-versus-variant comparisons, and `export_session_report` when another skill should reuse the stage analysis.
+- Avoid first: do not start with protocol-state assumptions, broad runtime patching, or breakpoint tools before the prior-state boundary is explicit.
 - Required evidence: the dependency list is explicit, local stages are callable with declared inputs, and baseline versus variant samples can be explained without hidden assumptions.
 
 ## Exit Gate

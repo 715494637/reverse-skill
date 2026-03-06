@@ -1,3 +1,0 @@
-interface:
-  display_name: "JSR Signature & Replay"
-  short_description: "Rebuild deterministic signature chains and offline replay scripts"

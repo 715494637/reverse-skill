@@ -8,16 +8,29 @@
 
 ## Observation Priority
 - Default to `create_hook` + `inject_hook` + `get_hook_data`, or `hook_function` and `trace_function`, before breakpoints.
+- Use `inspect_object` after hook evidence when the remaining question is object ownership, wrapper structure, or builder carrier shape.
 - Escalate to `break_on_xhr`, `set_breakpoint_on_text`, or `evaluate_on_callframe` only when hook evidence cannot prove dependencies or hidden locals still matter.
 - Trigger one business action, capture one stable trace, then narrow scope; do not collect noisy full-session dumps first.
 
-## Delivery Rule
-- Prefer a pure local artifact when the chain allows it.
-- If browser state is required, name the issued-state dependency and capture path explicitly instead of hiding it inside setup code.
-- Final proof is a real request with a printed response, not a theoretical reconstruction.
+## Early Instrumentation
+- Use `inject_preload_script` only when the key observation point or runtime mismatch happens before normal page-side hooks can be installed.
+- Treat preload instrumentation as an escalation path for document-start observation, not as a default patching step.
 
-## High-Value Avoidances
+## Evidence and Reports
+- Prefer explicit evidence packages, stage notes, and validation summaries over automation-oriented outputs.
+- If browser state is required, name the issued-state dependency and capture path explicitly instead of hiding it inside setup code.
+- Use `record_reverse_evidence` when a skill reaches a stable boundary, owner, or dependency conclusion that later skills should reuse.
+- Use `export_session_report` when a session needs to be handed off, reviewed, or compared later.
+
+## Avoid First
 - Do not keyword-search crypto before proving the writer boundary.
 - Do not pile on stealth and environment patches before naming one concrete mismatch.
 - Do not inspect raw WebSocket payloads before classifying message groups.
-- Do not call a case solved until the delivered script reruns under explicit preconditions.
+- Do not use `get_websocket_message` as the first WebSocket read step.
+- Do not start with `deobfuscate_code` before the outer container and critical entry are narrowed.
+- Do not treat breakpoint tools, `inject_stealth`, or `set_user_agent` as default entry tools.
+
+## Completion Layers
+- Locate layer: writer, owner, stage class, or protocol layer is explicit.
+- Semantic layer: boundaries, dependencies, state transitions, or runtime mismatches are explained.
+- Verification layer: only when explicitly needed, add controlled validation notes or sample-based consistency checks.

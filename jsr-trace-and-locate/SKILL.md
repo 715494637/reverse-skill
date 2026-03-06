@@ -8,7 +8,7 @@ description: Use when the formation path of dynamic request fields is unclear an
 ## Overview
 Find where dynamic fields are formed. Classify the sink, choose the least-distorting observation mode, and map the real parameter path from write boundary back to builder cause.
 
-This skill focuses on authorized analysis and debugging. It prioritizes observable evidence, repeatable call-path summaries, and boundary identification over direct automation-oriented outputs.
+This skill focuses on authorized analysis and debugging. It prioritizes observable evidence, repeatable call-path summaries, and boundary identification over automation-oriented outputs.
 
 ## Scope Boundary
 This skill owns discovery of the request trigger path, write boundary, assignment point, builder path, and crypto boundary.
@@ -23,7 +23,9 @@ It does not own runtime patching, large-scale deobfuscation, direct automation d
 
 ## Preferred JSReverser-MCP Path
 - Default entry: use `analyze_target` when page state is still unclear, then prefer `create_hook` + `inject_hook` + `get_hook_data` on the nearest request write surface such as `fetch`, `xhr`, `websocket`, header setters, or known sink helpers.
-- Escalate: use `hook_function` or `trace_function` before breakpoints. Move to `break_on_xhr`, `get_request_initiator`, `set_breakpoint_on_text`, or `evaluate_on_callframe` only when observation evidence still cannot prove the builder-to-writer chain.
+- Escalate: use `hook_function`, `trace_function`, or `inspect_object` before breakpoints. Move to `break_on_xhr`, `get_request_initiator`, `set_breakpoint_on_text`, or `evaluate_on_callframe` only when observation evidence still cannot prove the builder-to-writer chain. Use `inject_preload_script` only when the observation point appears before normal page hooks can be installed.
+- Valuable add-ons: use `record_reverse_evidence` to save stable builder and writer findings, and `export_session_report` when the locate result should be handed to another skill.
+- Avoid first: do not start with crypto keyword search, `detect_crypto`, or breakpoint tools before proving the write boundary.
 - Required evidence: one stable request fingerprint, one verified stack from trigger to writer, and one named builder function that survives rerun.
 
 ## Exit Gate
