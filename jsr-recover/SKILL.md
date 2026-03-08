@@ -24,7 +24,7 @@ description: Use when real business logic is hidden by jsvmp, ast transforms, co
 - 能黑盒复用模块闭包就先黑盒复用，不默认走全量反编译。
 - 先证明每层职责，再决定要不要继续往下拆。
 - 只恢复当前问题所需的那一段，不做低价值全量还原。
-- 每一层都要做等价性验证，不做“看起来像”。
+- 每一层都要做等价性验证，不以外观相似作为判定依据。
 
 ## 六层视角
 

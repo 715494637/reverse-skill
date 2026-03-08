@@ -13,7 +13,7 @@ description: Use when browser execution and local execution diverge because of m
 
 - 先分清是缺对象、缺状态、反调试、随机源、时间窗，还是风控分支。
 - 只为当前调用链补最小必需项。
-- 让中间值稳定，而不是让环境看起来像浏览器。
+- 以中间值稳定作为运行时目标，而不是以环境外观相似作为目标。
 
 ## 核心原则
 
@@ -34,7 +34,7 @@ description: Use when browser execution and local execution diverge because of m
 4. 只有六问都闭合，才允许把当前 builder 判成“可纯算迁移”。
 5. 一旦涉及 `deviceId`、`blackbox`、`sensor_data`、指纹 cookie，先画“表面 -> 采集器 -> 聚合器 -> 风控消费点 -> 目标字段/分支”的归因链。
 6. 先稳定时间和随机源，再比较中间值。
-7. 先补状态，再补对象；很多“环境错误”其实是会话没闭合。
+7. 先补状态，再补对象；大量环境类异常源于会话未闭合。
 8. 每新增一项依赖，都回头验证它是否真的影响结果。
 
 ## 交付要求

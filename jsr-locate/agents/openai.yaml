@@ -1,4 +1,4 @@
-interface:
+﻿interface:
   display_name: "JSR Locate"
-  short_description: "��λ������·��д��߽硢��������������ǰ��״̬��������"
-  default_prompt: "ʹ�� $jsr-locate ����Ŀ�������д��߽硢������Դ������������·��"
+  short_description: "定位动态字段写入边界、来源链、请求依赖与前置状态的逆向技能"
+  default_prompt: "使用 $jsr-locate 分析目标字段的写入边界、来源证明、状态链与请求依赖链。"

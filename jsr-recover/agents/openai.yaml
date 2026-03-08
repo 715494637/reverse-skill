@@ -1,4 +1,4 @@
-interface:
+ï»¿interface:
   display_name: "JSR Recover"
-  short_description: "»Ö¸´ jsvmp¡¢ast¡¢wasm ÓëĞ­ÒéÓïÒåµÄÄæÏò¼¼ÄÜ"
-  default_prompt: "Ê¹ÓÃ $jsr-recover ·Ö²ã»Ö¸´Ä¿±ê´úÂëµÄÕæÊµÓïÒåÓë¹Ø¼üÖ´ĞĞÂ·¾¶¡£"
+  short_description: "æ¢å¤ jsvmpã€astã€wasmã€worker ä¸åè®®å£³çœŸå®è¯­ä¹‰çš„é€†å‘æŠ€èƒ½"
+  default_prompt: "ä½¿ç”¨ $jsr-recover åˆ†å±‚æ¢å¤ç›®æ ‡é€»è¾‘ï¼Œè¾“å‡ºæ¡¥æ¥è¾¹ç•Œã€å…³é”®ç®—å­ä¸æ‰§è¡Œè·¯å¾„ã€‚"
