@@ -1,0 +1,4 @@
+interface:
+  display_name: "JSR Locate"
+  short_description: "定位请求链路、写入边界、参数依赖与完整前置状态的逆向技能"
+  default_prompt: "使用 $jsr-locate 梳理目标请求的写入边界、参数来源和完整依赖链路。"

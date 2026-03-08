@@ -1,0 +1,4 @@
+interface:
+  display_name: "JSR Recover"
+  short_description: "恢复 jsvmp、ast、wasm 与协议语义的逆向技能"
+  default_prompt: "使用 $jsr-recover 分层恢复目标代码的真实语义与关键执行路径。"

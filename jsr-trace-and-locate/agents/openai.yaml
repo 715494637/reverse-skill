@@ -1,3 +1,0 @@
-interface:
-  display_name: "JSR Trace & Locate"
-  short_description: "Locate token/sign/cookie generation chains via hooks and stack tracing"

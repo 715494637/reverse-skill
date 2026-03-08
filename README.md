@@ -1,116 +1,154 @@
 # reverse-skill
 
-面向 Web JS 逆向分析、调试与协议研究的 AI skills 仓库。
+面向 Web JS 逆向的三核技能仓库，核心目标不是教模型“套固定工具方案”，而是让模型具备三种真正关键的能力：
 
-这些 skills 主要用于帮助模型在授权场景下梳理动态参数形成路径、识别运行时依赖、理解打包与协议边界，并输出结构化分析结论、依赖清单和受控验证说明。
+- `locate`：会定位，会设计定位路径，会展开请求依赖链
+- `runtime`：会分辨环境、状态、反调试、风控分支，不乱补环境
+- `recover`：会拆 `jsvmp / ast / worker / wasm / 协议壳`，恢复真实语义而不是只会美化代码
 
-## 安装方式
-
-### 1. 安装 JSReverser-MCP
-
-[JSReverser-MCP](https://github.com/NoOne-hub/JSReverser-MCP)
-
-### 2. 安装 jsr skills
-
-将以下目录完整复制到客户端的 skills 根目录：
-
-- `jsr-trace-and-locate`
-- `jsr-runtime-stabilization`
-- `jsr-deobfuscation-and-lifting`
-- `jsr-signature-and-analysis`
-- `jsr-transport-and-protocol`
-- `jsr-shared-references`
-
-客户端目录：
-
-| 客户端 | 安装位置 |
-|---|---|
-| `Codex` | `%USERPROFILE%\.codex\skills\` |
-| `Claude Code` | `%USERPROFILE%\.claude\skills\` |
-
-![安装示例](image.png)
-
-## 使用边界
-
-这些 skills 默认面向以下用途：
-
-- 已授权场景下的页面逆向分析与调试
-- 动态参数形成路径与状态依赖识别
-- 浏览器与本地执行差异诊断
-- 打包、混淆、`worker`、`wasm` 与协议层结构理解
-
-默认不以未授权调用、批量滥用或绕过访问控制为目标。
-
-## 推荐使用方式
-
-将这段话发给 AI：
-
-```text
-使用：jsreverse mcp
-探索：<目标页面入口 / 当前上下文 / 是否已有授权环境>
-分析：<目标动态字段、调用路径、已知症状、希望确认的机制>
-方式：优先梳理参数形成路径、运行时依赖与状态边界，必要时提供最小复现和受控验证说明
-交付：输出结构化分析结论、依赖清单、伪代码或研究用最小复现样例
-审查：明确哪些结论来自本地计算、哪些依赖前置状态，并记录验证结果摘要
-```
-
-如果你已经知道问题归属，再显式点名 skill。
-
-```text
-$jsr-trace-and-locate 这个页面里有动态请求字段，请按写入边界梳理参数形成路径，确认 entry、builder、writer 三层，并给出最小复现证据。
-```
-
-更细的操作方式、显式 skill 模式、组合模式与证据标准见 [docs/usage.md](docs/usage.md)。
-
-## 当前 Skills
-
-| Skill | 用途 | 典型产出 |
-|---|---|---|
-| `jsr-trace-and-locate` | 梳理动态参数的形成路径、写入边界与关键依赖来源 | `entry -> builder -> writer` 调用链、关键函数签名、最小复现证据 |
-| `jsr-runtime-stabilization` | 处理调试干扰、缺失运行时对象、环境差异与状态失配 | 最小依赖清单、差异归因、稳定复核证据 |
-| `jsr-deobfuscation-and-lifting` | 处理 `webpack`、`worker`、`wasm`、`jsvmp`、AST 变换等导致的入口不可读与语义遮蔽 | 入口恢复、关键语义分层、等价性验证 |
-| `jsr-signature-and-analysis` | 分析动态参数的分阶段形成机制，并区分本地计算与前置状态依赖 | 分阶段 I/O、状态依赖清单、受控验证说明 |
-| `jsr-transport-and-protocol` | 处理 `WebSocket`、`protobuf`、握手、心跳、序号与协议状态迁移 | 协议契约表、消息分层、状态迁移说明 |
-
-## Skill 与 JSReverser-MCP 的协同关系
-
-| Skill | 默认起手工具 | 适合处理的问题 |
-|---|---|---|
-| `jsr-trace-and-locate` | `analyze_target`、`create_hook`、`inject_hook`、`get_hook_data` | 只知道动态字段存在，但还不知道它在哪里形成 |
-| `jsr-runtime-stabilization` | `check_browser_health`、`list_console_messages`、`get_storage`、`evaluate_script` | 浏览器能跑、本地跑不动，或一调试就出现明显环境差异 |
-| `jsr-deobfuscation-and-lifting` | `collect_code`、`search_in_sources`、`get_script_source`、`understand_code` | 入口被打包、混淆、拆到 `worker` 或 `wasm` 里 |
-| `jsr-signature-and-analysis` | `analyze_target`、`hook_function`、`list_network_requests`、`get_network_request` | 需要拆分本地计算阶段与前置状态依赖，并形成稳定的分析结论 |
-| `jsr-transport-and-protocol` | `list_websocket_connections`、`analyze_websocket_messages`、`get_websocket_messages` | 需要分析长连接、帧结构、心跳、续期、序号与协议状态 |
-
-共享路由与起手原则集中在 [jsr-shared-references/jsr-mcp-routing.md](jsr-shared-references/jsr-mcp-routing.md)。
-
-## 当前知识库状态
-
-统计口径：仅按 `knowledge.md` 章节数统计，不包含临时文件、链接汇总和中间产物。
-
-以下数字表示待提炼原料规模，不代表这些案例会原样进入 skill；skill 只吸收其中可迁移、可复用、可交付的知识。
-
-- `狗都不学爬虫`：63 章
-- `语雀-js逆向`：33 章
-- `逆向百例`：66 章
-- `合计`：162 章
-
-## 仓库结构
+## 当前结构
 
 ```text
 reverse-skill/
-|- jsr-trace-and-locate/
-|- jsr-runtime-stabilization/
-|- jsr-deobfuscation-and-lifting/
-|- jsr-signature-and-analysis/
-|- jsr-transport-and-protocol/
-|- jsr-shared-references/
-|- JSReverser-MCP-main/
-|- docs/
-|  |- usage.md
-|  `- plans/
-`- js逆向/
-   |- 狗都不学爬虫/
-   |- 语雀-js逆向/
-   `- 逆向百例/
+├─ jsr-locate/
+│  ├─ SKILL.md
+│  ├─ agents/
+│  └─ references/
+├─ jsr-runtime/
+│  ├─ SKILL.md
+│  ├─ agents/
+│  └─ references/
+├─ jsr-recover/
+│  ├─ SKILL.md
+│  ├─ agents/
+│  └─ references/
+├─ js逆向/
+├─ JSReverser-MCP-main/
+└─ README.md
+```
+
+## 设计取向
+
+- 不写“大、泛、空”的逆向说明
+- 不重复模型本来就会的常识
+- 不把 skill 写成固定工具菜单
+- 主 `SKILL.md` 负责触发、原则、切换条件、交付要求
+- `references/` 只放真正高价值的逆向难点与中文记录模板
+- 所有过程记录统一使用中文
+
+## 工作目录记录
+
+三核 skill 默认要求把过程记录真正写进当前任务工作目录，而不是只停留在对话里。
+
+默认记录根目录：
+
+```text
+<当前任务工作目录>/reverse-records/
+```
+
+默认文件：
+
+- `总览.md`：任务目标、当前阶段、已确认、卡点、下一步、风险、结论摘要
+- `请求链路.md`：请求参数、请求头、`cookie`、`HttpOnly`、上游依赖、正常态/风控态对照
+- `运行时依赖.md`：最小环境清单、状态依赖、时间/随机源、反调试、风控分支
+- `恢复记录.md`：`jsvmp`、`ast`、`worker`、`wasm`、协议壳、关键函数卡片、桥接边界
+- `验证记录.md`：等价性验证、回放验证、关键中间值、最终对照结果
+- `协议状态.md`：仅在 `WebSocket`、`protobuf`、长连接、心跳、序号、续期场景下创建
+
+写入原则：
+
+- 没有用户另行指定路径时，一律写到 `reverse-records/`
+- 文件不存在就创建，存在就追加或更新
+- 所有记录都用中文
+- 每次推进后至少更新 `总览.md`
+- 需要复现接口时，优先更新 `请求链路.md`
+
+## 三个主 skill 分工
+
+### `jsr-locate`
+
+负责：
+
+- 写入边界定位
+- `entry -> builder -> writer` 梳理
+- 参数来源证明
+- 请求链路与前置依赖展开
+- `HttpOnly cookie`、响应获取字段、风控态/正常态链路区分
+
+适合：
+
+- `sign`、`token`、`cookie`、请求头、请求体字段不知道从哪来
+- 已知目标请求，但不知道它依赖哪些前置请求和响应
+- 需要把整条链展开到正常态，而不是只找到一个函数名
+
+### `jsr-runtime`
+
+负责：
+
+- 补环境诊断
+- 最小环境设计
+- 状态依赖判断
+- 反调试与风控分支区分
+- 时间源、随机源、种子稳定化
+
+适合：
+
+- 浏览器内正常，本地执行异常
+- 一调试就变值、卡死、跳风控
+- 不确定是缺对象、缺状态、反调试还是风控分支
+
+### `jsr-recover`
+
+负责：
+
+- `jsvmp`
+- `ast` 与控制流平坦化
+- `worker`
+- `wasm`
+- `webpack/runtime` 包装
+- `protobuf`、`WebSocket`、长连接状态迁移等协议壳
+
+适合：
+
+- 逻辑被多层壳遮住，看得到写回点但看不透中间语义
+- 需要先恢复桥接层、调度层、状态载体，再讨论业务算子
+- 不想陷入整包美化和低价值还原
+
+## references 的作用
+
+每个 skill 都保留少量 `references/`，只承载真正高价值内容：
+
+- 难点分层
+- 逆向设计方法
+- 过程记录模板
+- 切换条件
+- 完成标准
+
+不是资料库，不是案例堆，也不是工具手册。
+
+## 安装
+
+把下面三个目录复制到技能根目录：
+
+- `jsr-locate`
+- `jsr-runtime`
+- `jsr-recover`
+
+常见位置：
+
+- `Codex`：`%USERPROFILE%\.codex\skills\`
+- `Claude Code`：`%USERPROFILE%\.claude\skills\`
+
+## 使用示例
+
+```text
+使用 $jsr-locate 梳理请求 A 的写入边界、参数来源、上游依赖和 HttpOnly cookie 链路。
+```
+
+```text
+使用 $jsr-runtime 判断这个 case 是缺状态、缺对象、反调试还是风控分支，并给出最小环境清单。
+```
+
+```text
+使用 $jsr-recover 恢复这个 jsvmp + worker + wasm 组合壳，先给出分层语义、桥接边界和等价性检查点。
 ```
