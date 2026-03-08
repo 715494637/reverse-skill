@@ -37,26 +37,28 @@
 
 ```text
 使用：JSReverse MCP
+方式：插桩采集完整的输入输出及中间态数据，与本地算法进行逻辑一致性和结果正确性对比分析。
 URL: 【https://example.com】
 目标：【接口 / 需要的数据】
 触发方式: 【刷新页面】
 cookie：【使用现有cookie / 如无或者非必要则可以不使用，若必须则需要完整模拟链路生成游客态】
-约束：不使用playwright等浏览器自动化工具
+约束：不使用playwright等浏览器自动化工具，不能联网搜索公开案例
 必须纯算法实现，【能/不能】依赖补环境
+交付：可运行的python脚本，运行后打印响应数据
 ```
 
 定向调用示例：
 
 ```text
-使用 $jsr-locate 梳理请求 A 的写入边界、参数来源、上游依赖和 HttpOnly cookie 链路。
+$jsr-locate 梳理请求 A 的写入边界、参数来源、上游依赖和 HttpOnly cookie 链路。
 ```
 
 ```text
-使用 $jsr-runtime 判断当前问题属于缺状态、缺对象、反调试还是风控分支，并给出最小环境清单。
+$jsr-runtime 判断当前问题属于缺状态、缺对象、反调试还是风控分支，并给出最小环境清单。
 ```
 
 ```text
-使用 $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界、关键算子和等价性检查点。
+$jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界、关键算子和等价性检查点。
 ```
 
 ## 技能概览
