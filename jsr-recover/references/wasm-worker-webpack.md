@@ -1,29 +1,29 @@
-# WASM、Worker、Webpack
+# WASM, Worker, and Webpack
 
-## 一、先确定桥接层，再进入内部实现
+## 1. Confirm the Bridge Layer Before Entering Internals
 
-这三类问题的共同点是：
+These three classes share one property:
 
-- 真逻辑不一定直接暴露在主线程或源码表面。
-- 但输入输出边界一定存在。
+- the real logic is not necessarily exposed in the main thread or visible source
+- but the input/output boundary always exists
 
-所以第一步永远是：
+So the first step is always:
 
-- 找入口
-- 找桥接
-- 找入参
-- 找回参
+- find the entry
+- find the bridge
+- find the input
+- find the output
 
-## 二、Worker
+## 2. Worker
 
-优先确认：
+Confirm first:
 
-- 是独立文件、`blob` 还是字符串拼装
-- 主线程传了什么
-- `worker` 回了什么
-- 是否夹带一次性挑战、设备种子、会话态
+- whether the worker is a separate file, `blob`, or string assembly
+- what the main thread sends
+- what the worker returns
+- whether one-time challenge, device seed, or session state is carried through the bridge
 
-默认记录格式：
+Default recording format:
 
 ```markdown
 worker 入口：
@@ -33,7 +33,7 @@ worker 回参：
 最终写回位置：
 ```
 
-桥接契约卡片：
+Bridge-contract card:
 
 ```markdown
 桥接类型：worker
@@ -45,20 +45,20 @@ worker -> 主线程：
 是否适合黑盒复用：是 / 否
 ```
 
-## 三、WASM
+## 3. WASM
 
-优先确认：
+Confirm first:
 
-- `imports` 需要什么
-- `exports` 暴露什么
-- JS 包装层如何组织参数
-- 结果是直接返回，还是经过二次壳包装
+- what `imports` are required
+- what `exports` are exposed
+- how the JS wrapper packs parameters
+- whether the result is returned directly or wrapped by another shell
 
-结论：
+Conclusion:
 
-- 如果桥接层已足以解释输入输出，则无需进行全量反汇编。
+- If the bridge layer is already enough to explain input and output, full disassembly is not required.
 
-桥接契约卡片：
+Bridge-contract card:
 
 ```markdown
 桥接类型：wasm
@@ -71,20 +71,20 @@ exports：
 是否适合黑盒复用：是 / 否
 ```
 
-## 四、Webpack / runtime
+## 4. Webpack / Runtime
 
-优先确认：
+Confirm first:
 
-- 模块装载入口
-- 懒加载点
-- 真正目标模块是哪一个
-- runtime 壳和业务模块的边界
+- module loading entry
+- lazy-loading points
+- the real target module
+- the boundary between runtime shell and business module
 
-高频误判包括：
+Common misjudgment:
 
-- 长时间停留在 runtime 壳层，未进入业务模块。
+- staying in the runtime shell for too long without entering the business module
 
-模块闭包记录：
+Module-closure record:
 
 ```markdown
 目标模块：
@@ -96,15 +96,16 @@ runtime helper：
 版本锚点（bundle/hash/moduleId）：
 ```
 
-## 五、何时说明桥接层才是主难点
+## 5. When the Bridge Layer Is the Real Difficulty
 
-- 主线程只看到壳，真实值在回调、消息、内存或懒加载模块里出现。
-- 改一层外壳并不能解释最终值怎么形成。
-- 只有把桥接契约写清楚，下游才能继续做定位或复现。
+- The main thread sees only a shell, while the real value appears in a callback, message, memory area, or lazy module.
+- Modifying the outer wrapper does not explain how the final value is formed.
+- Downstream locate or replay work cannot continue without a clear bridge contract.
 
-## 六、完成标准
+## 6. Completion Standard
 
-- 已有桥接契约。
-- 已知入参、回参、写回点。
-- `webpack` 场景下已知模块闭包边界。
-- 已区分容器层、桥接层和业务层。
+- A bridge contract exists.
+- Input, output, and write-back point are known.
+- For `webpack`, the module-closure boundary is known.
+- Container layer, bridge layer, and business layer are separated.
+

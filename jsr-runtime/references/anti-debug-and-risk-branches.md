@@ -1,53 +1,53 @@
-# 反调试与风控分支
+# Anti-Debugging and Risk Branches
 
-## 一、先区分“调试摩擦”和“真实风控”
+## 1. Separate Debug Friction from Real Risk Control
 
-不是所有一调试就挂的现象都叫反调试，也不是所有结果异常都叫风控。
+Not every “it breaks when I debug” symptom is anti-debugging, and not every abnormal result is a risk branch.
 
-默认先分两层：
+Start by separating:
 
-- `调试摩擦`：让你不好观察，但未必改变业务值
-- `真实风控分支`：会改变链路、改变中间值或改变最终响应
+- `debug friction`: makes observation harder but does not necessarily change business values
+- `real risk branch`: changes the chain, intermediate values, or final response
 
-## 二、常见反调试面
+## 2. Common Anti-Debug Surfaces
 
-| 类型 | 现象 | 处理原则 |
+| Type | Symptom | Handling principle |
 |---|---|---|
-| 无限 `debugger` | 一步一停 | 只去掉该点，不改业务链 |
-| 栈校验 | 本地直接走 fallback | 保持栈形态或绕开校验 |
-| 控制台诱饵 | 打开控制台就变值 | 不要把诱饵值当真实值 |
-| 性能探针 | 调试时耗时异常 | 固定时间和性能源 |
-| 源码完整性 | 改一行就失效 | 先确认它是否影响业务值 |
+| Endless `debugger` | execution stops every step | remove only that friction point, not business logic |
+| Stack checks | local replay always takes fallback | preserve stack shape or bypass the check |
+| Console bait | value changes when console opens | do not treat bait values as real values |
+| Performance probe | debug mode changes timing significantly | fix time and performance sources |
+| Source integrity | one-line edit breaks execution | first prove whether it affects business values |
 
-## 三、风控分支识别法
+## 3. How to Recognize a Risk Branch
 
-下面这些信号说明你不在正常态：
+The following signals mean the chain is not in normal state:
 
-- 请求还没发就走 fallback。
-- 同样输入，浏览器正常、本地总是另一条链。
-- 少一个上游请求就立即 403、空包、验证码、挑战升级。
-- 目标值能算出来，但服务端一直不认。
+- it enters fallback before the target request is even sent
+- same input, browser is normal, local replay always follows another path
+- missing one upstream request immediately causes 403, empty payload, challenge, or escalation
+- the target value is computed, but the server never accepts it
 
-这时不要继续深挖算法，要先证明正常态需要哪些状态。
+At that point, stop going deeper into the algorithm and prove which state normal execution requires.
 
-如果目标是 `deviceId`、`blackbox`、`sensor_data`、验证码、滑块类场景，还要继续追：
+For `deviceId`, `blackbox`, `sensor_data`, challenge, or slider tasks, continue tracing:
 
-- 哪个指纹表面差异最先出现
-- 该表面被哪个聚合器消费
-- 最终是在哪个 `riskGate/challenge/fallback` 点开始分叉
+- which fingerprint surface diverges first
+- which aggregator consumes that surface
+- which `riskGate`, challenge, or fallback point starts the fork
 
-不得将“某个指纹值不同”直接作为结论，必须说明其对应的消费点。
+Do not conclude from “one fingerprint value differs” alone; the consumer must be identified.
 
-## 四、正常态 / 风控态分叉图是必交付
+## 4. Normal/Risk Fork Map Is Mandatory
 
-除了对照表，还必须补一份分叉图。分叉图至少写清：
+In addition to a comparison table, create a fork map. It must state:
 
-- 分叉起点发生在哪个请求、响应、状态缺口或调试点
-- 正常态 builder / writer 走哪条路径
-- 风控态 fallback / challenge 走哪条路径
-- 缺失的是哪个状态，而不是笼统写“环境不对”
+- which request, response, state gap, or debug event starts the fork
+- which path the normal-state builder and writer follow
+- which path the risk-state fallback or challenge follows
+- which specific state is missing instead of a vague “environment mismatch”
 
-分叉图模板：
+Fork-map template:
 
 ```markdown
 分叉起点：请求 B 未返回 token / guest_id(HttpOnly) 缺失 / 调试触发风险探针
@@ -64,7 +64,7 @@
 - 指纹快照
 ```
 
-对照表模板：
+Comparison template:
 
 ```markdown
 | 项目 | 正常态 | 风控态 | 差异解释 |
@@ -74,15 +74,15 @@
 | 最终响应 | 正常数据 | 风控页 / challenge | 非同链 |
 ```
 
-没写出“分叉起点”和“缺失状态”，就不能算分清了正常态 / 风控态。
+Without the fork point and missing state, normal/risk separation is incomplete.
 
-## 五、处理原则
+## 5. Handling Principles
 
-- 只去掉妨碍观察的调试摩擦，不要大范围改代码。
-- 只要发现风控分支已发生，就回头补状态与正常态样本。
-- 只要发现真实逻辑位于壳层内部，就应停止在 runtime 层继续消耗，并切换到 `$jsr-recover`。
+- Remove only debug friction that blocks observation. Do not rewrite broad business logic.
+- As soon as a risk branch is confirmed, return to state closure and normal-state sampling.
+- If real logic sits inside a shell layer, stop burning time at runtime level and switch to `$jsr-recover`.
 
-## 六、指纹诱发风控的记录模板
+## 6. Fingerprint-Induced Risk Template
 
 ```markdown
 指纹表面差异：
@@ -95,7 +95,7 @@
 是否影响目标字段：是 / 否
 ```
 
-## 七、记录模板
+## 7. Record Template
 
 ```markdown
 反调试点：
@@ -110,9 +110,10 @@
 下一步：
 ```
 
-## 八、完成标准
+## 8. Completion Standard
 
-- 已分清调试摩擦与真实风控。
-- 已说明哪一个点开始发生链路分叉。
-- 指纹场景下已说明哪个消费点真正引发风控。
-- 已明确下一步该补状态、补对象还是切 skill。
+- Debug friction and real risk control are separated.
+- The exact fork starting point is known.
+- For fingerprint tasks, the real consumer that triggers risk control is known.
+- It is clear whether the next step is patching state, patching objects, or switching skills.
+

@@ -1,4 +1,5 @@
-﻿interface:
+interface:
   display_name: "JSR Recover"
-  short_description: "恢复 jsvmp、ast、wasm、worker 与协议壳真实语义的逆向技能"
-  default_prompt: "使用 $jsr-recover 分层恢复目标逻辑，输出桥接边界、关键算子与执行路径。"
+  short_description: "Reverse skill for semantic recovery of JSVMP, AST transforms, worker, WASM, webpack shells, and protocol wrappers"
+  default_prompt: "Use $jsr-recover to recover the obscuring layer, bridge contract, key operators, and equivalence checkpoints of the target logic."
+

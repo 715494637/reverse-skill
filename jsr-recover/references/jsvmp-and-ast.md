@@ -1,127 +1,127 @@
-# JSVMP 与 AST
+# JSVMP and AST Recovery
 
-## 一、先判 VMP 恢复级别
+## 1. Select the VMP Recovery Level First
 
-### A 级：只抽关键 `opcode`
+### Level A: extract only critical `opcode`
 
-适合：
+Suitable when:
 
-- 已知目标字段写回边界
-- 只差少量 `opcode` 语义就能解释目标字段
+- the target field’s write-back boundary is already known
+- only a small set of `opcode` semantics is required to explain the field
 
-重点：
+Focus:
 
-- 只抽会触碰目标字段的 `opcode`
-- 只证明输入、输出、状态变化
-- 能解释目标字段就停手
+- extract only the `opcode` that touches the target field
+- prove only input, output, and state change
+- stop as soon as the target field is explained
 
-### B 级：恢复 dispatcher + 关键状态载体
+### Level B: recover dispatcher plus critical state carriers
 
-适合：
+Suitable when:
 
-- 不恢复 dispatcher 就无法读懂 `opcode`
-- 关键分支依赖寄存器、栈、上下文对象或常量池
+- `opcode` cannot be understood without dispatcher recovery
+- key branches depend on registers, stack, context object, or constant pool
 
-重点：
+Focus:
 
-- 先恢复 dispatcher 循环
-- 再恢复关键状态载体
-- 最后归并关键 `opcode` 族
+- recover the dispatcher loop first
+- then recover critical state carriers
+- finally group the critical `opcode` family
 
-### C 级：最小反编译 / 最小解释器
+### Level C: minimal decompilation or minimal interpreter
 
-适合：
+Suitable when:
 
-- 需要多路径回放
-- 需要协议重建或批量执行
-- `A / B` 级无法支撑后续工作
+- multiple paths must be replayed
+- protocol rebuild or batch execution is required
+- levels `A` and `B` cannot support downstream work
 
-重点：
+Focus:
 
-- 只做最小可验证反编译 / 解释执行
-- 不进行低收益的全量外观整理
+- only a minimal verifiable decompilation or interpreted execution
+- no low-value full beautification
 
-升级原则：
+Escalation rule:
 
-- 默认从 `A` 开始。
-- 只有证据证明当前级别不够，才升级。
-- 能在低一级别解决，就不要进入高一级别。
+- Start from `A` by default.
+- Escalate only when evidence proves the current level is insufficient.
 
-## 二、处理 JSVMP 的基本顺序
+## 2. Basic Order for JSVMP
 
-### 第一步：定入口
+### Step 1: locate the entry
 
-先找：
+Find:
 
-- 字节码从哪里来
-- 调度循环从哪里开始
-- 哪个函数负责解释执行
+- where bytecode comes from
+- where the dispatcher loop starts
+- which function performs interpretation
 
-### 第二步：定状态载体
+### Step 2: identify the state carriers
 
-重点看：
+Prioritize:
 
-- 寄存器数组
-- 栈对象
-- 上下文对象
-- 常量池 / 字符串表
+- register arrays
+- stack objects
+- context objects
+- constant pools and string tables
 
-### 第三步：抽关键 `opcode`
+### Step 3: extract critical `opcode`
 
-初始阶段不进行整台虚拟机恢复。
+Do not rebuild the entire virtual machine at the start.
 
-应该先回答：
+Answer instead:
 
-- 哪些 `opcode` 会触碰目标字段
-- 哪些 `opcode` 会做散列、加密、序列化、拼包
-- 哪些 `opcode` 只是搬运状态
+- which `opcode` touches the target field
+- which `opcode` performs hashing, encryption, serialization, or packet assembly
+- which `opcode` only transports state
 
-### 第四步：做等价验证
+### Step 4: run equivalence checks
 
-每抽出一段逻辑，就做输入输出对照，不要凭视觉判断。
+After extracting each slice, compare input and output. Do not judge by appearance.
 
-## 三、处理 AST / 控制流平坦化的基本顺序
+## 3. Basic Order for AST and Control-Flow Flattening
 
-### 第一步：恢复可读锚点
+### Step 1: recover readable anchors
 
-先恢复：
+Recover first:
 
-- 字面量
-- 字符串表
-- 对象键
-- 调用关系
+- literals
+- string tables
+- object keys
+- call relations
 
-### 第二步：识别平坦化分发器
+### Step 2: identify the flattening dispatcher
 
-重点识别：
+Focus on:
 
-- 总 `switch`
-- 跳转状态变量
-- 死分支与诱饵分支
+- top-level `switch`
+- jump-state variables
+- dead branches and decoy branches
 
-### 第三步：恢复真实分支顺序
+### Step 3: recover the real execution order
 
-分析依据应为执行顺序，而不是格式化后的书写顺序。
+Judge by execution order, not by beautified source order.
 
-### 第四步：把副作用分离出来
+### Step 4: separate side effects
 
-区分：
+Separate:
 
-- 只是控制流包装
-- 真正会改状态、改请求、改返回值的分支
+- control-flow wrapping only
+- branches that really mutate state, request data, or return values
 
-## 四、常见误判
+## 4. Common Misjudgments
 
-- 把分发器当核心算法。
-- 把字符串表还原当成恢复完成。
-- 把平坦化后的某个 case 当真实主路径。
-- 直接进入 `C` 级整机恢复。
-- 未进行等价性验证，仅依据外观相似判断。
+- Treating the dispatcher as the core algorithm
+- Treating string-table recovery as completion
+- Treating one flattened case as the real main path
+- Jumping directly to level `C`
+- Skipping equivalence validation and judging only by appearance
 
-## 五、处理完成的标准
+## 5. Completion Standard
 
-- 已知调度入口。
-- 已知状态载体。
-- 已抽出与目标字段直接相关的关键分支或 `opcode`。
-- 已知当前停在 `A / B / C` 的哪一级，以及为什么不继续下钻。
-- 已能用恢复结果解释目标字段或支撑下一步复现。
+- Dispatcher entry is known.
+- State carriers are known.
+- Critical branches or `opcode` directly related to the target field are extracted.
+- The stopping level among `A / B / C` is justified.
+- The recovered result can explain the target field or support the next replay step.
+

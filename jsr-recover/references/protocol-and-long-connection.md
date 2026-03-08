@@ -1,73 +1,73 @@
-# 协议与长连接
+# Protocol and Long-Connection Recovery
 
-## 一、首包不足以支撑协议判断
+## 1. The First Packet Is Not Enough
 
-长连接、协议壳、`protobuf` 场景中的高频错误，是基于单包样本直接推断协议结构。
+The common protocol mistake in long connections, protocol shells, and `protobuf` tasks is to infer the whole protocol from a single packet.
 
-真正要看的至少包括：
+At minimum, inspect:
 
-- 握手
-- 首包
-- 心跳
-- 序号 / ack
-- 续期
-- 错误包 / 重试
+- handshake
+- first business packet
+- heartbeat
+- sequence and ack
+- renewal
+- error packet or retry packet
 
-## 落盘路径
+## Record Path
 
-协议与长连接场景默认额外写入：
+Protocol and long-connection tasks should additionally write:
 
 ```text
 reverse-records/协议状态.md
 ```
 
-建议内容：
+Recommended contents:
 
-- 握手请求与响应
-- 首包类型
-- 心跳周期
-- 序号 / ack 规则
-- 续期条件
-- 状态迁移图
-- 消息族分组
-- 目标消息类型与载荷结构
+- handshake request and response
+- first-packet type
+- heartbeat interval
+- sequence and ack rules
+- renewal conditions
+- state-transition map
+- message families
+- target-message type and payload structure
 
-## 二、先拆包络层，再拆载荷层
+## 2. Separate Envelope Layer Before Payload Layer
 
-### 包络层
+### Envelope layer
 
-重点是：
+Focus on:
 
-- 消息类型
-- 长度
-- 序号
-- 时间窗
-- 会话标识
-- 压缩 / 加密标记
+- message type
+- length
+- sequence
+- time window
+- session identifier
+- compression or encryption flag
 
-### 载荷层
+### Payload layer
 
-再看：
+Then inspect:
 
-- 字段顺序
-- 编码方式
-- `protobuf` 映射
-- 压缩后的正文
-- 真实业务字段
+- field order
+- encoding method
+- `protobuf` mapping
+- decompressed body
+- real business fields
 
-### 消息族
+### Message families
 
-至少区分：
+At least separate:
 
-- 握手 / 认证
-- 心跳 / 保活
-- 业务请求
-- ack / 重传 / 错误
-- 续期 / 刷新
+- handshake / authentication
+- heartbeat / keepalive
+- business request
+- ack / retry / error
+- renewal / refresh
 
-没分清消息族，就不要直接把某条消息当目标主链。
+Without message-family separation, do not treat one message as the main protocol chain.
 
-## 三、协议记录模板
+## 3. Protocol Recording Template
 
 ```markdown
 连接：
@@ -82,19 +82,19 @@ ack 规则：
 载荷结构：
 ```
 
-这段内容默认写入：`reverse-records/协议状态.md`
+Write this block into `reverse-records/协议状态.md`.
 
-## 四、状态迁移要单独记
+## 4. State Transition Must Be Recorded Separately
 
 ```markdown
 未连接 -> 握手中 -> 已认证 -> 心跳维持 -> 续期 -> 失效
 ```
 
-如果不记状态迁移，就很容易把续期失败误判成算法错误。
+Without state transition, renewal failures are easy to misjudge as algorithm errors.
 
-## 五、连接状态链要写成可追溯链路
+## 5. Write the Connection State Chain as a Traceable Chain
 
-推荐写法：
+Recommended form:
 
 ```text
 握手包 -> 握手响应(session) -> 已认证
@@ -104,18 +104,19 @@ token 临期 -> 续期包 -> 新 session
 续期失败 -> 失效 / 风控 / 强制重连
 ```
 
-只要目标消息依赖前面的 `session / ack / 续期`，就不能只复现目标包本身。
+If the target message depends on prior `session`, `ack`, or renewal state, do not replay the target packet alone.
 
-## 六、常见误判
+## 6. Common Misjudgments
 
-- 只看第一包，不看后续 ack / 心跳。
-- 把包络层字段误当业务字段。
-- 知道 `protobuf` 存在，就直接跳到 message schema，忽略状态机。
-- 把续期失败、序号错位、ack 缺失误判成 payload 算法错误。
+- Observing only the first packet and ignoring later ack or heartbeat traffic
+- Treating envelope fields as business fields
+- Jumping directly to message schema as soon as `protobuf` is found, while ignoring the state machine
+- Misclassifying renewal failure, sequence drift, or missing ack as payload algorithm failure
 
-## 七、完成标准
+## 7. Completion Standard
 
-- 已知包络层。
-- 已知状态迁移。
-- 已知消息族。
-- 已知目标消息的真实边界与依赖。
+- Envelope layer is known.
+- State transition is known.
+- Message families are known.
+- The real boundary and dependencies of the target message are known.
+

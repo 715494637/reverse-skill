@@ -1,119 +1,120 @@
-# 运行时诊断
+# Runtime Diagnosis
 
-## 一、先分类型，再决定怎么补
+## 1. Classify Before Patching
 
-运行时问题至少分成五类：
+Runtime problems fall into at least five classes:
 
-- `缺对象`
-- `缺状态`
-- `反调试`
-- `不确定源`
-- `风控分支`
+- `missing object`
+- `missing state`
+- `anti-debugging`
+- `unstable source`
+- `risk branch`
 
-多数运行时问题并非单一对象缺失，而是上述五类问题的叠加。
+Most runtime failures are combinations of these classes rather than one missing object.
 
-如果目标是 `deviceId`、`blackbox`、`sensor_data`、验证码、滑块、风控 cookie，还要额外拆一层：
+For `deviceId`, `blackbox`, `sensor_data`, challenge, slider, or risk-cookie targets, add one more layer:
 
-- 采集了哪些指纹表面
-- 哪些表面真正被聚合器消费
-- 哪些表面最终影响风险分支或目标字段
+- which fingerprint surfaces are collected
+- which surfaces are actually consumed by the aggregator
+- which consumed surfaces finally affect the risk branch or target field
 
-## 二、五类问题的识别信号
+## 2. Recognition Signals for the Five Classes
 
-| 类型 | 常见现象 | 真正要验证的东西 |
+| Class | Common symptom | What must be verified |
 |---|---|---|
-| 缺对象 | 报 `window`、`document`、`navigator`、`crypto` 未定义 | 当前调用链是否真的会访问它 |
-| 缺状态 | 不报错，但请求总失败、总进风控、值不对 | 是否缺 `cookie`、本地存储、上游响应、挑战结果 |
-| 反调试 | 一断点就卡住、无限 `debugger`、切控制台就变 | 是否存在调试摩擦、完整性检查、栈探针 |
-| 不确定源 | 每次运行结果不同 | 是否依赖时间、随机数、性能时间、设备种子 |
-| 风控分支 | 浏览器里偶尔正常，本地或调试时总走另一条链 | 正常态和风控态是否已经分叉 |
+| Missing object | Errors such as undefined `window`, `document`, `navigator`, or `crypto` | Whether the current chain really touches that object |
+| Missing state | No crash, but request always fails or always enters risk state | Whether `cookie`, storage, upstream response, or challenge state is missing |
+| Anti-debugging | Breakpoints freeze execution, endless `debugger`, output changes when console opens | Whether debug friction, integrity checks, or stack probes exist |
+| Unstable source | Different output on every run | Whether time, randomness, performance time, or device seed is part of the input |
+| Risk branch | Browser sometimes works, local replay or debugging always takes another path | Whether normal state and risk state have already diverged |
 
-## 三、浏览器正常态 vs 本地异常态对照法
+## 3. Browser Normal State vs Local Failure Comparison
 
-默认先做这张表：
+Start with a comparison table:
 
 ```markdown
-| 项目 | 浏览器正常态 | 本地执行 | 差异 |
+| Item | Browser normal state | Local execution | Difference |
 |---|---|---|---|
-| 输入参数 | 一致 | 一致 | 否 |
-| cookie / storage | 完整 | 缺失 | 是 |
-| Date.now | 实时 | 实时 | 可能 |
-| Math.random | 随机 | 随机 | 可能 |
-| 中间值 1 | 正常 | 正常 | 否 |
-| 中间值 2 | 正常 | 异常 | 是 |
-| 最终响应 | 正常数据 | 风控态 | 是 |
+| Input parameters | same | same | no |
+| cookie / storage | complete | missing | yes |
+| Date.now | real-time | real-time | maybe |
+| Math.random | random | random | maybe |
+| Intermediate value 1 | normal | normal | no |
+| Intermediate value 2 | normal | abnormal | yes |
+| Final response | normal data | risk state | yes |
 ```
 
-这张表的作用不是汇报结果，而是把问题缩到最早出现差异的那一层。
+This table is used to shrink the problem to the first layer where divergence appears.
 
-## 四、缺对象和缺状态不要混
+## 4. Do Not Mix Missing Objects with Missing State
 
-### 缺对象
+### Missing object
 
-判断标准：
+Classification rule:
 
-- 当前链路真的访问了该对象。
-- 去掉该对象后，链路在同一位置稳定失败。
+- the current chain really accesses that object
+- removing it reproduces the same failure point consistently
 
-### 缺状态
+### Missing state
 
-判断标准：
+Classification rule:
 
-- 即使对象都在，链路仍然走不到正常态。
-- 一旦补齐上游响应、`cookie`、存储或挑战结果，结果明显改善。
+- even with all objects present, the chain still cannot reach normal state
+- once upstream responses, `cookie`, storage, or challenge state is restored, the outcome improves clearly
 
-常见误判：
+Common misclassification:
 
-- 看到 `document.cookie` 不完整即开始模拟浏览器；实际缺口通常是响应下发的 `HttpOnly`。
+- seeing incomplete `document.cookie` and starting full browser simulation, while the real gap is an upstream `HttpOnly` cookie
 
-## 五、指纹问题不要统称“缺环境”
+## 5. Fingerprint Problems Are Not Just “Missing Environment”
 
-指纹类问题至少拆成五层：
+Split fingerprint problems into at least five layers:
 
 ```text
-表面(surface) -> 采集器(collector) -> 聚合器(aggregator) -> 消费点(consumer) -> 目标字段/风控分支
+surface -> collector -> aggregator -> consumer -> target field or risk branch
 ```
 
-示例：
+Example:
 
 ```text
 canvas / webgl / fonts / audio / timezone
 -> collectFingerprint()
 -> buildDeviceProfile()
 -> riskGate() / buildBlackbox()
--> deviceId / blackbox / sensor_data / challenge 分支
+-> deviceId / blackbox / sensor_data / challenge branch
 ```
 
-诊断规则：
+Diagnostic rules:
 
-- 没证明表面被消费，就不要补。
-- 没证明聚合器输出影响目标字段，就不要把它列为必需依赖。
-- 如果消费点位于风控分支而非目标 `builder`，则该问题不应归类为纯算法缺口。
+- Do not patch a surface before proving it is consumed.
+- Do not list a dependency as mandatory before proving that aggregator output affects the target field.
+- If the consumer belongs to a risk branch instead of the target builder, the problem is not a pure algorithm gap.
 
-## 六、不确定源要先固定
+## 6. Fix Unstable Sources First
 
-如果不先固定下面这些东西，很多对比都没有意义：
+If these inputs are not stabilized first, later comparisons are weak:
 
 - `Date.now()`
 - `performance.now()`
 - `Math.random()`
-- 设备种子、指纹种子、安装时间、会话序号
+- device seed, fingerprint seed, install time, session sequence
 
-先固定，再比较中间值。
+Stabilize first, then compare intermediate values.
 
-## 七、什么时候说明不是运行时问题
+## 7. When the Main Problem Is Not Runtime
 
-出现下面情况时，运行时不是主矛盾：
+Runtime is not the main contradiction when:
 
-- 浏览器正常态和本地链路在同一层都能走通，只是内部逻辑看不懂。
-- 写入边界清楚，但 builder 藏在 `jsvmp`、`worker`、`wasm`。
-- 只是需要还原协议包络、字节码调度或桥接层。
+- browser normal state and local execution both reach the same layer, but internal semantics are still unclear
+- the sink is clear but the builder is hidden inside `jsvmp`, `worker`, or `wasm`
+- the remaining work is to recover protocol envelope, bytecode dispatcher, or bridge semantics
 
-这时应切 `$jsr-recover`。
+Switch to `$jsr-recover` in these cases.
 
-## 八、诊断完成标准
+## 8. Completion Standard
 
-- 已能把问题明确归类。
-- 已知道第一个真正出现差异的层。
-- 指纹场景下已知哪些表面被真实消费，哪些表面可裁剪。
-- 已知道应该补状态、补对象、固定不确定源，还是处理风控分支。
+- The problem class is clearly identified.
+- The first layer where divergence appears is known.
+- For fingerprint problems, consumed surfaces and removable surfaces are known.
+- It is clear whether the next action is patching state, patching objects, stabilizing sources, or handling a risk branch.
+

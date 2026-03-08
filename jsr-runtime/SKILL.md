@@ -1,78 +1,75 @@
 ---
 name: jsr-runtime
-description: Use when browser execution and local execution diverge because of missing objects, hidden browser state, anti-debugging, timing or randomness, fingerprint surfaces, or risk-control branching, and you need a minimal runtime manifest instead of broad simulation. Use for 补环境、反调试、状态依赖、最小环境设计、风控分支判断。
+description: Use when browser execution and local execution diverge because of missing objects, hidden browser state, anti-debugging, timing or randomness, fingerprint surfaces, or risk-control branching, and you need a minimal runtime manifest instead of broad simulation. Use for environment patching, anti-debugging, state dependencies, minimal environment design, and risk-branch analysis.
 ---
 
 # JSR Runtime
 
 ## Overview
 
-本 skill 用于识别当前调用链的最小运行时缺口，并形成可验证的环境与状态依赖清单。
+This skill identifies the minimal runtime gap of the current execution chain and produces a verifiable manifest of required objects, required state, fixed sources, and risk-branch conditions.
 
-运行时问题常被误判成算法问题。真正要做的是：
+Runtime work is successful only when it can explain why the browser path works, why the local path diverges, and which smallest set of dependencies closes that gap.
 
-- 先分清是缺对象、缺状态、反调试、随机源、时间窗，还是风控分支。
-- 只为当前调用链补最小必需项。
-- 以中间值稳定作为运行时目标，而不是以环境外观相似作为目标。
+## Core Principles
 
-## 核心原则
+- Environment patching is subtraction, not accumulation.
+- Missing objects and missing state must be classified separately.
+- Stabilize time, randomness, and seeds before comparing outputs.
+- A chain can be treated as pure computation only after the pre-migration dependency check is closed.
+- For `deviceId`, `blackbox`, `sensor_data`, challenge, slider, or risk cookies, build a fingerprint-attribution matrix instead of calling everything “missing browser environment”.
+- Every patch item must answer what breaks when it is removed.
+- If the real obstacle is hidden inside `jsvmp`, `worker`, `wasm`, or a protocol shell, switch to `$jsr-recover`.
+- If the final sink is not yet proven, step back to `$jsr-locate`.
 
-- 补环境是减法，不是堆对象。
-- 状态缺失和对象缺失必须分开判断。
-- 先固定时间、随机数、种子，再谈输出差异。
-- 只有通过“纯算迁移前检查”，才能把问题定义成纯算；否则继续补状态链或最小环境。
-- 遇到 `deviceId`、`blackbox`、`sensor_data`、验证码、滑块、风控 cookie 时，先做“指纹归因矩阵”，不要把一切都归结为缺浏览器对象。
-- 每补一项都要回答“去掉它会怎样”。
-- 如果真实难点在 `jsvmp`、`worker`、`wasm` 或协议壳里，应切 `$jsr-recover`。
-- 如果最终写入点还没找清楚，应退回 `$jsr-locate`。
+## Required Reference Loading
 
-## 运行时任务的默认顺序
+- Never stop at `SKILL.md`. Before diagnosing the runtime gap, load at least one matching reference.
+- Read `references/runtime-diagnosis.md` for runtime-problem classification.
+- Read `references/minimal-env-design.md` when designing the minimal manifest, deciding patch scope, or checking whether pure-compute migration is allowed.
+- Read `references/anti-debug-and-risk-branches.md` when anti-debugging, stack checks, fingerprint-triggered risk branches, or normal/risk divergence is involved.
+- When the problem expands from one class to another, load the newly relevant reference before continuing.
 
-1. 先拿浏览器正常态样本，不在未知态上补环境。
-2. 先分类当前失败：缺对象、缺状态、反调试、不确定源、风控分支。
-3. 先做纯算迁移前六问：是否依赖上游响应、`HttpOnly cookie`、一次性 challenge、浏览器内部状态、指纹采集、时间窗。
-4. 只有六问都闭合，才允许把当前 builder 判成“可纯算迁移”。
-5. 一旦涉及 `deviceId`、`blackbox`、`sensor_data`、指纹 cookie，先画“表面 -> 采集器 -> 聚合器 -> 风控消费点 -> 目标字段/分支”的归因链。
-6. 先稳定时间和随机源，再比较中间值。
-7. 先补状态，再补对象；大量环境类异常源于会话未闭合。
-8. 每新增一项依赖，都回头验证它是否真的影响结果。
+## Default Order
 
-## 交付要求
+1. Capture a browser normal-state sample before patching any local runtime.
+2. Classify the failure: missing object, missing state, anti-debugging, unstable source, or risk branch.
+3. Run the pure-compute precheck: upstream response fields, `HttpOnly` cookies, one-time challenge, browser-internal state, fingerprint collection, and time-window or sequence dependencies.
+4. Only if all precheck items are closed may the current builder be classified as pure-compute migratable.
+5. For fingerprint-sensitive targets, map `surface -> collector -> aggregator -> consumer -> target field or risk branch`.
+6. Stabilize time and randomness before comparing intermediate values.
+7. Patch state before patching objects; many apparent environment failures are actually unclosed session state.
+8. After every new dependency, verify whether it truly affects the result.
 
-- 说清当前问题属于哪一类运行时问题。
-- 列出最小环境清单，而不是一份模糊“可能需要”的大列表。
-- 说明每个补项的必要性、证据和可去除性。
-- 说明当前链路是否允许纯算迁移，以及是哪一项依赖阻止了纯算迁移。
-- 指纹 / 风控场景必须给出指纹归因矩阵，说明哪些表面真的被消费、哪些只是噪声。
-- 给出稳定复现条件：时间、随机源、状态、输入样本。
+## Deliverables
 
-## 工作目录落盘
+- The runtime-problem class of the current task.
+- A minimal runtime manifest rather than a broad “maybe needed” list.
+- The necessity, evidence, and removability of each patch item.
+- A clear statement on whether pure-compute migration is allowed and which dependency blocks it if not.
+- A fingerprint-attribution matrix for fingerprint or risk-control tasks.
+- Stable reproduction conditions for time, randomness, state, and input sample.
 
-默认把运行时诊断写入当前任务工作目录下的 `reverse-records/`。
+## Record Files
 
-- 必写：`reverse-records/总览.md`
-- 必写：`reverse-records/运行时依赖.md`
-- 需要验证时追加：`reverse-records/验证记录.md`
+All reverse records must be written in Chinese under the current task working directory `reverse-records/`.
 
-写入要求：
+- Required: `reverse-records/总览.md`
+- Required: `reverse-records/运行时依赖.md`
+- Add when validating: `reverse-records/验证记录.md`
 
-- 开始诊断前先更新 `总览.md`
-- 一旦开始列依赖、状态、补丁、反调试点，立即写 `运行时依赖.md`
-- 每新增一个补项，都在 `运行时依赖.md` 记录“为什么需要、去掉后怎样、是否可移除”
-- 一旦开始做固定时间、固定随机源、正常态/风控态对照，补写 `验证记录.md`
-- 指纹 / 风控场景在 `运行时依赖.md` 中同时维护“指纹归因矩阵 + 可裁剪表面列表”
+Update rules:
 
-## 按需读取参考
+- Refresh `总览.md` before the first runtime diagnosis step.
+- Create or refresh `运行时依赖.md` as soon as dependencies, state gaps, anti-debug points, patch items, or fingerprint attribution are discussed.
+- Refresh records immediately after any problem reclassification, dependency change, patch decision, anti-debug finding, normal/risk fork update, blocker change, next-step change, or validation result.
+- Rewrite `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证` on every record refresh.
+- Do not continue long runtime analysis while `总览.md` or `运行时依赖.md` is stale.
 
-- 需要先判断自己面对的是哪类运行时问题：读 `references/runtime-diagnosis.md`
-- 需要设计最小环境，而不是堆浏览器壳：读 `references/minimal-env-design.md`
-- 需要处理反调试、栈校验、风控分支、正常态/风控态差异：读 `references/anti-debug-and-risk-branches.md`
+## Completion Criteria
 
-不要把三个参考一次性读完，按当前卡点加载。
+- The root cause class is known.
+- The minimal runtime manifest is known.
+- Intermediate values become stable under fixed input and fixed sources.
+- The next stage does not need to re-diagnose the runtime gap.
 
-## 结束条件
-
-- 已说明根因属于缺对象、缺状态、反调试、不确定源或风控分支中的哪类。
-- 已列出最小环境清单。
-- 固定输入后，中间值可稳定复现。
-- 下一阶段不需要再重新判定环境问题。

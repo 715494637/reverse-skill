@@ -1,135 +1,133 @@
-# 恢复策略
+# Recovery Strategy
 
-## 一、恢复不是全量反编译
+## 1. Recovery Is Not Full Decompilation
 
-恢复任务的核心交付通常包括：
+The core deliverables of a recovery task are usually:
 
-- 当前目标字段经过了哪几层包装。
-- 哪个桥接层把真实算子藏起来了。
-- 哪些输入输出点可以作为验证锚点。
+- which layers wrap the target field or target business path
+- which bridge layer hides the real operator
+- which input and output points can serve as validation anchors
 
-## 二、先问三个问题
+## 2. Ask Three Questions First
 
-1. 当前被遮住的是入口、调度、桥接、状态还是算子。
-2. 当前任务只需要“解释链路”，还是已经需要“最小重建”。
-3. 恢复到哪一层就足够支持后续定位或复现。
+1. Is the obscured layer the entry, dispatcher, bridge, state carrier, or operator?
+2. Does the current task need only semantic explanation, or does it already need a minimal rebuild?
+3. At which layer can recovery stop while still supporting downstream locate or replay work?
 
-## 三、三种恢复目标
+## 3. Three Recovery Targets
 
-### 1. 语义解释
+### 1. Semantic explanation
 
-只需要回答：
+Only answer:
 
-- 哪一层负责什么
-- 当前目标值经过什么路径
-- 哪些输入控制输出
+- which layer is responsible for what
+- which path the target value follows
+- which inputs control the output
 
-适合：
+Suitable when:
 
-- 先定位，再交给其他 skill
-- 不要求立即复现全链路
+- locate work comes first and another skill will use the result next
+- full replay is not required immediately
 
-### 2. 关键算子抽离
+### 2. Key-operator extraction
 
-只恢复当前必要的那部分：
+Recover only what is necessary:
 
-- 关键 `opcode`
-- 关键序列化壳
-- 关键桥接函数
+- critical `opcode`
+- critical serialization shell
+- critical bridge function
 
-适合：
+Suitable when:
 
-- builder 已经定位清楚
-- 只差核心算子看不透
+- the builder is already located
+- only the core operator remains opaque
 
-### 3. 最小重建
+### 3. Minimal rebuild
 
-把当前必要链路重组成最小可验证片段。
+Reassemble the required path into a smallest verifiable fragment.
 
-适合：
+Suitable when:
 
-- 已知道输入输出边界
-- 已有明确验证样本
+- input and output boundaries are already known
+- stable validation samples already exist
 
-## 四、纯算迁移前先否定六类依赖
+## 4. Deny Six Dependency Classes Before Pure-Compute Migration
 
-在完成关键算子抽离后，仍需先排除以下六类依赖，再判断是否允许纯算迁移：
+Even after extracting a key operator, pure-compute migration is allowed only after excluding:
 
-1. 上游响应字段
+1. upstream response fields
 2. `HttpOnly cookie`
-3. 一次性 challenge / nonce / ticket
-4. 浏览器内部状态
-5. 指纹采集结果
-6. 时间窗 / 序号 / 续期
+3. one-time challenge, nonce, or ticket
+4. browser-internal state
+5. fingerprint collection result
+6. time window, sequence, or renewal dependency
 
-判断原则：
+Rule:
 
-- 六项里只要有一项还没闭合，就不要把当前结论写成“纯算已拿到”。
-- 这时应该退回 `$jsr-locate` 或 `$jsr-runtime` 继续补链，而不是继续美化代码。
+- If any dependency class is still open, do not write “pure computation obtained”.
 
-## 五、VMP 恢复级别判断
+## 5. VMP Recovery-Level Selection
 
-### A 级：只抽关键 `opcode`
+### Level A: extract only critical `opcode`
 
-适合：
+Suitable when:
 
-- 已知目标字段的写回边界
-- 只需要解释少量 `opcode` 就能说明目标字段如何形成
+- the write-back boundary is already known
+- a few `opcode` semantics are enough to explain the target field
 
-交付：
+Deliverables:
 
-- 关键 `opcode` 卡片
-- 输入输出对照
-- 目标字段形成路径
+- critical `opcode` cards
+- input/output comparison
+- target-field formation path
 
-### B 级：恢复 dispatcher + 关键状态载体
+### Level B: recover dispatcher plus critical state carriers
 
-适合：
+Suitable when:
 
-- `opcode` 语义依赖 dispatcher、寄存器、栈或上下文
-- 不恢复状态流就无法判断关键分支
+- `opcode` meaning depends on dispatcher, registers, stack, or context
+- critical branches cannot be judged without state flow
 
-交付：
+Deliverables:
 
-- dispatcher 循环
-- 关键状态载体
-- 关键 `opcode` 族与状态流
+- dispatcher loop
+- critical state carriers
+- `opcode` families with state flow
 
-### C 级：最小反编译 / 最小解释器
+### Level C: minimal decompilation or minimal interpreter
 
-适合：
+Suitable when:
 
-- 需要跨多条路径回放
-- 需要做协议重建、批量执行或最小可运行重建
-- `A / B` 级都无法支撑后续工作
+- multiple paths must be replayed
+- protocol rebuild, batch execution, or minimal executable rebuild is needed
+- levels `A` and `B` cannot support downstream work
 
-交付：
+Deliverables:
 
-- 最小反编译结果或最小解释器
-- 关键路径验证样本
+- minimal decompiled result or minimal interpreter
+- validation samples for the critical path
 
-原则：
+Rule:
 
-- 默认从 `A` 开始，只有证据表明不够，才升到 `B` 或 `C`。
-- 能在低一级别解决，就不要进入高一级别。
+- Start from `A` by default. Escalate only when evidence proves that the current level is insufficient.
 
-## 六、黑盒复用边界判断
+## 6. Black-Box Reuse Boundary
 
-对于 `webpack/runtime`、`worker`、部分 `wasm` 包装层，不一定要先反编译，很多时候先做“黑盒复用边界”更划算。
+For `webpack/runtime`, `worker`, and some `wasm` wrappers, black-box reuse is often better than decompilation.
 
-适合黑盒复用的信号：
+Good signals for black-box reuse:
 
-- 已知输入输出边界
-- 已找到目标模块或桥接入口
-- 主要困难在容器壳、模块装载或桥接调用，而不是业务算子本身
+- input and output boundaries are known
+- the target module or bridge entry is found
+- the main difficulty is the container shell or bridge call rather than the business operator itself
 
-不适合黑盒复用的信号：
+Bad signals for black-box reuse:
 
-- 目标模块依赖大量隐式共享状态
-- 不恢复状态载体就无法稳定回放
-- 目标模块内部本身就是 `jsvmp` / 深层协议壳
+- the target module depends on heavy implicit shared state
+- replay is unstable without recovering the state carrier
+- the module itself is another `jsvmp` or deep protocol shell
 
-记录模板：
+Recording template:
 
 ```markdown
 模块 / 桥接入口：
@@ -142,29 +140,30 @@ runtime helper：
 是否适合黑盒复用：是 / 否
 ```
 
-## 七、先拆哪一层
+## 7. Which Layer to Open First
 
-| 现象 | 先拆哪层 |
+| Symptom | First layer to open |
 |---|---|
-| 代码入口都找不到 | 外层容器 |
-| 大量 `switch` / 调度表 / 状态机 | 调度层 |
-| 看得见调用，但参数结构怪异 | 状态载体 |
-| 逻辑在 `worker`/`wasm` 回来后才出现 | 桥接层 |
-| 写回点已知，但中间算法看不透 | 核心算子 |
+| Cannot even find the real entry | outer container |
+| Large switch tables or state machines | dispatcher layer |
+| Calls are visible but parameters are strange | state carrier |
+| Logic appears only after worker, wasm, or lazy module callback | bridge layer |
+| Write-back point is known but the algorithm is opaque | core operator |
 
-## 八、什么时候停手
+## 8. When to Stop
 
-出现下面任一情况就该停：
+Stop when any of the following becomes true:
 
-- 已足够解释目标字段形成路径。
-- 已拿到桥接契约和关键算子，无需继续进行全量外观整理。
-- 已在当前恢复级别拿到足够支撑后续定位 / 复现的结果。
-- 继续下钻只会增加代码量，不会提升结论质量。
+- the target field formation path is already explained
+- the bridge contract and key operator are already sufficient for downstream work
+- the current recovery level already supports locate or replay work
+- going deeper adds code volume without increasing conclusion quality
 
-## 九、恢复完成标准
+## 9. Completion Standard
 
-- 已能明确说出当前层的职责。
-- 已有稳定锚点用于验证。
-- 已知当前为什么停在 `A / B / C` 中的哪一级。
-- 桥接 / runtime 场景下已知是否可以黑盒复用，以及黑盒边界在哪里。
-- 已知道该交回 `$jsr-locate` 还是 `$jsr-runtime` 继续推进。
+- The current layer’s responsibility is explicit.
+- Stable validation anchors exist.
+- The stopping level among `A / B / C` is justified.
+- For bridge and runtime shells, black-box reusability and boundary are known.
+- It is clear whether the next step should return to `$jsr-locate` or `$jsr-runtime`.
+

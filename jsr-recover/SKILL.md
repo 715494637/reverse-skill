@@ -1,88 +1,86 @@
 ---
 name: jsr-recover
-description: Use when real business logic is hidden by jsvmp, ast transforms, control-flow flattening, worker, wasm, webpack/runtime loaders, protobuf envelopes, or protocol wrappers, and you need to recover semantic layers, bridge contracts, state carriers, or dispatcher behavior instead of only beautifying code. Use for 还原、JSVMP、AST、WASM、Worker、协议语义、桥接层恢复。
+description: Use when real business logic is hidden by jsvmp, ast transforms, control-flow flattening, worker, wasm, webpack/runtime loaders, protobuf envelopes, or protocol wrappers, and you need to recover semantic layers, bridge contracts, state carriers, or dispatcher behavior instead of only beautifying code. Use for semantic recovery, JSVMP, AST, WASM, worker, protocol semantics, and bridge recovery.
 ---
 
 # JSR Recover
 
 ## Overview
 
-本 skill 用于识别业务逻辑所处的遮蔽层，并确定最低必要恢复层级与恢复顺序。
+This skill identifies the obscuring layer around real business logic and determines the lowest recovery level and recovery order that are sufficient for the task.
 
-恢复工作的目标不是全量外观整理，而是取得以下结果：
+Recovery is complete only when the current layer’s role, bridge boundary, state carrier, and key operator are clear enough for downstream locate or replay work to continue without reopening the shell.
 
-- 哪一层负责容器、调度、桥接、状态、算子、写回。
-- 哪些函数是真业务，哪些只是壳。
-- 哪些输入输出可以作为等价性检查点。
+## Core Principles
 
-## 核心原则
+- Recover semantic boundaries before chasing readable appearance.
+- Identify container, dispatcher, and bridge layers before diving into business operators.
+- Classify the recovery level as `A / B / C` and start from the lowest effective level.
+- For `worker`, `wasm`, `webpack/runtime`, and protocol shells, write the bridge-contract card before entering internals.
+- Prefer black-box reuse when the module boundary and contract are stable enough; do not default to full decompilation.
+- Recover only the slice required by the current problem.
+- Every recovered layer must have an equivalence checkpoint.
+- If the write-back point is still unclear, return to `$jsr-locate`; if replay remains unstable because of runtime state, switch to `$jsr-runtime`.
 
-- 先还原语义边界，再追求代码好看。
-- 先找容器、调度器、桥接层，再找业务算子。
-- 先判断恢复级别 `A / B / C`，默认从最低有效级别开始，不默认做全量恢复。
-- `worker / wasm / webpack / 协议壳` 场景必须先写“桥接契约卡片”，不允许直接钻内部实现。
-- 能黑盒复用模块闭包就先黑盒复用，不默认走全量反编译。
-- 先证明每层职责，再决定要不要继续往下拆。
-- 只恢复当前问题所需的那一段，不做低价值全量还原。
-- 每一层都要做等价性验证，不以外观相似作为判定依据。
+## Required Reference Loading
 
-## 六层视角
+- Never stop at `SKILL.md`. Before serious recovery work, load at least one matching reference.
+- Read `references/recover-strategy.md` for any task that needs level selection or recovery order.
+- Read `references/jsvmp-and-ast.md` when `jsvmp`, AST transforms, or control-flow flattening is involved.
+- Read `references/wasm-worker-webpack.md` when the hiding layer includes `worker`, `wasm`, `webpack`, or runtime loaders.
+- Read `references/protocol-and-long-connection.md` when the shell is a protocol envelope, `WebSocket`, `protobuf`, long connection, heartbeat, ack, or renewal chain.
+- Read `references/equivalence-and-validation.md` whenever key functions, bridge contracts, or extracted operators need equivalence proof.
 
-1. `外层容器`：`webpack`、IIFE、loader、模块装载、懒加载
-2. `调度层`：分发器、状态机、字节码循环、控制流平坦化总开关
-3. `状态载体`：寄存器、栈、上下文对象、闭包池、对象表、内存区
-4. `桥接层`：`worker` 消息契约、`wasm` 的 `imports/exports`、协议编解码壳
-5. `核心算子`：签名、散列、加密、指纹采样、序列化、挑战计算
-6. `业务写回`：把结果写回请求、头、`cookie`、帧、存储的地方
+## Six-Layer View
 
-## 默认顺序
+1. `outer container`: `webpack`, IIFE, loader, module bootstrap, lazy loading
+2. `dispatcher layer`: dispatcher, state machine, bytecode loop, flattening switch
+3. `state carrier`: registers, stacks, context objects, closure pools, tables, memory areas
+4. `bridge layer`: `worker` message contract, `wasm` imports and exports, protocol codec shell
+5. `core operator`: hash, signature, encryption, fingerprint collection, serialization, challenge logic
+6. `write-back layer`: where the result is written into request, header, `cookie`, frame, or storage
 
-1. 先判断当前被遮住的是哪一层。
-2. 先判断当前恢复级别：`A` 只抽关键 `opcode`，`B` 恢复 dispatcher + 关键状态载体，`C` 才做最小反编译 / 最小解释器。
-3. 先确认当前层的入口、输入、输出，再决定是否需要扩大恢复范围。
-4. 遇到 `worker / wasm / webpack / 协议壳` 时，先写桥接契约卡片和模块闭包边界。
-5. 先证明桥接契约或调度关系，再提炼关键算子。
-6. 在把算子迁到纯算前，先确认它不依赖上游响应、`HttpOnly cookie`、challenge、浏览器内部状态、指纹和时间窗。
-7. 每恢复一层，就记下等价性检查点。
-8. 如果写回点不明，退回 `$jsr-locate`；如果结果不稳且依赖环境，切 `$jsr-runtime`。
+## Default Order
 
-## 交付要求
+1. Identify which layer is currently obscuring the business logic.
+2. Select the current recovery level: `A` for key-opcode extraction, `B` for dispatcher plus critical state carriers, `C` for minimal decompilation or minimal interpreter.
+3. Confirm entry, input, and output of the current layer before widening the scope.
+4. For `worker`, `wasm`, `webpack`, and protocol shells, write the bridge-contract card and module-boundary note first.
+5. Prove bridge contracts or dispatcher relations before extracting the core operator.
+6. Before migrating an operator as pure computation, re-check upstream response, `HttpOnly` cookie, challenge, browser state, fingerprint, and time-window dependencies.
+7. After each recovered layer, record the equivalence checkpoint.
+8. If the sink is unclear, return to `$jsr-locate`; if the result is unstable because of runtime state, switch to `$jsr-runtime`.
 
-- 说清当前难点属于 `jsvmp`、`ast`、`worker`、`wasm`、协议壳、还是容器包装。
-- 说清当前恢复级别是 `A / B / C`，以及为什么停在这一层。
-- 说清当前层的入口、桥接边界、状态载体和关键算子。
-- `worker / wasm / webpack / 协议壳` 场景必须给出桥接契约卡片；`webpack` 黑盒复用场景还要给出模块闭包边界。
-- 给出关键函数卡片与等价性验证记录。
-- 让下游不再重新拆这层壳。
+## Deliverables
 
-## 工作目录落盘
+- The class of the current obscuring layer: `jsvmp`, `ast`, `worker`, `wasm`, protocol shell, or container wrapper.
+- The chosen recovery level `A / B / C` and why it stops there.
+- The entry, bridge boundary, state carrier, and key operator of the current layer.
+- For `worker`, `wasm`, `webpack`, or protocol-shell tasks, a bridge-contract card and, when relevant, a module-closure boundary.
+- Key-function cards and equivalence-validation records.
+- Enough recovered structure that downstream work does not need to reopen the same shell.
 
-默认把恢复过程写入当前任务工作目录下的 `reverse-records/`。
+## Record Files
 
-- 必写：`reverse-records/总览.md`
-- 必写：`reverse-records/恢复记录.md`
-- 必写：`reverse-records/验证记录.md`
-- 协议 / 长连接场景必写：`reverse-records/协议状态.md`
+All reverse records must be written in Chinese under the current task working directory `reverse-records/`.
 
-写入要求：
+- Required: `reverse-records/总览.md`
+- Required: `reverse-records/恢复记录.md`
+- Required: `reverse-records/验证记录.md`
+- Required for protocol or long-connection tasks: `reverse-records/协议状态.md`
 
-- 开始恢复前先更新 `总览.md`
-- 一旦确认遮蔽层、桥接层、关键函数卡片，写入 `恢复记录.md`
-- 每做一次等价性对照、桥接层对照、关键中间值对照，都写 `验证记录.md`
-- `WebSocket`、`protobuf`、长连接、心跳、序号、续期问题，额外维护 `协议状态.md`
-- `worker / wasm / webpack` 场景在 `恢复记录.md` 中额外维护“桥接契约卡片 + 模块闭包边界”
+Update rules:
 
-## 按需读取参考
+- Refresh `总览.md` before the first recovery action.
+- Create or refresh `恢复记录.md` as soon as the obscuring layer, bridge contract, key-function card, or module boundary is identified.
+- Refresh records immediately after any recovery-level change, new bridge finding, state-carrier finding, key-operator extraction, equivalence result, blocker change, or next-step change.
+- Rewrite `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证` on every record refresh.
+- Do not continue long recovery work while `总览.md`, `恢复记录.md`, or `验证记录.md` is stale.
 
-- 需要先设计恢复路线、决定先拆哪层：读 `references/recover-strategy.md`
-- 需要处理 `jsvmp`、`ast`、控制流平坦化：读 `references/jsvmp-and-ast.md`
-- 需要处理 `worker`、`wasm`、`webpack/runtime` 包装：读 `references/wasm-worker-webpack.md`
-- 需要处理 `WebSocket`、`protobuf`、长连接状态迁移：读 `references/protocol-and-long-connection.md`
-- 需要设计等价性校验与恢复记录：读 `references/equivalence-and-validation.md`
+## Completion Criteria
 
-## 结束条件
+- The obscuring layer is classified.
+- The key bridge boundary or dispatcher entry is known.
+- Key-function cards and equivalence checkpoints exist.
+- Downstream work can continue directly from the recovery result.
 
-- 已知当前遮蔽层属于哪一类。
-- 已知关键桥接边界或调度入口。
-- 已产出关键函数卡片与等价性记录。
-- 下游可以直接基于恢复结果继续推进。

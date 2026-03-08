@@ -1,20 +1,20 @@
-# 最小环境设计
+# Minimal Environment Design
 
-## 一、最小环境目标
+## 1. Goal of a Minimal Environment
 
-最小环境的目标只有一个：
+The goal is singular:
 
-让当前调用链稳定复现，并且知道每一项依赖为什么存在。
+stabilize the current execution chain and explain why every dependency exists.
 
-不是：
+It is not:
 
-- 补得越多越安全。
-- 把浏览器全量模拟到本地。
-- 只要跑起来就算成功。
+- patching more for safety
+- simulating the entire browser locally
+- calling it done as soon as code runs once
 
-## 落盘路径
+## Record Paths
 
-默认写到当前任务工作目录：
+Write records under the current task working directory:
 
 ```text
 reverse-records/总览.md
@@ -22,91 +22,89 @@ reverse-records/运行时依赖.md
 reverse-records/验证记录.md
 ```
 
-- `总览.md` 记录当前阶段、卡点、下一步、风险
-- `运行时依赖.md` 记录最小环境、必需对象、必需状态、反调试点、风控分支
-- `验证记录.md` 记录补丁开关对照、固定源对照、稳定性验证
+- `总览.md`: current phase, blocker, next step, and risk
+- `运行时依赖.md`: minimal environment, required objects, required state, anti-debug points, and risk branches
+- `验证记录.md`: patch on/off comparisons, fixed-source comparisons, and stability validation
 
-## 二、最小环境由五部分组成
+## 2. Five Parts of a Minimal Environment
 
-1. 必需对象
-2. 必需状态
-3. 固定时间源
-4. 固定随机源
-5. 可切换补丁
+1. required objects
+2. required state
+3. fixed time sources
+4. fixed random sources
+5. switchable patches
 
-## 三、对象只补当前链路会碰到的
+## 3. Patch Only Objects Touched by the Current Chain
 
 ```markdown
-| 对象/属性 | 是否必需 | 为什么 | 去掉后现象 | 备注 |
+| Object or property | Required | Why | Effect when removed | Note |
 |---|---|---|---|---|
-| `window.navigator.userAgent` | 是 | 分支依赖 | 进入风控分支 | 不需要整个 navigator |
-| `crypto.subtle` | 是 | builder 调用 | 直接报错 | 只补当前方法 |
-| `document` | 否 / 部分 | 当前链路不访问 DOM | 无影响 | 不要默认补全 |
+| `window.navigator.userAgent` | yes | branch dependency | enters risk branch | full navigator not needed |
+| `crypto.subtle` | yes | builder calls it | immediate error | patch only the used method |
+| `document` | no / partial | current chain does not touch DOM | no effect | do not patch by default |
 ```
 
-## 四、状态优先于对象
+## 4. State Has Priority Over Objects
 
-高频缺口通常来自以下状态：
+The most common gaps are state gaps:
 
 - `cookie`
 - `HttpOnly cookie`
 - `localStorage`
 - `sessionStorage`
-- 上游响应返回值
-- 挑战结果
-- 某个初始化请求下发的设备标识
+- upstream response values
+- challenge results
+- device identifiers returned by initialization requests
 
-如果状态没闭合，补再多对象也只是让代码跑到风控分支。
+If state is not closed, adding more objects only moves execution deeper into a risk branch.
 
-## 五、纯算迁移前检查
+## 5. Pure-Compute Pre-Migration Check
 
-在把当前链路判定为“纯算可迁移”前，必须先检查下面六项：
+Before declaring that the current chain can be migrated as pure computation, check these six items:
 
-1. 是否依赖上游响应字段
-2. 是否依赖 `HttpOnly cookie`
-3. 是否依赖一次性 challenge / nonce / ticket
-4. 是否依赖浏览器内部状态
-5. 是否依赖指纹采集结果
-6. 是否依赖时间窗 / 序号 / 续期
+1. upstream response fields
+2. `HttpOnly cookie`
+3. one-time challenge, nonce, or ticket
+4. browser-internal state
+5. fingerprint collection result
+6. time window, sequence, or renewal dependency
 
-记录模板：
+Recording template:
 
 ```markdown
-| 检查项 | 是否依赖 | 当前证据 | 结论 | 下一步 |
+| Check item | Depends | Current evidence | Conclusion | Next step |
 |---|---|---|---|---|
-| 上游响应字段 | 是 | token 来自请求 B.response | 不能直接纯算 | 先补状态链 |
-| HttpOnly cookie | 是 | guest_id 只能抓包获得 | 不能直接纯算 | 先闭合 cookie 链 |
-| 一次性 challenge | 否 | 当前样本可重复提交 | 可继续 | 保持观察 |
-| 浏览器内部状态 | 是 | 依赖 storage 中 device_seed | 暂不纯算 | 先补状态 |
-| 指纹采集 | 未知 | 浏览器正常、本地不稳 | 待验证 | 补指纹证据 |
-| 时间窗 | 是 | 过期后服务端拒绝 | 暂不纯算 | 固定时间并验证 |
+| Upstream response field | yes | token comes from request B.response | cannot migrate as pure computation | close state chain first |
+| HttpOnly cookie | yes | guest_id only exists in capture | cannot migrate as pure computation | close cookie chain first |
+| One-time challenge | no | sample can be replayed repeatedly | may continue | keep observing |
+| Browser-internal state | yes | depends on device_seed in storage | not pure computation yet | restore state first |
+| Fingerprint collection | unknown | browser works, local replay unstable | pending | collect fingerprint evidence |
+| Time window | yes | server rejects after expiry | not pure computation yet | fix time and validate |
 ```
 
-规则：
+Rule:
 
-- 六项里只要有一项是“依赖且未闭合”，就不能直接走纯算迁移。
-- 这时应回到状态链或最小环境设计，而不是继续堆对象。
+- If any of the six items is dependency-present and still unclosed, do not treat the chain as pure computation.
 
-## 六、指纹归因矩阵
+## 6. Fingerprint Attribution Matrix
 
-遇到 `deviceId`、`blackbox`、`sensor_data`、验证码、滑块、风控 cookie 时，必须补一张指纹归因矩阵：
+For `deviceId`, `blackbox`, `sensor_data`, challenge, slider, or risk-cookie tasks, add a fingerprint-attribution matrix:
 
 ```markdown
-| 表面 | 采集器 | 聚合器 | 消费点 | 影响目标 | 是否必需 | 证据 | 可裁剪 |
+| Surface | Collector | Aggregator | Consumer | Target impact | Required | Evidence | Removable |
 |---|---|---|---|---|---|---|---|
-| canvas | collectCanvas() | buildProfile() | riskGate() | challenge 分支 | 是 | 去掉后进风控 | 否 |
-| webgl | collectWebGL() | buildProfile() | buildBlackbox() | blackbox | 是 | 中间值变化 | 否 |
-| fonts | collectFonts() | buildProfile() | riskGate() | 风控 cookie | 未知 | 待验证 | 待定 |
-| audio | collectAudio() | buildProfile() | 无直接消费 | 无 | 否 | 去掉无变化 | 是 |
+| canvas | collectCanvas() | buildProfile() | riskGate() | challenge branch | yes | removing it enters risk state | no |
+| webgl | collectWebGL() | buildProfile() | buildBlackbox() | blackbox | yes | intermediate value changes | no |
+| fonts | collectFonts() | buildProfile() | riskGate() | risk cookie | unknown | pending | pending |
+| audio | collectAudio() | buildProfile() | no direct consumer | none | no | removing it changes nothing | yes |
 ```
 
-原则：
+Rules:
 
-- 没进入消费点的表面，一律优先视为可裁剪。
-- 不要为了“像浏览器”而把 `navigator`、`canvas`、`webgl` 整包补齐。
-- 优先补被消费的少数表面，而不是表面全集。
+- Surfaces that never reach a consumer are removable by default.
+- Do not patch the whole `navigator`, `canvas`, or `webgl` surface set just to “look like a browser”.
 
-## 七、时间和随机源必须显式记录
+## 7. Time and Random Sources Must Be Explicitly Recorded
 
 ```markdown
 固定时间：1710000000000
@@ -115,23 +113,23 @@ reverse-records/验证记录.md
 固定设备种子：device-seed-01
 ```
 
-不显式记录，后面所有回归都不可靠。
+Without explicit recording, later regression checks are unreliable.
 
-## 八、补丁要可开关
+## 8. Patches Must Be Switchable
 
-每个补丁都应该能单独开关，并记录结果变化：
+Each patch should have an on/off check:
 
 ```markdown
-| 补丁 | 开 | 关 | 结论 |
+| Patch | On | Off | Conclusion |
 |---|---|---|---|
-| 固定 Date.now | 中间值稳定 | 中间值漂移 | 必需 |
-| 导入 HttpOnly cookie | 请求正常 | 风控态 | 必需 |
-| 模拟 canvas | 无变化 | 无变化 | 可移除 |
+| Fix Date.now | intermediate values stable | intermediate values drift | required |
+| Import HttpOnly cookie | request succeeds | risk state | required |
+| Simulate canvas | no change | no change | removable |
 ```
 
-这样才能防止越补越多、越补越乱。
+This prevents uncontrolled patch accumulation.
 
-## 九、最小环境清单模板
+## 9. Minimal Environment Template
 
 ```markdown
 目标链路：
@@ -157,13 +155,13 @@ reverse-records/验证记录.md
 - 
 ```
 
-这段内容默认写入：`reverse-records/运行时依赖.md`
+Write this block into `reverse-records/运行时依赖.md`.
 
-## 十、设计完成的标准
+## 10. Completion Standard
 
-- 只保留当前链路必需项。
-- 去掉非必需项后结果不变。
-- 固定输入与固定源后，中间值稳定。
-- 已完成纯算迁移前六问，且知道哪一项阻止了纯算迁移。
-- 指纹场景下已知哪些表面真必需、哪些表面可裁剪。
-- 能解释每一项依赖为什么存在。
+- Only required items remain for the current chain.
+- Removing non-required items does not change the result.
+- Intermediate values become stable under fixed input and fixed sources.
+- The six pure-compute prechecks are complete and the blocking item is known if migration is still blocked.
+- For fingerprint tasks, truly required surfaces and removable surfaces are known.
+

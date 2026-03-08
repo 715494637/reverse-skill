@@ -1,8 +1,12 @@
 # reverse-skill
 
-面向 Web JS 逆向任务的技能仓库，聚焦三类核心能力：定位、运行时诊断、语义恢复。
+面向 Web JS逆向 ，（待开发）安卓逆向 任务的技能仓库。
 
 ## 安装
+
+接入JSReverse MCP：
+
+- [JSReverse MCP](https://github.com/NoOne-hub/JSReverser-MCP)
 
 将以下目录复制到技能根目录：
 
@@ -32,16 +36,13 @@
 全自动示例：
 
 ```text
-请使用 reverse-skill 自动推进这个逆向任务。
-
-URL: https://example.com
-接口 / 需要的数据: flightSearch 接口中的 deviceId、sign
-触发方式: 首页输入出发地和目的地后点击查询
-
-要求:
-- 自动选择 jsr-locate / jsr-runtime / jsr-recover
-- 自动维护 reverse-records/ 中文记录
-- 输出当前进度、卡点、下一步
+使用：JSReverse MCP
+URL: 【https://example.com】
+目标：【接口 / 需要的数据】
+触发方式: 【刷新页面】
+cookie：【使用现有cookie / 如无或者非必要则可以不使用，若必须则需要完整模拟链路生成游客态】
+约束：不使用playwright等浏览器自动化工具
+必须纯算法实现，【能/不能】依赖补环境
 ```
 
 定向调用示例：

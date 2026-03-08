@@ -1,4 +1,5 @@
 interface:
   display_name: "JSR Runtime"
-  short_description: "处理补环境、反调试、状态依赖、最小环境清单与风控分叉的逆向技能"
-  default_prompt: "使用 $jsr-runtime 识别最小补环境集合、反调试点和状态依赖。"
+  short_description: "Reverse skill for minimal runtime manifests, anti-debugging analysis, state closure, and risk-branch diagnosis"
+  default_prompt: "Use $jsr-runtime to identify the minimal runtime manifest, anti-debugging points, state dependencies, and risk branches."
+

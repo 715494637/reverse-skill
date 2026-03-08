@@ -1,49 +1,51 @@
-# Request-Chain Recording
+# 请求链路记录
 
-## 1. Recording Principles
+## 一、记录原则
 
-- All reverse records must be written in Chinese.
-- Record not only the target request, but also every upstream request it depends on.
-- Label every parameter, header, and `cookie` with status tags.
-- Mark `HttpOnly` cookies explicitly. Never place them in the `document.cookie` readable set.
-- As soon as response fields, `Set-Cookie`, challenge state, session state, or device state becomes relevant, write the state chain before discussing pure computation.
-- The record must always answer: current stage, confirmed facts, blocker, next step, and pending validation.
+- 所有记录使用中文。
+- 不只记录目标请求，必须记录它依赖的上游请求。
+- 每个参数、请求头、`cookie` 都要标状态标签。
+- `HttpOnly` cookie 必须单独标出，不得归入 `document.cookie` 可读范围。
+- 只要发现响应字段、`Set-Cookie`、challenge、session、device state 依赖，就必须先写状态链，再讨论纯算。
+- 记录要能回答“现在做到哪了、卡在哪、下一步是什么”。
 
-## Record Paths
+## 落盘路径
 
-Write records under the current task working directory:
+默认写到当前任务工作目录：
 
 ```text
 reverse-records/总览.md
 reverse-records/请求链路.md
 reverse-records/验证记录.md
-reverse-records/协议状态.md (protocol or long-connection tasks only)
+reverse-records/协议状态.md（仅协议 / 长连接场景）
 ```
 
-- `总览.md`: task-level progress and high-level conclusions
-- `请求链路.md`: full request chain, parameter table, dependencies, and normal/risk comparison
-- `验证记录.md`: validation results after removing dependencies, switching state, or comparing samples
-- `协议状态.md`: connection state chain, message families, sequence, ack, heartbeat, and renewal rules
+其中：
 
-## Record Refresh Triggers
+- `总览.md` 记录任务级进度与结论摘要
+- `请求链路.md` 记录完整请求链、参数、依赖、正常态/风控态对照
+- `验证记录.md` 记录删除上游依赖、切换状态、对照样本后的验证结果
+- `协议状态.md` 记录连接状态链、消息族、序号 / ack / 心跳 / 续期规则
 
-Refresh the relevant files immediately after any of the following:
+## 二、记录刷新触发条件
 
-- phase change
-- new upstream request discovered
-- field status classification changes
-- state chain becomes more complete
-- normal/risk fork is confirmed or corrected
-- sink or builder proof is updated
-- blocker changes
-- next step changes
-- any validation result is obtained
+遇到下面任一事件，都要立即更新对应记录文件：
 
-Sustained reverse work with stale records is not compliant.
+- 阶段切换
+- 新发现上游请求
+- 字段状态标签变化
+- 状态链闭合程度变化
+- 正常态 / 风控态分叉被确认或修正
+- sink 或 builder 证明更新
+- 卡点变化
+- 下一步变化
+- 得到新的验证结果
 
-## 2. Status Tag Standard
+持续逆向但记录不更新，视为记录不合格。
 
-Use an array of tags. Choose at least from the following set:
+## 三、状态标签规范
+
+统一用数组叠加，至少从下面标签中选择：
 
 - `未知`
 - `已知`
@@ -61,7 +63,7 @@ Use an array of tags. Choose at least from the following set:
 - `可复用`
 - `HttpOnly`
 
-Examples:
+示例：
 
 ```json
 ["动态", "加密", "响应获取", "会话相关"]
@@ -71,16 +73,16 @@ Examples:
 ["动态", "响应获取", "HttpOnly", "会话相关"]
 ```
 
-## 3. State Chain Is Mandatory
+## 四、状态链是强制项
 
-If the target request depends on any of the following, the state chain must be written first:
+只要目标请求依赖下面任一来源，就必须先写状态链：
 
-- upstream response fields
-- `Set-Cookie` or `HttpOnly` cookies
-- challenge, token, or session state
-- `device_id`, fingerprint results, or hidden browser state
+- 上游响应字段
+- `Set-Cookie` / `HttpOnly cookie`
+- challenge / token / session
+- `device_id` / 指纹结果 / 浏览器内部状态
 
-State-chain template:
+状态链模板：
 
 ```text
 请求 B.response.token ----------> 会话状态.token ----------> 请求 A.builder.x-token ----------> 请求 A.header.x-token
@@ -88,12 +90,12 @@ State-chain template:
 请求 C.response.challenge ------> 挑战状态.challenge -------> 请求 A.builder.challenge --------> 请求 A.body.challenge
 ```
 
-Rules:
+规则：
 
-- Without the state chain, do not conclude that the target is pure computation.
-- Expand the state chain until the target request receives a normal response instead of a risk response.
+- 没写出状态链，不允许先下结论说目标值是纯算。
+- 状态链必须一直展开到“目标请求拿到正常响应而不是风控态”为止。
 
-## 4. Target Request Template
+## 五、目标请求记录模板
 
 ```markdown
 目标请求：A
@@ -111,9 +113,9 @@ Rules:
 | body | scene | login | ["固定","明文"] | 页面固定值 | 请求体 | 固定参数 |
 ```
 
-## 5. Dependency Expansion Template
+## 六、依赖链展开模板
 
-If request A depends on B or C, do not write only “depends on upstream”. Expand the chain:
+如果请求 A 依赖 B、C，不得仅记录“依赖上游”这一结论，必须展开依赖链：
 
 ```markdown
 ### 依赖链
@@ -138,9 +140,9 @@ If request A depends on B or C, do not write only “depends on upstream”. Exp
 | response | challenge | 省略 | ["动态","响应获取","一次性"] | 服务端 | 响应包 | 挑战态输入 |
 ```
 
-## 6. Protocol and Long-Connection Tasks Must Include Connection State
+## 七、协议 / 长连接场景必须补连接状态链
 
-For `WebSocket`, `protobuf`, SSE, heartbeat, or renewal flows, add the connection state chain in addition to ordinary dependencies:
+如果目标是 `WebSocket`、`protobuf`、长连接、SSE、心跳、续期类请求，除了普通依赖链，还必须补“连接状态链”：
 
 ```markdown
 连接：ws-1
@@ -159,14 +161,14 @@ For `WebSocket`, `protobuf`, SSE, heartbeat, or renewal flows, add the connectio
 | 续期包 | recv/sent | 延长会话 | 续期 | refresh_token | 失效前更新 |
 ```
 
-Rules:
+规则：
 
-- Without the connection state chain, do not reduce the problem to “payload encryption”.
-- Without message families, do not infer the whole protocol from one message.
+- 没写出连接状态链，不允许把协议问题简化成“某个 payload 加密”。
+- 没写出消息族，不允许只凭单条消息推断全部链路。
 
-## 7. Readable Dependency Display
+## 八、美观展示依赖链
 
-For longer chains, use a tree view:
+如果链路比较长，用树状展示：
 
 ```text
 请求 B（初始化）
@@ -180,18 +182,18 @@ For longer chains, use a tree view:
 └─ 拿到正常响应
 ```
 
-Always expand until the chain reaches a normal response instead of a risk response.
+要求一直展开到“能拿到正常响应而不是风控态”为止。
 
-## 8. Normal/Risk Fork Map Is Mandatory
+## 九、正常态 / 风控态分叉图是必交付
 
-In addition to the comparison table, add a fork map that states:
+除了对照表，还必须补一份分叉图，至少写清：
 
-- fork starting point
-- normal-state construction path
-- risk-state fallback or challenge path
-- missing state
+- 分叉起点
+- 正常态构建路径
+- 风控态 fallback / challenge 路径
+- 缺失状态
 
-Template:
+模板：
 
 ```markdown
 分叉起点：请求 B 未返回 token / 未下发 HttpOnly cookie
@@ -207,7 +209,7 @@ B 失败 / 状态缺失 -> A.fallback_sign() -> A 风控响应 / challenge
 - guest_id(HttpOnly)
 ```
 
-## 9. Normal/Risk Comparison Template
+## 十、正常态 / 风控态对照模板
 
 ```markdown
 | 项目 | 正常态 | 风控态 | 结论 |
@@ -217,9 +219,9 @@ B 失败 / 状态缺失 -> A.fallback_sign() -> A 风控响应 / challenge
 | x-sign 写入点 | builder.sign() | fallback.sign() | 风控态有诱饵分支 |
 ```
 
-Without the fork point and missing state, the record is incomplete.
+没写出“分叉起点”和“缺失状态”，这份记录就不算完成。
 
-## 10. Progress Template
+## 十一、进度记录模板
 
 ```markdown
 当前阶段：定位写入边界 / 展开依赖链 / 复核正常态 / 对照风控态
@@ -241,9 +243,9 @@ Without the fork point and missing state, the record is incomplete.
 - 
 ```
 
-Write this block into `reverse-records/总览.md`.
+这段内容默认写入：`reverse-records/总览.md`
 
-## 11. Evidence Template
+## 十二、证据记录模板
 
 ```markdown
 证据编号：E-01
@@ -253,14 +255,14 @@ Write this block into `reverse-records/总览.md`.
 仍未证明：x-token 的上游来源是否来自请求 B 响应
 ```
 
-Write this block into `reverse-records/验证记录.md`.
+这段内容可以写在：`reverse-records/验证记录.md`
 
-## 12. What a Good Record Looks Like
+## 十三、什么叫记录做对了
 
-- A reader can follow the dependency chain without replaying the whole capture.
-- Fixed fields, dynamic fields, response-derived fields, and environment-derived fields are easy to distinguish.
-- The first point of entry into risk state is visible.
-- It is clear whether the state chain is closed or still missing `HttpOnly`, challenge, session, or device state.
-- For protocol tasks, the connection state, message family, and renewal or replay failure point are visible.
-- Current stage, blocker, and next step are always current.
+- 看记录的人不用重新抓包，就知道依赖链怎么走。
+- 能一眼分清哪些字段是固定、哪些是动态、哪些来自响应、哪些来自环境。
+- 能看出哪一步开始进入风控态。
+- 能看出状态链是否闭合，是否还有 `HttpOnly`、challenge、session、device state 缺口。
+- 协议场景下能看出连接处在哪个状态、目标消息属于哪一类消息族、为什么会续期失败或重放失败。
+- 能看出当前做到哪、卡在哪、下一步该怎么推进。
 

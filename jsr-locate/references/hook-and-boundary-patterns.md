@@ -1,54 +1,54 @@
-# hook 与边界选择
+# Hook and Boundary Selection
 
-## 一、先选边界，不要先选工具
+## 1. Choose the Boundary Before Choosing the Tool
 
-工具只是手段，边界才是定位的核心。
+Tools are secondary. Boundary selection is the core of locate work.
 
-默认先问：
+Ask first:
 
-- 目标值最终写到哪里。
-- 哪一层离最终写入最近。
-- 哪一层最不容易被伪装。
+- where the target value is finally written
+- which layer is closest to the final write
+- which layer is least likely to be disguised
 
-## 二、常见边界模式
+## 2. Common Boundary Patterns
 
-| 场景 | 优先观察边界 | 说明 | 不建议起手 |
+| Scenario | Preferred boundary | Why | Poor opening move |
 |---|---|---|---|
-| 请求体动态字段 | 最终序列化前的写入对象 | 便于观察最终值 | 直接搜 crypto |
-| 请求头动态字段 | 头部设置点 / writer | 能区分 builder 和 writer | 直接搜 header 名 |
-| JS 写 cookie | `cookie` 写入点 | 能看到谁改值 | 仅观察 `document.cookie` 读取 |
-| 响应下发 `Set-Cookie` | 网络响应 | 尤其要区分 `HttpOnly` | 在前端全局搜 cookie 名 |
-| `WebSocket` 帧 | 发送前包络层 | 先看 envelope、序号、心跳 | 仅截取单条 payload |
-| `worker` 生成值 | `postMessage` 契约 | 先看入参和回参 | 直接进入 worker 内部实现 |
-| DOM 隐藏字段 | 赋值点 + 提交动作 | 适合从事件链回溯 | 直接搜字段明文 |
+| Dynamic request-body field | Final object before serialization | Shows the final value clearly | Search crypto first |
+| Dynamic request-header field | Header-setting point or writer | Separates builder from writer | Search header name first |
+| JS-written cookie | `cookie` write point | Shows who mutates the value | Only inspect `document.cookie` reads |
+| Response `Set-Cookie` | Network response | Especially important for `HttpOnly` | Search cookie name in frontend code |
+| `WebSocket` frame | Envelope layer before send | Reveals envelope, sequence, and heartbeat | Inspect one payload only |
+| `worker`-generated value | `postMessage` contract | Input and output are clearer than internals | Enter worker internals first |
+| Hidden DOM field | Assignment point plus submit action | Easy to trace from event chain | Search plain field text first |
 
-## 三、什么时候适合 hook
+## 3. When Hooking Is Appropriate
 
-适合：
+Appropriate when:
 
-- 已知道大致落点，但不知道谁写进去。
-- 需要证明调用顺序、入参、回参。
-- 需要稳定观察多次请求中的差异。
+- the general sink is known but the real writer is unknown
+- call order, arguments, or return values must be proven
+- repeated requests must be compared under stable observation
 
-不适合：
+Not appropriate when:
 
-- 还不知道目标字段最终写到哪。
-- 当前拿到的是风控态诱饵链。
-- 一 hook 就触发明显反调试，此时应先切 `$jsr-runtime`。
+- the final sink is still unknown
+- the current sample is already a risk-state decoy chain
+- any hook immediately triggers obvious anti-debugging; in that case switch to `$jsr-runtime` first
 
-## 四、什么时候适合断点
+## 4. When a Breakpoint Is Worth Using
 
-只有下面情况才值得上断点：
+Use a breakpoint only when all of the following are true:
 
-- 被动观察已经证明不到局部变量。
-- 必须看某个分支条件、闭包变量、临时对象。
-- 需要证明“同名函数里到底是哪一路在写值”。
+- passive observation cannot reveal the required local variable
+- a branch condition, closure variable, or temporary object must be inspected
+- a same-named function contains multiple candidate paths and only one writes the value
 
-断点不作为默认起始策略。
+Breakpointing is not the default opening move.
 
-## 五、不同场景的首选观察顺序
+## 5. Preferred Observation Order by Scenario
 
-### 请求体 / 请求头
+### Request body or request header
 
 ```text
 writer -> builder -> entry -> source
@@ -57,35 +57,36 @@ writer -> builder -> entry -> source
 ### `cookie`
 
 ```text
-先分清是 JS 写入，还是响应 Set-Cookie
-JS 写入：writer -> builder -> entry
-响应写入：response -> dependency request -> target request
+First separate JS-written cookies from response Set-Cookie
+JS write: writer -> builder -> entry
+Response write: response -> dependency request -> target request
 ```
 
 ### `WebSocket`
 
 ```text
-send 包络层 -> 消息类型 -> 状态迁移 -> payload
+send envelope -> message type -> state transition -> payload
 ```
 
 ### `worker`
 
 ```text
-主线程构造 worker -> 入参 -> worker 回参 -> 最终写入
+main-thread worker construction -> input -> worker output -> final write
 ```
 
-## 六、这些信号说明你选错边界了
+## 6. Signals That the Boundary Is Wrong
 
-- 只能看到疑似加密函数，但解释不了最终写入点。
-- 找到值相似的中间变量，却解释不了请求为什么还依赖上游响应。
-- 看到某字段变化，却证明不了它和目标请求是否同一层写入。
-- 每次观察到的点都太早，离最终发送还隔很多包装层。
+- Only possible crypto functions are visible, but the final write point is still unexplained.
+- A similar intermediate variable is found, but the request still depends on unexplained upstream responses.
+- One field changes, but it is unclear whether the target request is written on the same layer.
+- Observation points are too early and still far from actual network emission.
 
-一旦出现这些信号，应该后退到离 sink 更近的边界。
+When these signals appear, step back to a boundary closer to the sink.
 
-## 七、边界选对后的最小产出
+## 7. Minimal Output After Correct Boundary Selection
 
-- 一个稳定的写入点。
-- 一条能重复出现的调用顺序。
-- 一份字段状态标签表。
-- 一张完整依赖链记录。
+- One stable write point
+- One repeatable call order
+- One field status-label table
+- One complete dependency-chain record
+

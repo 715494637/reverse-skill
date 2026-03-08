@@ -1,17 +1,17 @@
-# 等价性验证与恢复记录
+# Equivalence Validation and Recovery Records
 
-## 一、恢复结果必须具备可验证性
+## 1. Recovery Output Must Be Verifiable
 
-恢复结果必须满足两个要求：
+Recovery output must satisfy two requirements:
 
-- 结论基于检查点对照，而不是基于外观相似判断
-- 验证可以重复执行，而不是一次性样本成立
+- the conclusion is based on checkpoints instead of appearance
+- validation can be repeated instead of succeeding on one sample only
 
-因此每次恢复都必须建立检查点。
+Therefore every recovery task must define checkpoints.
 
-## 落盘路径
+## Record Paths
 
-默认写到当前任务工作目录：
+Write records under the current task working directory:
 
 ```text
 reverse-records/总览.md
@@ -20,22 +20,22 @@ reverse-records/验证记录.md
 reverse-records/协议状态.md
 ```
 
-- `恢复记录.md`：记录当前遮蔽层、桥接层、关键函数卡片、恢复结论
-- `验证记录.md`：记录等价性检查点、输入输出对照、缺口层定位
-- `协议状态.md`：只在协议 / 长连接场景下记录握手、心跳、序号、续期、状态迁移
+- `恢复记录.md`: current obscuring layer, bridge layer, key-function cards, and recovery conclusions
+- `验证记录.md`: equivalence checkpoints, input/output comparisons, and gap localization
+- `协议状态.md`: handshake, heartbeat, sequence, renewal, and state transition for protocol tasks
 
-## 二、检查点怎么选
+## 2. How to Choose Checkpoints
 
-优先选：
+Prefer:
 
-- 桥接层入参
-- 桥接层回参
-- 关键中间值
-- 最终写回值
+- bridge-layer inputs
+- bridge-layer outputs
+- critical intermediate values
+- final write-back value
 
-不应仅比较最终输出，否则难以定位缺口所处层级。
+Do not compare only the final output, or the missing layer will remain unclear.
 
-## 三、等价性模板
+## 3. Equivalence Template
 
 ```markdown
 验证目标：
@@ -59,9 +59,9 @@ reverse-records/协议状态.md
 - 在桥接层 / 在调度层 / 在状态载体 / 在上游状态
 ```
 
-这段内容默认写入：`reverse-records/验证记录.md`
+Write this block into `reverse-records/验证记录.md`.
 
-## 四、关键函数卡片模板
+## 4. Key-Function Card Template
 
 ```markdown
 函数 / 片段：
@@ -87,16 +87,17 @@ reverse-records/协议状态.md
 - 对照样本：
 ```
 
-这段内容默认写入：`reverse-records/恢复记录.md`
+Write this block into `reverse-records/恢复记录.md`.
 
-## 五、什么时候说明恢复已经够用了
+## 5. When Recovery Is Already Sufficient
 
-- 已能解释目标字段形成路径。
-- 已能给下游定位或复现直接使用。
-- 再继续恢复只会增加代码量，不会提升判断质量。
+- the target field formation path is explainable
+- downstream locate or replay work can use the current output directly
+- continuing recovery would increase code volume without increasing judgment quality
 
-## 六、完成标准
+## 6. Completion Standard
 
-- 已有清晰检查点。
-- 已知缺口在第几层。
-- 已留下中文记录，后续不用重拆。
+- clear checkpoints exist
+- the missing layer is known
+- Chinese reverse records are current enough that downstream work does not need to reopen the same shell
+

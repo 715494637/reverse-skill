@@ -1,153 +1,155 @@
-# 定位工作流
+# Locate Workflow
 
-## 一、定位目标：确切来源证明
+## 1. Target of Locate Work: Exact Source Proof
 
-一个定位任务至少要回答五个问题：
+A locate task must answer at least five questions:
 
-1. 目标请求是什么。
-2. 目标字段最终写到哪里。
-3. 它是在哪个动作后形成的。
-4. 它依赖本地计算、上游响应、环境状态中的哪些部分。
-5. 当前拿到的是正常态链路，还是风控态链路。
+1. What is the target request?
+2. Where is the target field finally written?
+3. After which action is it formed?
+4. Which parts come from local computation, upstream responses, or environment state?
+5. Is the current chain a normal-state chain or a risk-state chain?
 
-只回答“这个值是某函数算出来的”，不算定位完成。
+Saying only that “this value is computed by some function” is not sufficient.
 
-## 二、先定义目标单位
+## 2. Define the Target Unit First
 
-不要把目标定义成“找 sign 算法”。
+Do not define the task as “find the sign algorithm”.
 
-应该定义成：
+Define it like this instead:
 
 ```markdown
-目标请求：A
-目标字段：header.x-sign
-最终落点：请求头
-触发动作：点击提交
-当前状态：正常态
+Target request: A
+Target field: header.x-sign
+Final sink: request header
+Trigger action: click submit
+Current state: normal state
 ```
 
-如果还没法写出这五项，说明上下文还不够，不要急着挖代码。
+If these items cannot be written yet, the context is still incomplete.
 
-## 三、从写入边界倒推
+## 3. Walk Backward from the Write Boundary
 
-定位默认按这条线往回走：
+The default locate path is:
 
 ```text
 writer <- builder <- entry <- source
 ```
 
-- `writer`：最终把值写进请求、头、`cookie`、帧、存储的位置
-- `builder`：真正负责组装或计算这个值的逻辑层
-- `entry`：哪个动作、哪个事件、哪个响应触发了 builder
-- `source`：builder 依赖的真实输入，可能来自响应、状态、环境、时间、随机数、用户输入
+- `writer`: the place that finally writes the value into a request, header, `cookie`, frame, or storage
+- `builder`: the logic layer that actually assembles or computes the value
+- `entry`: the action, event, or response that triggers the builder
+- `source`: the true input of the builder, often from responses, state, environment, time, randomness, or user input
 
-这四层必须分开记，不要混成“某函数里顺手写了个值”。
+Keep these layers separate.
 
-## 四、常见目标落点与起手点
+## 4. Common Sinks and Best First Observation Points
 
-| 落点 | 第一观察点 | 不要先做的事 |
+| Sink | First observation point | What not to do first |
 |---|---|---|
-| `body` 字段 | 提交前最终序列化/写入点 | 先搜散列函数 |
-| `header` 字段 | 头部设置点或最终请求构造点 | 先搜 token 名 |
-| JS 写入 `cookie` | `cookie` setter / 写入点 | 先只看 `document.cookie` |
-| 响应下发 `Set-Cookie` | 网络响应与依赖请求 | 先在前端搜 cookie 名 |
-| `WebSocket` 帧 | `send` 前的包络层 | 先看单条 payload 明文 |
-| `worker` 回传 | `postMessage` 契约 | 先强行抠内部算子 |
-| DOM 隐藏字段 | 赋值点与提交动作 | 先搜字段名全局文本 |
+| `body` field | Final serialization or write point before submit | Search hash functions first |
+| `header` field | Header-setting point or final request-construction point | Search token names first |
+| JS-written `cookie` | `cookie` setter or write point | Only observe `document.cookie` reads |
+| Response `Set-Cookie` | Network response and dependency request | Search the cookie name in frontend first |
+| `WebSocket` frame | Envelope layer before `send` | Start from one plaintext payload |
+| `worker` reply | `postMessage` contract | Dive into internal operators first |
+| Hidden DOM field | Assignment point and submit action | Search the plain field name globally |
 
-## 五、什么时候全局搜索有用，什么时候有害
+## 5. When Global Search Helps and When It Hurts
 
-### 有用
+### Helpful
 
-- 目标字段名比较独特。
-- 代码未明显混淆。
-- 已经知道当前链路属于正常态。
+- The field name is distinctive.
+- The code is not heavily obfuscated.
+- The chain is already known to be normal state.
 
-### 有害
+### Harmful
 
-- 字段名重复太多。
-- 混淆后字符串不可读。
-- 真正写入点和计算点隔着多层包装。
-- 风控态下出现诱饵分支。
+- The field name appears too many times.
+- Strings are unreadable after obfuscation.
+- The real write point and compute point are separated by wrappers.
+- The current sample is already in a risk-state decoy branch.
 
-结论：
+Conclusion:
 
-- 搜索只是辅助，不是工作流。
-- 搜不到不代表没有，搜到也不代表它就是源头。
+- Search is auxiliary, not the workflow itself.
+- Failing to find a string does not prove absence.
+- Finding a string does not prove origin.
 
-## 六、什么时候必须展开上游链路
+## 6. When Upstream Expansion Is Mandatory
 
-一旦出现下面任一情况，就必须往上游展开：
+Expand upstream immediately when any of the following is true:
 
-- 字段值直接来自响应字段。
-- 目标请求依赖上游 `Set-Cookie`，尤其是 `HttpOnly`。
-- 字段只在某次挑战后出现。
-- 字段在刷新后变化，但同一页重复点击不变。
-- 去掉某个初始化请求后，目标请求直接进入风控态。
+- The field comes from a response field.
+- The target request depends on upstream `Set-Cookie`, especially `HttpOnly`.
+- The field appears only after a challenge.
+- The field changes after refresh but stays constant during repeated clicks in one page session.
+- Removing one initialization request moves the target request directly into a risk state.
 
-这时不要再继续追 builder 内部细节，先把依赖请求补齐，并先建立状态链：
+When this happens, stop diving into builder internals and build the state chain first:
 
 ```text
-上游响应 / Set-Cookie / challenge / session / device state
--> 当前状态载体（cookie / storage / 内存 / worker / wasm）
--> builder 输入
--> writer 写回
+upstream response / Set-Cookie / challenge / session / device state
+-> current state carrier (cookie / storage / memory / worker / wasm)
+-> builder input
+-> writer output
 ```
 
-只要状态链没有闭合，就不允许先下结论说“这是纯算”。
+If the state chain is not closed, do not classify the result as pure computation.
 
-## 七、正常态与风控态要分开记
+## 7. Record Normal State and Risk State Separately
 
-定位阶段的高频误判，是将风控态链路误认成主链路。
+The most common locate mistake is to treat a risk-state chain as the main chain.
 
-至少做下面这张对照，并补一份分叉图。分叉图里必须明确：
+At minimum, create the following comparison and a fork map. The fork map must state:
 
-- 从哪一个请求、响应、状态缺口开始分叉
-- 正常态 builder / writer 走哪条链
-- 风控态 fallback / challenge 走哪条链
-- 缺失的是哪个状态，而不是只写“环境不对”
+- where the fork starts
+- which chain normal-state `builder` and `writer` follow
+- which chain risk-state `fallback` and challenge logic follow
+- which exact state is missing, instead of a vague statement such as “environment is wrong”
 
-对照表至少包含：
+Comparison table:
 
 ```markdown
-| 项目 | 正常态 | 风控态 | 是否同链 |
+| Item | Normal state | Risk state | Same chain |
 |---|---|---|---|
-| 触发动作 | 点击提交 | 点击提交 | 是 |
-| 上游请求 B | 有正常响应 | 403 / 空响应 | 否 |
-| x-sign 写入点 | builder.sign() | fallback.sign() | 否 |
-| cookie 依赖 | 有 HttpOnly | 无 | 否 |
+| Trigger action | click submit | click submit | yes |
+| Upstream request B | valid response | 403 / empty response | no |
+| x-sign write point | builder.sign() | fallback.sign() | no |
+| Cookie dependency | has HttpOnly cookie | missing | no |
 ```
 
-只要对照中出现“否”，就不要把风控态结果当最终结论。
+If any row says `no`, do not treat the risk-state result as the final conclusion.
 
-## 八、什么时候切到别的 skill
+## 8. When to Switch Skills
 
-### 切 `$jsr-runtime`
+### Switch to `$jsr-runtime`
 
-- 浏览器内值稳定，本地执行不稳定。
-- 一调试就变值。
-- 写入点清楚，但状态或对象缺失导致结果不对。
+- Values are stable in browser normal state but unstable locally.
+- Values change as soon as debugging starts.
+- The write boundary is clear but missing state or objects makes replay fail.
 
-### 切 `$jsr-recover`
+### Switch to `$jsr-recover`
 
-- 写入点清楚，但 `builder` 藏在 `jsvmp`、`worker`、`wasm`、控制流平坦化里。
-- 需要先恢复桥接层、调度器、字节码逻辑，才能继续定位。
+- The write boundary is clear but the builder is hidden inside `jsvmp`, `worker`, `wasm`, or control-flow flattening.
+- Dispatcher, bridge, or bytecode logic must be recovered before locate work can continue.
 
-## 九、协议场景额外要求
+## 9. Extra Requirements for Protocol Tasks
 
-如果目标不是普通 `XHR/fetch`，而是 `WebSocket`、`protobuf`、长连接、心跳、续期场景，定位时至少补三层：
+If the target is not ordinary `XHR/fetch` but `WebSocket`, `protobuf`, long connection, heartbeat, or renewal traffic, include at least three layers:
 
-1. 连接状态链：握手 -> 已认证 -> 心跳维持 -> 续期 -> 失效
-2. 消息族：握手包、控制包、业务包、ack、错误包、续期包
-3. 目标消息边界：包络层字段、载荷层字段、加密 / 压缩层
+1. Connection state chain: handshake -> authenticated -> heartbeat maintained -> renewed -> invalid
+2. Message families: handshake, control, business, ack, error, renewal
+3. Target message boundary: envelope fields, payload fields, and encryption or compression layer
 
-此时不应以单包 `payload` 或单一字段名作为主要依据。应先确定目标消息所属消息族与连接状态，再继续回溯写入边界。
+Do not use one packet payload or one field name as the main basis.
 
-## 十、定位完成的标准
+## 10. Completion Standard
 
-- 已知最终落点。
-- 已知触发动作。
-- 已知 `writer`、`builder`、`entry`。
-- 已区分本地计算、响应获取、环境产生、状态依赖。
-- 协议场景下已知连接状态链、消息族和目标消息边界。
-- 若有上游依赖，已展开到正常响应为止。
+- Final sink is known.
+- Trigger action is known.
+- `writer`, `builder`, and `entry` are known.
+- Local computation, response-derived state, environment-derived state, and mixed dependencies are distinguished.
+- For protocol tasks, connection state chain, message families, and target message boundary are known.
+- If upstream dependencies exist, expansion has reached the request that produces the normal response.
+
