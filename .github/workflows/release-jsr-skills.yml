@@ -1,0 +1,98 @@
+name: release-jsr-skills
+
+'on':
+  push:
+    branches:
+      - main
+    paths:
+      - 'jsr-*/**'
+      - '.github/workflows/release-jsr-skills.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-jsr-skills
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build skills archive
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist/jsr-skills
+
+          found=0
+          for dir in jsr-*; do
+            if [ -d "$dir" ]; then
+              cp -R "$dir" dist/jsr-skills/
+              found=1
+            fi
+          done
+
+          if [ "$found" -ne 1 ]; then
+            echo "No jsr-* skill directories found."
+            exit 1
+          fi
+
+          (
+            cd dist
+            zip -r jsr-skills-latest.zip jsr-skills
+          )
+
+      - name: Write release notes
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          cat > dist/release-notes.md <<EOF
+          Automatically updated JSR skills bundle.
+
+          - Commit: ${COMMIT_SHA}
+          - Workflow: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}
+          - Run number: ${RUN_NUMBER}
+          - Included skills:
+            - jsr-locate
+            - jsr-runtime
+            - jsr-recover
+          - Asset: jsr-skills-latest.zip
+          EOF
+
+      - name: Move latest tag
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f skills-latest "${GITHUB_SHA}"
+          git push --force origin "refs/tags/skills-latest"
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if gh release view skills-latest >/dev/null 2>&1; then
+            gh release edit skills-latest \
+              --title "JSR Skills Latest" \
+              --notes-file dist/release-notes.md
+
+            gh release upload skills-latest dist/jsr-skills-latest.zip --clobber
+          else
+            gh release create skills-latest dist/jsr-skills-latest.zip \
+              --title "JSR Skills Latest" \
+              --notes-file dist/release-notes.md
+          fi
