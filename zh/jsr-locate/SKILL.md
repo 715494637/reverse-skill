@@ -32,7 +32,7 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 
 - 不要停留在 `SKILL.md`。进入实质分析、代码阅读、hook 设计、重放设计前，至少加载一个匹配参考。
 - 任何来源追踪任务都要读 `references/locate-workflow.md`。
-- 只要涉及请求参数、请求头、`cookie`、`HttpOnly`、上游响应、依赖展开、进度记录，就要读 `references/request-chain-recording.md`。
+- 只要涉及请求参数、请求头、`cookie`、`HttpOnly`、上游响应、依赖展开、连接信息，就要读 `references/request-chain-recording.md`。
 - 只要问题是“从哪观察、从哪 hook、要不要断点”，就要读 `references/hook-and-boundary-patterns.md`。
 - 任务范围一旦扩大，要先补读新匹配的参考，再继续推进。
 
@@ -46,7 +46,7 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 ## 定位顺序
 
 1. 先抓一轮完整正常态样本，保留请求顺序、响应摘要、页面动作和时间点。
-2. 一旦涉及响应字段、`Set-Cookie`、`HttpOnly`、challenge、session、device state，立即打开 `请求链路.md`，先写状态链，再继续看代码。
+2. 一旦涉及响应字段、`Set-Cookie`、`HttpOnly`、challenge、session、device state，立即打开当前会话的 `请求链路.md`，先写状态链，再继续看代码。
 3. 先找最近写入边界，不要一上来搜 `md5`、`aes`、`sign`。
 4. 从 sink 向上回溯，分清谁触发、谁组装、谁最终写入。
 5. 每个字段都要打标签：固定、动态、加密、本地计算、响应获取、环境产生。
@@ -69,19 +69,43 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 
 所有逆向记录都写入当前任务工作目录下的 `reverse-records/`，并使用中文。
 
-- 必写：`reverse-records/总览.md`
-- 必写：`reverse-records/请求链路.md`
-- 需要验证时追加：`reverse-records/验证记录.md`
-- 协议 / 长连接场景必写：`reverse-records/协议状态.md`
+目录结构：
+
+```text
+reverse-records/
+├─ 会话1/
+│  ├─ 总览.md
+│  ├─ 请求链路.md
+│  ├─ 运行时依赖.md
+│  ├─ 恢复记录.md
+│  └─ 验证记录.md
+├─ 会话2/
+│  └─ ...
+└─ ...
+```
+
+会话规则：
+
+- 一个逆向会话只使用一个 `会话N/` 目录。
+- 用户指定了 `会话N`，就只读写那个目录。
+- 用户未指定时，创建下一个未占用的 `会话N/` 目录，并且只写入那个目录。
+- 不得覆盖、合并、重命名、清理其他 `会话N/` 目录。
+- 协议 / 长连接状态写入当前会话 `请求链路.md` 的专门章节，不再单独创建 `协议状态.md`。
+
+当前会话中与定位直接相关的文件：
+
+- `reverse-records/会话N/总览.md`
+- `reverse-records/会话N/请求链路.md`
+- `reverse-records/会话N/验证记录.md`（需要验证时）
 
 更新规则：
 
-- 第一个实质动作前先创建或更新 `总览.md`。
-- 一旦开始展开依赖链，就创建或更新 `请求链路.md`。
+- 第一个实质动作前先创建或更新当前会话 `总览.md`。
+- 一旦开始展开依赖链，就创建或更新当前会话 `请求链路.md`。
 - 每次阶段切换、发现上游依赖、状态链闭合变化、确认正常态 / 风控态分叉、确认 sink、卡点变化、下一步变化、拿到验证结果后，都要立即回写记录。
 - 每次回写都要重写 `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证`。
-- 不得在 `总览.md` 或 `请求链路.md` 已过期的情况下持续长时间分析。
-- 协议 / 长连接场景要并行维护 `协议状态.md`，同步记录连接状态、消息族、序号 / ack / 续期规则。
+- 不得在当前会话 `总览.md` 或 `请求链路.md` 已过期的情况下持续长时间分析。
+- 协议 / 长连接场景要在当前会话 `请求链路.md` 内维护专门章节，同步记录连接状态、消息族、序号 / ack / 续期规则。
 
 ## 结束条件
 
@@ -89,4 +113,3 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 - 已证明来源属于本地计算、上游响应、环境状态或混合依赖中的哪类。
 - 若存在上游依赖，链路已展开到正常响应。
 - 下一阶段无需重复做定位。
-

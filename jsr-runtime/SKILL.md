@@ -54,17 +54,26 @@ Runtime work is successful only when it can explain why the browser path works, 
 
 All reverse records must be written in Chinese under the current task working directory `reverse-records/`.
 
-- Required: `reverse-records/总览.md`
-- Required: `reverse-records/运行时依赖.md`
-- Add when validating: `reverse-records/验证记录.md`
+Session rules:
+
+- One reverse session must use exactly one `会话N/` folder.
+- If the user names a session folder, read and write only that folder.
+- If the user does not name one, create the next unused `会话N/` folder and use only that folder.
+- Never overwrite, merge, rename, or clean another `会话N/` folder.
+
+Required files for runtime work in the current session:
+
+- `reverse-records/会话N/总览.md`
+- `reverse-records/会话N/运行时依赖.md`
+- `reverse-records/会话N/验证记录.md` when validating
 
 Update rules:
 
-- Refresh `总览.md` before the first runtime diagnosis step.
-- Create or refresh `运行时依赖.md` as soon as dependencies, state gaps, anti-debug points, patch items, or fingerprint attribution are discussed.
+- Refresh the current session `总览.md` before the first runtime diagnosis step.
+- Create or refresh the current session `运行时依赖.md` as soon as dependencies, state gaps, anti-debug points, patch items, or fingerprint attribution are discussed.
 - Refresh records immediately after any problem reclassification, dependency change, patch decision, anti-debug finding, normal/risk fork update, blocker change, next-step change, or validation result.
 - Rewrite `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证` on every record refresh.
-- Do not continue long runtime analysis while `总览.md` or `运行时依赖.md` is stale.
+- Do not continue long runtime analysis while the current session `总览.md` or `运行时依赖.md` is stale.
 
 ## Completion Criteria
 
@@ -72,4 +81,3 @@ Update rules:
 - The minimal runtime manifest is known.
 - Intermediate values become stable under fixed input and fixed sources.
 - The next stage does not need to re-diagnose the runtime gap.
-

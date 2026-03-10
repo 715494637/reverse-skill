@@ -1,167 +1,134 @@
 # Minimal Environment Design
 
-## 1. Goal of a Minimal Environment
+## Purpose
 
-The goal is singular:
+`运行时依赖.md` records only the minimal runtime manifest for the current chain.
 
-stabilize the current execution chain and explain why every dependency exists.
+Do not write the following here:
 
-It is not:
+- full request-chain expansion
+- broad recovery notes
+- general progress summaries
 
-- patching more for safety
-- simulating the entire browser locally
-- calling it done as soon as code runs once
+This file should explain only what the current chain needs to run and why.
 
-## Record Paths
+## Record Path
 
 Write records under the current task working directory:
 
 ```text
-reverse-records/总览.md
-reverse-records/运行时依赖.md
-reverse-records/验证记录.md
+reverse-records/
+├─ 会话1/
+│  ├─ 总览.md
+│  ├─ 请求链路.md
+│  ├─ 运行时依赖.md
+│  ├─ 恢复记录.md
+│  └─ 验证记录.md
+├─ 会话2/
+│  └─ ...
+└─ ...
 ```
 
-- `总览.md`: current phase, blocker, next step, and risk
-- `运行时依赖.md`: minimal environment, required objects, required state, anti-debug points, and risk branches
-- `验证记录.md`: patch on/off comparisons, fixed-source comparisons, and stability validation
+Session rules:
 
-## 2. Five Parts of a Minimal Environment
+- One reverse session uses one `会话N/` folder only.
+- If the user specifies `会话N`, use only that folder.
+- If the user does not specify one, create the next unused `会话N/` folder.
+- Never overwrite or edit another `会话N/` folder.
 
-1. required objects
-2. required state
-3. fixed time sources
-4. fixed random sources
-5. switchable patches
+## Writing Rules
 
-## 3. Patch Only Objects Touched by the Current Chain
+- Start with the target chain, not with a list of browser objects.
+- Separate `必需对象` from `必需状态`.
+- Record fixed time, random, and seed sources explicitly.
+- Record anti-debug points only if they affect the current chain.
+- Record fingerprint surfaces only if a consumer uses them.
+- Record risk branches only if they affect the current chain.
+- Every dependency item must answer `必要性`, `证据`, and `去掉后现象`.
 
-```markdown
-| Object or property | Required | Why | Effect when removed | Note |
-|---|---|---|---|---|
-| `window.navigator.userAgent` | yes | branch dependency | enters risk branch | full navigator not needed |
-| `crypto.subtle` | yes | builder calls it | immediate error | patch only the used method |
-| `document` | no / partial | current chain does not touch DOM | no effect | do not patch by default |
-```
-
-## 4. State Has Priority Over Objects
-
-The most common gaps are state gaps:
-
-- `cookie`
-- `HttpOnly cookie`
-- `localStorage`
-- `sessionStorage`
-- upstream response values
-- challenge results
-- device identifiers returned by initialization requests
-
-If state is not closed, adding more objects only moves execution deeper into a risk branch.
-
-## 5. Pure-Compute Pre-Migration Check
-
-Before declaring that the current chain can be migrated as pure computation, check these six items:
-
-1. upstream response fields
-2. `HttpOnly cookie`
-3. one-time challenge, nonce, or ticket
-4. browser-internal state
-5. fingerprint collection result
-6. time window, sequence, or renewal dependency
-
-Recording template:
+## Runtime Skeleton
 
 ```markdown
-| Check item | Depends | Current evidence | Conclusion | Next step |
-|---|---|---|---|---|
-| Upstream response field | yes | token comes from request B.response | cannot migrate as pure computation | close state chain first |
-| HttpOnly cookie | yes | guest_id only exists in capture | cannot migrate as pure computation | close cookie chain first |
-| One-time challenge | no | sample can be replayed repeatedly | may continue | keep observing |
-| Browser-internal state | yes | depends on device_seed in storage | not pure computation yet | restore state first |
-| Fingerprint collection | unknown | browser works, local replay unstable | pending | collect fingerprint evidence |
-| Time window | yes | server rejects after expiry | not pure computation yet | fix time and validate |
-```
+# 运行时依赖
 
-Rule:
+## 目标链路
+- 目标请求 / 函数：
+- 浏览器现象：
+- 本地现象：
 
-- If any of the six items is dependency-present and still unclosed, do not treat the chain as pure computation.
+## 必需对象
+- `对象1`
+  - 必要性：
+  - 证据：
+  - 去掉后现象：
 
-## 6. Fingerprint Attribution Matrix
+## 必需状态
+- `状态1`
+  - 状态：`["动态","响应获取","HttpOnly","会话相关"]`
+  - 来源：
+  - 证据：
+  - 去掉后现象：
 
-For `deviceId`, `blackbox`, `sensor_data`, challenge, slider, or risk-cookie tasks, add a fingerprint-attribution matrix:
-
-```markdown
-| Surface | Collector | Aggregator | Consumer | Target impact | Required | Evidence | Removable |
-|---|---|---|---|---|---|---|---|
-| canvas | collectCanvas() | buildProfile() | riskGate() | challenge branch | yes | removing it enters risk state | no |
-| webgl | collectWebGL() | buildProfile() | buildBlackbox() | blackbox | yes | intermediate value changes | no |
-| fonts | collectFonts() | buildProfile() | riskGate() | risk cookie | unknown | pending | pending |
-| audio | collectAudio() | buildProfile() | no direct consumer | none | no | removing it changes nothing | yes |
-```
-
-Rules:
-
-- Surfaces that never reach a consumer are removable by default.
-- Do not patch the whole `navigator`, `canvas`, or `webgl` surface set just to “look like a browser”.
-
-## 7. Time and Random Sources Must Be Explicitly Recorded
-
-```markdown
-固定时间：1710000000000
-固定随机种子：seed-001
-固定性能时间：0 起点偏移
-固定设备种子：device-seed-01
-```
-
-Without explicit recording, later regression checks are unreliable.
-
-## 8. Patches Must Be Switchable
-
-Each patch should have an on/off check:
-
-```markdown
-| Patch | On | Off | Conclusion |
-|---|---|---|---|
-| Fix Date.now | intermediate values stable | intermediate values drift | required |
-| Import HttpOnly cookie | request succeeds | risk state | required |
-| Simulate canvas | no change | no change | removable |
-```
-
-This prevents uncontrolled patch accumulation.
-
-## 9. Minimal Environment Template
-
-```markdown
-目标链路：
-
-### 必需对象
-- 
-
-### 必需状态
-- 
-
-### 指纹归因矩阵
-- 
-
-### 固定源
+## 固定源
 - 时间：
 - 随机：
 - 种子：
 
-### 可移除项
-- 
+## 纯算迁移前检查
+- 上游响应：
+  - 结论：
+  - 证据：
+- HttpOnly：
+  - 结论：
+  - 证据：
+- 一次性 challenge / nonce / ticket：
+  - 结论：
+  - 证据：
+- 浏览器内部状态：
+  - 结论：
+  - 证据：
+- 指纹采集：
+  - 结论：
+  - 证据：
+- 时间窗 / 序号 / 续期：
+  - 结论：
+  - 证据：
 
-### 当前结论
-- 
+## 反调试（按需）
+- `点1`
+  - 现象：
+  - 是否影响业务值：
+  - 最小处理：
+
+## 指纹归因（按需）
+- `表面1`
+  - 采集器：
+  - 消费点：
+  - 是否必需：
+  - 证据：
+
+## 风控分支（按需）
+- `分支点1`
+  - 触发条件：
+  - 结果：
+  - 证据：
+
+## 可移除项
+- `项1`
+  - 去掉后现象：
+  - 结论：
+
+## 验证点
+- `验证1`
+  - 开关：
+  - 结果：
 ```
 
-Write this block into `reverse-records/运行时依赖.md`.
+## Quality Check
 
-## 10. Completion Standard
-
-- Only required items remain for the current chain.
-- Removing non-required items does not change the result.
-- Intermediate values become stable under fixed input and fixed sources.
-- The six pure-compute prechecks are complete and the blocking item is known if migration is still blocked.
-- For fingerprint tasks, truly required surfaces and removable surfaces are known.
-
+- Objects and state are separated.
+- Fixed sources are explicit.
+- Pure-compute migration checks are explicit.
+- Anti-debug, fingerprint, and risk sections are present only when needed.
+- Every dependency item states necessity and evidence.
+- Non-runtime content is not mixed into this file.

@@ -15,13 +15,10 @@ At minimum, inspect:
 
 ## Record Path
 
-Protocol and long-connection tasks should additionally write:
+Protocol and long-connection tasks must record connection state in the current session `请求链路.md`.
+Protocol-shell bridge notes, dispatcher notes, and semantic recovery notes remain in the current session `恢复记录.md`.
 
-```text
-reverse-records/协议状态.md
-```
-
-Recommended contents:
+Recommended contents for the `请求链路.md` protocol section:
 
 - handshake request and response
 - first-packet type
@@ -82,7 +79,7 @@ ack 规则：
 载荷结构：
 ```
 
-Write this block into `reverse-records/协议状态.md`.
+Write this block into the current session `reverse-records/会话N/请求链路.md` under a dedicated `协议 / 长连接状态` section.
 
 ## 4. State Transition Must Be Recorded Separately
 
@@ -119,4 +116,3 @@ If the target message depends on prior `session`, `ack`, or renewal state, do no
 - State transition is known.
 - Message families are known.
 - The real boundary and dependencies of the target message are known.
-

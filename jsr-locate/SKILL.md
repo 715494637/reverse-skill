@@ -32,7 +32,7 @@ Locate work is complete only when it can answer all of the following:
 
 - Never stop at `SKILL.md`. Before substantial analysis, code reading, hook placement, or replay design, load at least one matching reference file.
 - Read `references/locate-workflow.md` for any source-tracing task.
-- Read `references/request-chain-recording.md` whenever request parameters, headers, cookies, `HttpOnly` cookies, upstream responses, dependency expansion, or progress records are involved.
+- Read `references/request-chain-recording.md` whenever request parameters, headers, cookies, `HttpOnly` cookies, upstream responses, dependency expansion, or connection metadata are involved.
 - Read `references/hook-and-boundary-patterns.md` whenever the main question is where to observe, where to hook, or whether a breakpoint is justified.
 - When task scope expands, load the newly relevant reference before continuing.
 
@@ -46,7 +46,7 @@ Locate work is complete only when it can answer all of the following:
 ## Operating Order
 
 1. Capture one complete normal-state sample with request order, response summaries, page actions, and timing.
-2. As soon as response fields, `Set-Cookie`, `HttpOnly` cookies, challenge state, session state, or device state becomes relevant, open `请求链路.md` and write the state chain before deeper code reading.
+2. As soon as response fields, `Set-Cookie`, `HttpOnly` cookies, challenge state, session state, or device state becomes relevant, open the current session `请求链路.md` and write the state chain before deeper code reading.
 3. Find the nearest write boundary instead of starting with `md5`, `aes`, `sign`, or generic crypto searches.
 4. Walk upward from the sink and separate who triggers execution, who assembles the value, and who performs the final write.
 5. Label every field as fixed, dynamic, encrypted, locally computed, response-derived, or environment-derived.
@@ -69,19 +69,43 @@ Locate work is complete only when it can answer all of the following:
 
 All reverse records must be written in Chinese under the current task working directory `reverse-records/`.
 
-- Required: `reverse-records/总览.md`
-- Required: `reverse-records/请求链路.md`
-- Add when validating: `reverse-records/验证记录.md`
-- Required for protocol or long-connection tasks: `reverse-records/协议状态.md`
+Session layout:
+
+```text
+reverse-records/
+├─ 会话1/
+│  ├─ 总览.md
+│  ├─ 请求链路.md
+│  ├─ 运行时依赖.md
+│  ├─ 恢复记录.md
+│  └─ 验证记录.md
+├─ 会话2/
+│  └─ ...
+└─ ...
+```
+
+Session rules:
+
+- One reverse session must use exactly one `会话N/` folder.
+- If the user names a session folder, read and write only that folder.
+- If the user does not name one, create the next unused `会话N/` folder and use only that folder.
+- Never overwrite, merge, rename, or clean another `会话N/` folder.
+- Protocol and long-connection state must be written as dedicated sections inside the current session `请求链路.md`, not as a separate file.
+
+Required files for locate work in the current session:
+
+- `reverse-records/会话N/总览.md`
+- `reverse-records/会话N/请求链路.md`
+- `reverse-records/会话N/验证记录.md` when validating
 
 Update rules:
 
-- Create or refresh `总览.md` before the first substantial action.
-- Create or refresh `请求链路.md` as soon as dependency expansion starts.
+- Create or refresh the current session `总览.md` before the first substantial action.
+- Create or refresh the current session `请求链路.md` as soon as dependency expansion starts.
 - Refresh records immediately after any phase change, upstream dependency discovery, state-chain closure change, normal/risk fork confirmation, sink confirmation, blocker change, next-step change, or validation result.
 - Rewrite `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证` on every record refresh.
-- Do not continue long analysis on a branch while `总览.md` or `请求链路.md` is stale.
-- For protocol and long-connection tasks, maintain `协议状态.md` in parallel with connection state, message families, and sequence/ack/renewal rules.
+- Do not continue long analysis on a branch while the current session `总览.md` or `请求链路.md` is stale.
+- For protocol and long-connection tasks, maintain dedicated sections in the current session `请求链路.md` for connection state, message families, and sequence/ack/renewal rules.
 
 ## Completion Criteria
 
@@ -89,4 +113,3 @@ Update rules:
 - The source class is proven as local computation, upstream response, environment state, or mixed dependency.
 - If upstream dependencies exist, the chain has been expanded until the normal response is obtained.
 - The next stage can continue without repeating locate work.
-

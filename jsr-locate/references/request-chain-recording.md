@@ -1,49 +1,45 @@
 # Request-Chain Recording
 
-## 1. Recording Principles
+## Purpose
 
-- All reverse records must be written in Chinese.
-- Record not only the target request, but also every upstream request it depends on.
-- Label every parameter, header, and `cookie` with status tags.
-- Mark `HttpOnly` cookies explicitly. Never place them in the `document.cookie` readable set.
-- As soon as response fields, `Set-Cookie`, challenge state, session state, or device state becomes relevant, write the state chain before discussing pure computation.
-- The record must always answer: current stage, confirmed facts, blocker, next step, and pending validation.
+`请求链路.md` records only request structure, field status arrays, source proof, upstream expansion, and optional connection metadata.
 
-## Record Paths
+Do not write the following here:
+
+- current stage, blocker, next step, or summary conclusion
+- normal-state versus risk-state fork maps
+- runtime patch decisions
+- recovery conclusions or equivalence judgments
+
+Those belong in the other record files.
+
+## Record Path
 
 Write records under the current task working directory:
 
 ```text
-reverse-records/总览.md
-reverse-records/请求链路.md
-reverse-records/验证记录.md
-reverse-records/协议状态.md (protocol or long-connection tasks only)
+reverse-records/
+├─ 会话1/
+│  ├─ 总览.md
+│  ├─ 请求链路.md
+│  ├─ 运行时依赖.md
+│  ├─ 恢复记录.md
+│  └─ 验证记录.md
+├─ 会话2/
+│  └─ ...
+└─ ...
 ```
 
-- `总览.md`: task-level progress and high-level conclusions
-- `请求链路.md`: full request chain, parameter table, dependencies, and normal/risk comparison
-- `验证记录.md`: validation results after removing dependencies, switching state, or comparing samples
-- `协议状态.md`: connection state chain, message families, sequence, ack, heartbeat, and renewal rules
+Session rules:
 
-## Record Refresh Triggers
+- One reverse session uses one `会话N/` folder only.
+- If the user specifies `会话N`, use only that folder.
+- If the user does not specify one, create the next unused `会话N/` folder.
+- Never overwrite or edit another `会话N/` folder.
 
-Refresh the relevant files immediately after any of the following:
+## Status Tag Standard
 
-- phase change
-- new upstream request discovered
-- field status classification changes
-- state chain becomes more complete
-- normal/risk fork is confirmed or corrected
-- sink or builder proof is updated
-- blocker changes
-- next step changes
-- any validation result is obtained
-
-Sustained reverse work with stale records is not compliant.
-
-## 2. Status Tag Standard
-
-Use an array of tags. Choose at least from the following set:
+Use arrays and keep the original status vocabulary:
 
 - `未知`
 - `已知`
@@ -61,206 +57,120 @@ Use an array of tags. Choose at least from the following set:
 - `可复用`
 - `HttpOnly`
 
-Examples:
-
-```json
-["动态", "加密", "响应获取", "会话相关"]
-```
+Example:
 
 ```json
 ["动态", "响应获取", "HttpOnly", "会话相关"]
 ```
 
-## 3. State Chain Is Mandatory
+## Writing Rules
 
-If the target request depends on any of the following, the state chain must be written first:
+- Put the target request first.
+- Expand upstream requests after the target request.
+- One request block per section.
+- Within each request block, use only these parts: `请求头`, `Query参数`, `Body参数`, `Cookie`, `响应输出`.
+- Every field must include `状态`, `来源`, and `证据`.
+- Keep `状态` as an array, not prose.
+- Write `来源` as `来源字段 -> 目标字段`.
+- If a request has no upstream request, write `上游请求：无`.
+- If a section has no fields, write `- 无`.
 
-- upstream response fields
-- `Set-Cookie` or `HttpOnly` cookies
-- challenge, token, or session state
-- `device_id`, fingerprint results, or hidden browser state
+Do not create separate sections for:
 
-State-chain template:
+- dependency summaries
+- current conclusion
+- normal/risk comparison
 
-```text
-请求 B.response.token ----------> 会话状态.token ----------> 请求 A.builder.x-token ----------> 请求 A.header.x-token
-请求 B.Set-Cookie.guest_id -----> cookie jar(HttpOnly) -----> 请求 A 自动携带 cookie -----------> 请求 A 正常态
-请求 C.response.challenge ------> 挑战状态.challenge -------> 请求 A.builder.challenge --------> 请求 A.body.challenge
-```
+Dependency is already expressed by per-field `来源` and per-request `上游请求`.
 
-Rules:
-
-- Without the state chain, do not conclude that the target is pure computation.
-- Expand the state chain until the target request receives a normal response instead of a risk response.
-
-## 4. Target Request Template
+## Request Skeleton
 
 ```markdown
-目标请求：A
-目标地址：
-目标动作：页面初始化 / 点击按钮 / 表单提交 / 滑块通过 / 心跳续期
-目标状态：正常态 / 风控态 / 未知
-目标字段：
+# 请求链路
 
-### 请求 A 参数总览
-| 位置 | 名称 | 值摘要 | 状态标签 | 直接来源 | 证据 | 备注 |
-|---|---|---|---|---|---|---|
-| query | sign | 32位摘要 | ["动态","加密","本地计算"] | builder.sign() | 提交前对照 | 最终写入值 |
-| header | x-token | 省略 | ["动态","响应获取","会话相关"] | 请求 B 响应 | 响应映射 | 上游依赖 |
-| cookie | guest_id | 省略 | ["动态","响应获取","HttpOnly","会话相关"] | 请求 B Set-Cookie | 抓包 | 不能从 document.cookie 读 |
-| body | scene | login | ["固定","明文"] | 页面固定值 | 请求体 | 固定参数 |
+## 请求A
+- 接口：
+- 触发方式：
+- 响应结果：
+- 上游请求：`请求B`、`请求C`
+
+### 请求头
+- `头1`
+  - 状态：`["动态","响应获取","会话相关"]`
+  - 来源：`请求B.response.token -> 请求A.header.头1`
+  - 证据：`发送前对照`
+
+### Query参数
+- `参数1`
+  - 状态：`["固定","明文"]`
+  - 来源：`页面固定值 -> 请求A.query.参数1`
+  - 证据：`抓包`
+
+### Body参数
+- `参数2`
+  - 状态：`["动态","响应获取","一次性"]`
+  - 来源：`请求C.response.ticket -> 请求A.body.参数2`
+  - 证据：`响应包`
+
+### Cookie
+- `cookie1`
+  - 状态：`["动态","响应获取","HttpOnly","会话相关"]`
+  - 来源：`请求B.Set-Cookie.cookie1 -> 请求A.cookie.cookie1`
+  - 证据：`Set-Cookie`
+
+### 响应输出
+- `response.field1`
+  - 状态：`["动态","响应获取","可复用"]`
+  - 去向：`请求D.header.头2`
+  - 证据：`响应包`
+
+## 请求B
+- 接口：
+- 触发方式：
+- 响应结果：
+- 上游请求：无
+
+### 请求头
+- 无
+
+### Query参数
+- 无
+
+### Body参数
+- `参数1`
+  - 状态：`["动态","环境产生"]`
+  - 来源：`storage.seed -> 请求B.body.参数1`
+  - 证据：`storage 快照`
+
+### Cookie
+- 无
+
+### 响应输出
+- `response.token`
+  - 状态：`["动态","响应获取","会话相关"]`
+  - 去向：`请求A.header.头1`
+  - 证据：`响应包`
 ```
 
-## 5. Dependency Expansion Template
+## Protocol and Long-Connection Addition
 
-If request A depends on B or C, do not write only “depends on upstream”. Expand the chain:
+For `WebSocket`, `protobuf`, SSE, heartbeat, or renewal flows, keep the ordinary request blocks and add one optional connection section at the end.
 
 ```markdown
-### 依赖链
-- A.header.x-token <- B.response.token
-- A.cookie.guest_id <- B.Set-Cookie.guest_id
-- A.body.challenge <- C.response.challenge
-
-### 请求 B
-触发动作：页面初始化
-请求结果：正常返回 token 与 HttpOnly cookie
-
-| 位置 | 名称 | 值摘要 | 状态标签 | 直接来源 | 证据 | 备注 |
-|---|---|---|---|---|---|---|
-| body | device_id | 省略 | ["动态","环境产生"] | 浏览器状态 | 初始化阶段 | 非用户输入 |
-
-### 请求 C
-触发动作：点击验证
-请求结果：返回 challenge
-
-| 位置 | 名称 | 值摘要 | 状态标签 | 直接来源 | 证据 | 备注 |
-|---|---|---|---|---|---|---|
-| response | challenge | 省略 | ["动态","响应获取","一次性"] | 服务端 | 响应包 | 挑战态输入 |
+## 连接信息
+- 连接：
+- 当前状态：
+- 会话标识：
+- 序号规则：
+- ack 规则：
+- 续期条件：
 ```
 
-## 6. Protocol and Long-Connection Tasks Must Include Connection State
+## Quality Check
 
-For `WebSocket`, `protobuf`, SSE, heartbeat, or renewal flows, add the connection state chain in addition to ordinary dependencies:
-
-```markdown
-连接：ws-1
-
-### 连接状态链
-未连接 -> 握手中 -> 已认证 -> 订阅完成 -> 心跳维持 -> 续期 -> 失效
-
-### 消息族
-| 消息族 | 方向 | 作用 | 当前状态 | 关键字段 | 备注 |
-|---|---|---|---|---|---|
-| 握手包 | sent | 建链 | 握手中 | token / nonce | 首包 |
-| 握手响应 | recv | 下发会话 | 已认证 | session / ack | 状态切换点 |
-| 心跳包 | sent | 保活 | 心跳维持 | seq / ts | 周期发送 |
-| 业务包 A | sent | 目标消息 | 已认证 | payload / sign | 目标写入边界 |
-| ack 包 | recv | 确认序号 | 已认证 | ack / seq | 与重放相关 |
-| 续期包 | recv/sent | 延长会话 | 续期 | refresh_token | 失效前更新 |
-```
-
-Rules:
-
-- Without the connection state chain, do not reduce the problem to “payload encryption”.
-- Without message families, do not infer the whole protocol from one message.
-
-## 7. Readable Dependency Display
-
-For longer chains, use a tree view:
-
-```text
-请求 B（初始化）
-├─ response.token ---------> 请求 A.header.x-token
-└─ Set-Cookie.guest_id ---> 请求 A.cookie.guest_id (HttpOnly)
-
-请求 C（挑战）
-└─ response.challenge ----> 请求 A.body.challenge
-
-请求 A（目标请求）
-└─ 拿到正常响应
-```
-
-Always expand until the chain reaches a normal response instead of a risk response.
-
-## 8. Normal/Risk Fork Map Is Mandatory
-
-In addition to the comparison table, add a fork map that states:
-
-- fork starting point
-- normal-state construction path
-- risk-state fallback or challenge path
-- missing state
-
-Template:
-
-```markdown
-分叉起点：请求 B 未返回 token / 未下发 HttpOnly cookie
-
-正常态构建路径：
-B.response.token -> A.builder_main() -> A.writer.header.x-token -> A 正常响应
-
-风控态路径：
-B 失败 / 状态缺失 -> A.fallback_sign() -> A 风控响应 / challenge
-
-缺失状态：
-- token
-- guest_id(HttpOnly)
-```
-
-## 9. Normal/Risk Comparison Template
-
-```markdown
-| 项目 | 正常态 | 风控态 | 结论 |
-|---|---|---|---|
-| 上游请求 B | 有 token + HttpOnly cookie | 无 cookie | A 依赖 B |
-| 目标请求 A 响应 | 正常数据 | 风控页 / 403 / 空包 | 当前链路未闭合 |
-| x-sign 写入点 | builder.sign() | fallback.sign() | 风控态有诱饵分支 |
-```
-
-Without the fork point and missing state, the record is incomplete.
-
-## 10. Progress Template
-
-```markdown
-当前阶段：定位写入边界 / 展开依赖链 / 复核正常态 / 对照风控态
-
-已确认：
-- 
-- 
-
-当前卡点：
-- 
-
-下一步：
-- 
-
-风险：
-- 
-
-待验证：
-- 
-```
-
-Write this block into `reverse-records/总览.md`.
-
-## 11. Evidence Template
-
-```markdown
-证据编号：E-01
-观察点：提交前请求头
-观察现象：x-token 在发送前被写入
-直接结论：x-token 写入发生在 writer 层，不在网络返回后追加
-仍未证明：x-token 的上游来源是否来自请求 B 响应
-```
-
-Write this block into `reverse-records/验证记录.md`.
-
-## 12. What a Good Record Looks Like
-
-- A reader can follow the dependency chain without replaying the whole capture.
-- Fixed fields, dynamic fields, response-derived fields, and environment-derived fields are easy to distinguish.
-- The first point of entry into risk state is visible.
-- It is clear whether the state chain is closed or still missing `HttpOnly`, challenge, session, or device state.
-- For protocol tasks, the connection state, message family, and renewal or replay failure point are visible.
-- Current stage, blocker, and next step are always current.
-
+- The target request is first.
+- Every field has a status array.
+- Every field has a concrete source chain.
+- Every field has at least one evidence anchor.
+- Upstream expansion is readable without adding separate summary sections.
+- Progress, forks, runtime notes, and recovery notes are not mixed into this file.

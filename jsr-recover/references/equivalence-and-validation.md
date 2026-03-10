@@ -1,103 +1,111 @@
 # Equivalence Validation and Recovery Records
 
-## 1. Recovery Output Must Be Verifiable
+## Purpose
 
-Recovery output must satisfy two requirements:
+`恢复记录.md` and `验证记录.md` record only recovery structure and proof.
 
-- the conclusion is based on checkpoints instead of appearance
-- validation can be repeated instead of succeeding on one sample only
+Do not write the following here:
 
-Therefore every recovery task must define checkpoints.
+- full request-chain expansion
+- minimal runtime manifests
+- general progress summaries
 
-## Record Paths
+These files should prove what was recovered, where the gap remains, and why the result is trustworthy.
+
+## Record Path
 
 Write records under the current task working directory:
 
 ```text
-reverse-records/总览.md
-reverse-records/恢复记录.md
-reverse-records/验证记录.md
-reverse-records/协议状态.md
+reverse-records/
+├─ 会话1/
+│  ├─ 总览.md
+│  ├─ 请求链路.md
+│  ├─ 运行时依赖.md
+│  ├─ 恢复记录.md
+│  └─ 验证记录.md
+├─ 会话2/
+│  └─ ...
+└─ ...
 ```
 
-- `恢复记录.md`: current obscuring layer, bridge layer, key-function cards, and recovery conclusions
-- `验证记录.md`: equivalence checkpoints, input/output comparisons, and gap localization
-- `协议状态.md`: handshake, heartbeat, sequence, renewal, and state transition for protocol tasks
+Session rules:
 
-## 2. How to Choose Checkpoints
+- One reverse session uses one `会话N/` folder only.
+- If the user specifies `会话N`, use only that folder.
+- If the user does not specify one, create the next unused `会话N/` folder.
+- Never overwrite or edit another `会话N/` folder.
 
-Prefer:
+## Writing Rules
 
-- bridge-layer inputs
-- bridge-layer outputs
-- critical intermediate values
-- final write-back value
+- `恢复记录.md` stores structure, layer, boundary, state carrier, and key-function cards.
+- `验证记录.md` stores checkpoints, fixed inputs, equivalence results, and gap location.
+- Keep checkpoints concrete; do not validate only the final output.
+- Keep layer names explicit: `外层容器`, `调度层`, `状态载体`, `桥接层`, `核心算子`, `写回层`.
+- Each key-function card must state `输入`, `输出`, `副作用`, `依赖`, and `证据`.
 
-Do not compare only the final output, or the missing layer will remain unclear.
-
-## 3. Equivalence Template
+## Recovery Skeleton
 
 ```markdown
-验证目标：
-当前层：外层容器 / 调度层 / 状态载体 / 桥接层 / 核心算子 / 写回层
+# 恢复记录
 
-固定输入：
+## 模块 / 壳层1
+- 遮蔽层：
+- 所在层：
+- 位置锚点：
+- 入口：
+- 出口：
+- 状态载体：
+- 桥接边界：
+
+### 关键函数1
+- 所在层：
+- 输入：
+- 输出：
+- 副作用：
+- 依赖：
+- 证据：
+
+### 关键函数2
+- 所在层：
+- 输入：
+- 输出：
+- 副作用：
+- 依赖：
+- 证据：
+```
+
+## Validation Skeleton
+
+```markdown
+# 验证记录
+
+## 验证项1
+- 验证目标：
+- 当前层：
+
+### 固定输入
 - 输入样本：
 - 时间源：
 - 随机源：
 - 会话状态：
 
-对照点：
-- 检查点 1：
-- 检查点 2：
-- 检查点 3：
+### 对照点
+- 检查点1：
+- 检查点2：
+- 检查点3：
 
-结果：
-- 完全等价 / 部分等价 / 不等价
-
-缺口位置：
-- 在桥接层 / 在调度层 / 在状态载体 / 在上游状态
+### 结果
+- 等价性：完全等价 / 部分等价 / 不等价
+- 缺口位置：
+- 证据：
 ```
 
-Write this block into `reverse-records/验证记录.md`.
+## Quality Check
 
-## 4. Key-Function Card Template
-
-```markdown
-函数 / 片段：
-所在层：
-位置锚点：
-
-输入：
-- 
-
-输出：
-- 
-
-副作用：
-- 写请求 / 写头 / 写 cookie / 发消息 / 改状态
-
-依赖：
-- 上游状态：
-- 环境要求：
-
-证据：
-- 调用前后值：
-- 分支条件：
-- 对照样本：
-```
-
-Write this block into `reverse-records/恢复记录.md`.
-
-## 5. When Recovery Is Already Sufficient
-
-- the target field formation path is explainable
-- downstream locate or replay work can use the current output directly
-- continuing recovery would increase code volume without increasing judgment quality
-
-## 6. Completion Standard
-
-- clear checkpoints exist
-- the missing layer is known
-- Chinese reverse records are current enough that downstream work does not need to reopen the same shell
-
+- Recovery structure and validation proof are separated.
+- Layer names are explicit.
+- Key-function cards are concrete.
+- Checkpoints are concrete.
+- Gap location is explicit.
+- Non-recovery content is not mixed into these files.

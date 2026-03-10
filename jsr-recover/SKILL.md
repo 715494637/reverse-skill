@@ -64,18 +64,27 @@ Recovery is complete only when the current layer’s role, bridge boundary, stat
 
 All reverse records must be written in Chinese under the current task working directory `reverse-records/`.
 
-- Required: `reverse-records/总览.md`
-- Required: `reverse-records/恢复记录.md`
-- Required: `reverse-records/验证记录.md`
-- Required for protocol or long-connection tasks: `reverse-records/协议状态.md`
+Session rules:
+
+- One reverse session must use exactly one `会话N/` folder.
+- If the user names a session folder, read and write only that folder.
+- If the user does not name one, create the next unused `会话N/` folder and use only that folder.
+- Never overwrite, merge, rename, or clean another `会话N/` folder.
+- Protocol and long-connection state must be written in the current session `请求链路.md`; protocol-shell bridge recovery and semantic notes stay in `恢复记录.md`.
+
+Required files for recovery work in the current session:
+
+- `reverse-records/会话N/总览.md`
+- `reverse-records/会话N/恢复记录.md`
+- `reverse-records/会话N/验证记录.md`
 
 Update rules:
 
-- Refresh `总览.md` before the first recovery action.
-- Create or refresh `恢复记录.md` as soon as the obscuring layer, bridge contract, key-function card, or module boundary is identified.
+- Refresh the current session `总览.md` before the first recovery action.
+- Create or refresh the current session `恢复记录.md` as soon as the obscuring layer, bridge contract, key-function card, or module boundary is identified.
 - Refresh records immediately after any recovery-level change, new bridge finding, state-carrier finding, key-operator extraction, equivalence result, blocker change, or next-step change.
 - Rewrite `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证` on every record refresh.
-- Do not continue long recovery work while `总览.md`, `恢复记录.md`, or `验证记录.md` is stale.
+- Do not continue long recovery work while the current session `总览.md`, `恢复记录.md`, or `验证记录.md` is stale.
 
 ## Completion Criteria
 
@@ -83,4 +92,3 @@ Update rules:
 - The key bridge boundary or dispatcher entry is known.
 - Key-function cards and equivalence checkpoints exist.
 - Downstream work can continue directly from the recovery result.
-
