@@ -34,7 +34,7 @@
 全自动调用示例：
 
 ```text
-使用：js-reverse-mcp
+使用：Jsreverser Mcp 
 方式：在真实浏览器插桩采集输入输出及中间态数据，与本地算法进行逻辑一致性和结果正确性对比分析。
 URL: 【https://example.com】
 目标：【接口 / 需要的数据】
