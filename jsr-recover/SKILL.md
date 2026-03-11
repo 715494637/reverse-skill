@@ -16,6 +16,7 @@ Recovery is complete only when the current layer’s role, bridge boundary, stat
 - Recover semantic boundaries before chasing readable appearance.
 - Identify container, dispatcher, and bridge layers before diving into business operators.
 - Classify the recovery level as `A / B / C` and start from the lowest effective level.
+- For AST-heavy shells, fingerprint the obfuscation family first, then apply ordered transforms with a per-step ledger and validation checkpoint.
 - For `worker`, `wasm`, `webpack/runtime`, and protocol shells, write the bridge-contract card before entering internals.
 - Prefer black-box reuse when the module boundary and contract are stable enough; do not default to full decompilation.
 - Recover only the slice required by the current problem.
@@ -27,6 +28,7 @@ Recovery is complete only when the current layer’s role, bridge boundary, stat
 - Never stop at `SKILL.md`. Before serious recovery work, load at least one matching reference.
 - Read `references/recover-strategy.md` for any task that needs level selection or recovery order.
 - Read `references/jsvmp-and-ast.md` when `jsvmp`, AST transforms, or control-flow flattening is involved.
+- Read `references/ast-deobfuscation-playbook.md` when the main recovery work is AST deobfuscation, string-table recovery, helper inlining, control-flow unflattening, or bundle unpacking.
 - Read `references/wasm-worker-webpack.md` when the hiding layer includes `worker`, `wasm`, `webpack`, or runtime loaders.
 - Read `references/protocol-and-long-connection.md` when the shell is a protocol envelope, `WebSocket`, `protobuf`, long connection, heartbeat, ack, or renewal chain.
 - Read `references/equivalence-and-validation.md` whenever key functions, bridge contracts, or extracted operators need equivalence proof.
@@ -79,12 +81,13 @@ For known shell families, add the tightest available anchor:
 
 1. Identify which layer is currently obscuring the business logic.
 2. Select the current recovery level: `A` for key-opcode extraction, `B` for dispatcher plus critical state carriers, `C` for minimal decompilation or minimal interpreter.
-3. Confirm entry, input, and output of the current layer before widening the scope.
-4. For `worker`, `wasm`, `webpack`, and protocol shells, write the bridge-contract card and module-boundary note first.
-5. Prove bridge contracts or dispatcher relations before extracting the core operator.
-6. Before migrating an operator as pure computation, re-check upstream response, `HttpOnly` cookie, challenge, browser state, fingerprint, and time-window dependencies.
-7. After each recovered layer, record the equivalence checkpoint.
-8. If the sink is unclear, return to `$jsr-locate`; if the result is unstable because of runtime state, switch to `$jsr-runtime`.
+3. When AST-heavy recovery dominates, follow `references/ast-deobfuscation-playbook.md` to fingerprint first, then unpack or transform in an evidence-preserving order.
+4. Confirm entry, input, and output of the current layer before widening the scope.
+5. For `worker`, `wasm`, `webpack`, and protocol shells, write the bridge-contract card and module-boundary note first.
+6. Prove bridge contracts or dispatcher relations before extracting the core operator.
+7. Before migrating an operator as pure computation, re-check upstream response, `HttpOnly` cookie, challenge, browser state, fingerprint, and time-window dependencies.
+8. After each recovered layer, record the equivalence checkpoint.
+9. If the sink is unclear, return to `$jsr-locate`; if the result is unstable because of runtime state, switch to `$jsr-runtime`.
 
 ## Deliverables
 
@@ -102,6 +105,7 @@ If recovery work stops, stays partial, or cannot yet justify the current level, 
 ```yaml
 status: ready | partial | blocked
 stage: recover
+code:
 summary:
 evidence:
   - ...

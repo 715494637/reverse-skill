@@ -5,6 +5,12 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 
 # JSR Locate
 
+## 入口定位专项补充
+
+- 遇到 `sign`、`token`、动态请求头、加密参数入口定位时，优先读取 `references/crypto-entry-locating.md`。
+- 这类任务先走 `请求 -> initiator / 调用栈 -> 候选帧 -> 参数证据`，再做大范围源码搜索。
+- 该专项只负责证明入口和写入关系，不负责完整算法还原；语义被壳层遮住时切到 `$jsr-recover`。
+
 ## 概述
 
 本 skill 用于把动态字段还原成可证明的来源链，并明确最终写入边界、触发动作、上游依赖链，以及正常态与风控态的关系。
@@ -20,8 +26,10 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 
 - 目标单位定义成 `字段 + 写入点 + 触发动作 + 当前状态`，不要只盯函数名。
 - 先找最近写入边界，再回溯 `builder` 和 `entry`。
+- 遇到 `sign`、`token`、动态请求头、加密参数入口定位时，先从真实请求和它的 initiator 栈入手，再做大范围文本搜索。
 - 先拿到正常态样本，再分析风控态分叉。
 - 只要目标依赖响应字段、`Set-Cookie`、`HttpOnly`、challenge、session、device state，就先写状态链，再讨论纯算。
+- 如果入口只能通过动态别名或 resolver 找到，必须先记下包装链、触发条件、最小运行时前置条件和残余风险，才能把它当工作入口。
 - 只要任务涉及风控分支，正常态 / 风控态分叉图就是必交付。
 - `WebSocket`、`protobuf`、长连接、心跳、续期场景，先建连接状态链和消息族，再谈单包 payload。
 - 发现上游依赖后，必须一直展开到能拿到正常响应的那条链。
@@ -34,6 +42,7 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 - 任何来源追踪任务都要读 `references/locate-workflow.md`。
 - 只要涉及请求参数、请求头、`cookie`、`HttpOnly`、上游响应、依赖展开、连接信息，就要读 `references/request-chain-recording.md`。
 - 只要问题是“从哪观察、从哪 hook、要不要断点”，就要读 `references/hook-and-boundary-patterns.md`。
+- 只要任务要证明真实请求里的签名、token、header 或加密参数是从哪里生成的，就要读 `references/crypto-entry-locating.md`。
 - 创建或刷新 `总览.md`、`验证记录.md` 前，要读 `references/record-overview-and-validation.md`。
 - 任务范围一旦扩大，要先补读新匹配的参考，再继续推进。
 
@@ -75,19 +84,21 @@ Constraints:
 ## 定位顺序
 
 1. 先抓一轮完整正常态样本，保留请求顺序、响应摘要、页面动作和时间点。
-2. 一旦涉及响应字段、`Set-Cookie`、`HttpOnly`、challenge、session、device state，立即打开当前会话的 `请求链路.md`，先写状态链，再继续看代码。
-3. 先找最近写入边界，不要一上来搜 `md5`、`aes`、`sign`。
-4. 从 sink 向上回溯，分清谁触发、谁组装、谁最终写入。
-5. 每个字段都要打标签：固定、动态、加密、本地计算、响应获取、环境产生。
-6. 一旦字段来自上游响应或 `Set-Cookie`，立刻展开整条依赖链。
-7. 协议 / 长连接场景先拆包络层、消息族、连接状态，再看 payload 逻辑。
-8. 同时记录正常态 builder 路径、风控态 fallback 路径、分叉起点和缺失状态。
-9. 若链路已清楚但内部语义被壳遮住，切 `$jsr-recover`；若链路已清楚但复现不稳，切 `$jsr-runtime`。
+2. 遇到签名、token、header 或加密参数入口任务时，先按 `references/crypto-entry-locating.md` 的 `request -> initiator -> candidate frame -> argument proof` 顺序走，再做大范围源码搜索。
+3. 一旦涉及响应字段、`Set-Cookie`、`HttpOnly`、challenge、session、device state，立即打开当前会话的 `请求链路.md`，先写状态链，再继续看代码。
+4. 先找最近写入边界，不要一上来搜 `md5`、`aes`、`sign`。
+5. 从 sink 向上回溯，分清谁触发、谁组装、谁最终写入。
+6. 每个字段都要打标签：固定、动态、加密、本地计算、响应获取、环境产生。
+7. 一旦字段来自上游响应或 `Set-Cookie`，立刻展开整条依赖链。
+8. 协议 / 长连接场景先拆包络层、消息族、连接状态，再看 payload 逻辑。
+9. 同时记录正常态 builder 路径、风控态 fallback 路径、分叉起点和缺失状态。
+10. 若链路已清楚但内部语义被壳遮住，切 `$jsr-recover`；若链路已清楚但复现不稳，切 `$jsr-runtime`。
 
 ## 交付要求
 
 - 证明目标字段的最终写入边界。
 - 说明 `entry -> builder -> writer` 关系。
+- 如果入口不是稳定路径而是 resolver / 动态别名，还要补包装链、resolver 触发条件、最小运行时前置条件和残余风险。
 - 给出状态链，证明是否依赖响应、`HttpOnly cookie`、challenge、session、device state。
 - 说明前置请求、响应字段、状态载体和触发动作。
 - 给出正常态 / 风控态分叉图，写清分叉起点、正常路径、fallback 路径、缺失状态。
@@ -101,6 +112,7 @@ Constraints:
 ```yaml
 status: ready | partial | blocked
 stage: locate
+code:
 summary:
 evidence:
   - ...

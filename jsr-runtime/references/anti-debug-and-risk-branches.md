@@ -69,7 +69,7 @@ Comparison template:
 ```markdown
 | 项目 | 正常态 | 风控态 | 差异解释 |
 |---|---|---|---|
-| 上游请求 B | 返回 token 与 cookie | 返回空/403 | 会话未闭合 |
+| 上游请求 B | 返回 token 与 cookie | 返回空 / 403 | 会话未闭合 |
 | builder 路径 | sign_main() | sign_fallback() | 已分叉 |
 | 最终响应 | 正常数据 | 风控页 / challenge | 非同链 |
 ```
@@ -79,7 +79,10 @@ Without the fork point and missing state, normal/risk separation is incomplete.
 ## 5. Handling Principles
 
 - Remove only debug friction that blocks observation. Do not rewrite broad business logic.
+- Choose the narrowest matching anti-debug rule that actually changes the investigation path.
 - As soon as a risk branch is confirmed, return to state closure and normal-state sampling.
+- Do not classify navigation or exit listeners as anti-debug by default; if they produce state, record them as the runtime state-close signal.
+- If navigation or lifecycle patches were required, record that they changed page state and re-validate the request chain without them when feasible.
 - If real logic sits inside a shell layer, stop burning time at runtime level and switch to `$jsr-recover`.
 
 ## 6. Fingerprint-Induced Risk Template
@@ -99,10 +102,14 @@ Without the fork point and missing state, normal/risk separation is incomplete.
 
 ```markdown
 反调试点：
+规则选择：
+命中表面：
+是否属于状态闭合信号：是 / 否
 现象：
 是否影响业务值：是 / 否
 最小处理：
 处理后变化：
+移除 patch 后复验：
 
 风控分支触发条件：
 正常态需要的状态：
@@ -115,5 +122,6 @@ Without the fork point and missing state, normal/risk separation is incomplete.
 - Debug friction and real risk control are separated.
 - The exact fork starting point is known.
 - For fingerprint tasks, the real consumer that triggers risk control is known.
+- The chosen anti-debug rule is minimal enough to justify itself.
+- State-close signals and anti-debug points are not mixed into one conclusion block.
 - It is clear whether the next step is patching state, patching objects, or switching skills.
-

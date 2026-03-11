@@ -20,8 +20,10 @@ Locate work is complete only when it can answer all of the following:
 
 - Define the target as `field + sink + trigger + current state`, not as a function name.
 - Start from the nearest write boundary, then walk backward through `builder` and `entry`.
+- For signature, token, header, or encrypted-parameter entry tasks, start from a live request and its initiator stack before doing broad text search.
 - Capture a normal-state sample before analyzing risk-state divergence.
 - If the target depends on response fields, `Set-Cookie`, `HttpOnly` cookies, challenge tokens, session state, or device state, build the state chain before discussing pure computation.
+- If the entrypoint is only reachable through a dynamic alias or resolver, record the wrapper chain, trigger condition, minimum runtime preconditions, and residual risk before accepting it as the working entry.
 - A normal-state versus risk-state fork map is mandatory output whenever the task touches risk branching.
 - For `WebSocket`, `protobuf`, long connections, heartbeats, or renewal flows, build the connection state chain and message-family map before analyzing a single packet payload.
 - Expand every upstream dependency until the chain reaches the request that produces a normal response.
@@ -34,6 +36,7 @@ Locate work is complete only when it can answer all of the following:
 - Read `references/locate-workflow.md` for any source-tracing task.
 - Read `references/request-chain-recording.md` whenever request parameters, headers, cookies, `HttpOnly` cookies, upstream responses, dependency expansion, or connection metadata are involved.
 - Read `references/hook-and-boundary-patterns.md` whenever the main question is where to observe, where to hook, or whether a breakpoint is justified.
+- Read `references/crypto-entry-locating.md` when the task is to prove where a live request's signature, token, header, or encrypted parameter is generated.
 - Read `references/record-overview-and-validation.md` before creating or refreshing `总览.md` or `验证记录.md`.
 - When task scope expands, load the newly relevant reference before continuing.
 
@@ -75,19 +78,21 @@ For protocol or long-connection tasks, also add:
 ## Operating Order
 
 1. Capture one complete normal-state sample with request order, response summaries, page actions, and timing.
-2. As soon as response fields, `Set-Cookie`, `HttpOnly` cookies, challenge state, session state, or device state becomes relevant, open the current session `请求链路.md` and write the state chain before deeper code reading.
-3. Find the nearest write boundary instead of starting with `md5`, `aes`, `sign`, or generic crypto searches.
-4. Walk upward from the sink and separate who triggers execution, who assembles the value, and who performs the final write.
-5. Label every field as fixed, dynamic, encrypted, locally computed, response-derived, or environment-derived.
-6. When a field comes from an upstream response or `Set-Cookie`, expand the full dependency chain immediately.
-7. For protocol and long-connection tasks, separate envelope layer, message families, and connection state before payload logic.
-8. Record the normal-state builder path, the risk-state fallback path, the fork point, and the missing state for the same target.
-9. If the chain is clear but internal semantics remain hidden, switch to `$jsr-recover`; if the chain is clear but replay is unstable, switch to `$jsr-runtime`.
+2. For signature, token, header, or encrypted-parameter entry tasks, follow `request -> initiator -> candidate frame -> argument proof` from `references/crypto-entry-locating.md` before broad source search.
+3. As soon as response fields, `Set-Cookie`, `HttpOnly` cookies, challenge state, session state, or device state becomes relevant, open the current session `请求链路.md` and write the state chain before deeper code reading.
+4. Find the nearest write boundary instead of starting with `md5`, `aes`, `sign`, or generic crypto searches.
+5. Walk upward from the sink and separate who triggers execution, who assembles the value, and who performs the final write.
+6. Label every field as fixed, dynamic, encrypted, locally computed, response-derived, or environment-derived.
+7. When a field comes from an upstream response or `Set-Cookie`, expand the full dependency chain immediately.
+8. For protocol and long-connection tasks, separate envelope layer, message families, and connection state before payload logic.
+9. Record the normal-state builder path, the risk-state fallback path, the fork point, and the missing state for the same target.
+10. If the chain is clear but internal semantics remain hidden, switch to `$jsr-recover`; if the chain is clear but replay is unstable, switch to `$jsr-runtime`.
 
 ## Deliverables
 
 - The proven final write boundary of the target field.
 - The `entry -> builder -> writer` relation.
+- For resolver-based entries, a record of the wrapper chain, resolver trigger, minimum runtime preconditions, and residual risk.
 - A state chain proving whether the target depends on upstream responses, `HttpOnly` cookies, challenge state, session state, or device state.
 - The full set of prerequisite requests, response fields, state carriers, and triggering actions.
 - A normal-state versus risk-state fork map with fork point, normal path, fallback path, and missing state.
@@ -101,6 +106,7 @@ If locate work stops, stays partial, or cannot yet prove the sink, return and re
 ```yaml
 status: ready | partial | blocked
 stage: locate
+code:
 summary:
 evidence:
   - ...

@@ -55,6 +55,7 @@ reverse-records/
 ## 当前状态块
 - status：`ready / partial / blocked`
 - stage：`recover`
+- code：
 - summary：
 - evidence：
 - impact：
@@ -96,5 +97,6 @@ reverse-records/
 ## 六、检查标准
 
 - `总览.md` 含有六个固定阶段字段。
+- 只要阶段处于 `partial / blocked`，`总览.md` 就必须填完整的当前状态块。
 - `恢复记录.md` 继续只写结构。
 - `验证记录.md` 使用具体检查点，并明确剩余缺口。

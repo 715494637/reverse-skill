@@ -55,6 +55,7 @@ reverse-records/
 ## 当前状态块
 - status：`ready / partial / blocked`
 - stage：`recover`
+- code：
 - summary：
 - evidence：
 - impact：
@@ -96,5 +97,6 @@ reverse-records/
 ## Quality Check
 
 - `总览.md` has all six required stage fields.
+- `总览.md` keeps a filled current status block whenever the stage is partial or blocked.
 - `恢复记录.md` stays structural.
 - `验证记录.md` uses concrete checkpoints and names the remaining gap explicitly.

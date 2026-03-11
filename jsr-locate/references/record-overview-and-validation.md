@@ -53,6 +53,15 @@ reverse-records/
 ## 待验证
 - ...
 
+## 当前状态块
+- status：`ready / partial / blocked`
+- stage：`locate`
+- code：
+- summary：
+- evidence：
+- impact：
+- next_action：
+
 ## 正常态 / 风控态对比（按需）
 | Item | 正常态 | 风控态 | Same chain |
 |---|---|---|---|
@@ -96,7 +105,7 @@ reverse-records/
 
 ## Routing Rules
 
-- `总览.md` owns `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证`.
+- `总览.md` owns `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证` and the current normalized status block.
 - Normal/risk comparison tables and fork maps belong in `总览.md`, never in `请求链路.md`.
 - `请求链路.md` owns request blocks, status arrays, `来源/去向`, evidence, upstream expansion, and optional connection metadata.
 - `验证记录.md` starts as soon as a sink candidate, state-chain closure, or fork hypothesis needs proof.
@@ -104,6 +113,7 @@ reverse-records/
 ## Quality Check
 
 - `总览.md` has all six required stage fields.
+- `总览.md` keeps a filled current status block whenever the stage is partial or blocked.
 - Fork maps are stored only when risk branching is relevant.
 - `验证记录.md` uses concrete checkpoints, not only a final conclusion.
 - Request-structure content stays in `请求链路.md`.

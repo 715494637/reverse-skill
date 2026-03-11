@@ -5,6 +5,12 @@ description: Use when real business logic is hidden by jsvmp, AST transforms, co
 
 # JSR Recover
 
+## AST 恢复专项补充
+
+- 遇到 AST 去混淆、字符串表恢复、helper 内联、控制流平坦化、bundle 拆包时，优先读取 `references/ast-deobfuscation-playbook.md`。
+- 这类任务先做混淆指纹判断，再决定变换顺序，并为每一步维护输入、输出、保持不变项和验证证据。
+- 该专项只负责可验证的语义恢复，不把“代码变好看”当成完成。
+
 ## 概述
 
 本 skill 用于识别真实业务逻辑被哪一层遮住，并确定支持当前任务所需的最低恢复级别和恢复顺序。
@@ -16,6 +22,7 @@ description: Use when real business logic is hidden by jsvmp, AST transforms, co
 - 先恢复语义边界，再追求代码外观。
 - 先识别容器层、调度层、桥接层，再深入业务算子。
 - 先判断恢复级别 `A / B / C`，从最低有效级别开始。
+- 遇到 AST 重度遮蔽时，先做混淆家族指纹判断，再按顺序执行变换，并为每一步保留记录和验证点。
 - 对 `worker`、`wasm`、`webpack/runtime`、协议壳，先写桥接契约卡片，再进入内部实现。
 - 在模块边界和输入输出契约稳定时，优先考虑黑盒复用，不默认全量反编译。
 - 只恢复当前问题真正需要的那一段。
@@ -27,6 +34,7 @@ description: Use when real business logic is hidden by jsvmp, AST transforms, co
 - 不要停留在 `SKILL.md`。开始实质恢复前，至少加载一个匹配参考。
 - 任何需要判断恢复顺序或恢复级别的任务，都要读 `references/recover-strategy.md`。
 - 只要涉及 `jsvmp`、AST 变换、控制流平坦化，就要读 `references/jsvmp-and-ast.md`。
+- 只要主恢复工作是 AST 去混淆、字符串表恢复、helper 内联、控制流还原或 bundle 拆包，就要读 `references/ast-deobfuscation-playbook.md`。
 - 只要遮蔽层涉及 `worker`、`wasm`、`webpack`、runtime loader，就要读 `references/wasm-worker-webpack.md`。
 - 只要是协议包络、`WebSocket`、`protobuf`、长连接、心跳、ack、续期问题，就要读 `references/protocol-and-long-connection.md`。
 - 只要需要证明桥接契约、关键函数、关键算子的等价性，就要读 `references/equivalence-and-validation.md`。
@@ -79,12 +87,13 @@ Constraints:
 
 1. 先判断当前到底是哪一层在遮蔽真实逻辑。
 2. 先选恢复级别：`A` 关键 `opcode` 抽离，`B` dispatcher + 关键状态载体，`C` 最小反编译 / 最小解释器。
-3. 先确认当前层的入口、输入、输出，再决定是否扩大恢复范围。
-4. 对 `worker`、`wasm`、`webpack`、协议壳，先写桥接契约卡片和模块边界说明。
-5. 先证明桥接契约或调度关系，再提炼核心算子。
-6. 在把算子迁成纯算前，重新检查上游响应、`HttpOnly cookie`、challenge、浏览器状态、指纹、时间窗依赖。
-7. 每恢复一层，都补一条等价性检查点。
-8. 若 sink 不清楚，退回 `$jsr-locate`；若结果不稳定且受运行时状态影响，切 `$jsr-runtime`。
+3. 如果当前主工作是 AST 重度恢复，先按 `references/ast-deobfuscation-playbook.md` 做指纹判断，再按保留证据的顺序拆包或变换。
+4. 先确认当前层的入口、输入、输出，再决定是否扩大恢复范围。
+5. 对 `worker`、`wasm`、`webpack`、协议壳，先写桥接契约卡片和模块边界说明。
+6. 先证明桥接契约或调度关系，再提炼核心算子。
+7. 在把算子迁成纯算前，重新检查上游响应、`HttpOnly cookie`、challenge、浏览器状态、指纹、时间窗依赖。
+8. 每恢复一层，都补一条等价性检查点。
+9. 若 sink 不清楚，退回 `$jsr-locate`；若结果不稳定且受运行时状态影响，切 `$jsr-runtime`。
 
 ## 交付要求
 
@@ -102,6 +111,7 @@ Constraints:
 ```yaml
 status: ready | partial | blocked
 stage: recover
+code:
 summary:
 evidence:
   - ...

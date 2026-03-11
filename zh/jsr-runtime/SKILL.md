@@ -1,6 +1,6 @@
 ---
 name: jsr-runtime
-description: Use when browser execution and local execution diverge because of missing objects, missing state, anti-debugging, unstable sources, or risk-branch conditions.
+description: Use when browser execution and local execution diverge because of missing objects, missing state, anti-debugging, unstable sources, risk-branch conditions, or page-lifecycle-produced state.
 ---
 
 # JSR Runtime
@@ -15,10 +15,15 @@ description: Use when browser execution and local execution diverge because of m
 
 - 补环境是减法，不是堆对象。
 - 缺对象和缺状态必须分开分类。
+- 在决定迁移到 `sdenv`、远程 jsdom 或任何浏览器画像方案前，先做适配检查。
+- 只要存在反调试或生命周期陷阱，就优先选择改变调查路径的最小匹配规则，不做大范围 patch。
 - 对比输出前先固定时间、随机数和种子。
 - 只有纯算迁移前检查闭合后，才能把链路定义成纯算。
 - 遇到 `deviceId`、`blackbox`、`sensor_data`、挑战、滑块、风控 cookie，要先做指纹归因矩阵，不要统称“缺浏览器环境”。
+- 对指纹敏感目标，优先锁定单一高保真浏览器画像，不做多画像泛化模拟。
 - 每个补项都要回答：去掉它会发生什么。
+- 如果运行时状态是通过页面生命周期或导航事件产出的，必须明确记录注入时机、状态闭合信号和状态载体。
+- 如果导航类或生命周期 patch 改变了页面状态，应在条件允许时移除 patch 并重新验证请求链路。
 - 如果真实难点藏在 `jsvmp`、`worker`、`wasm`、协议壳里，应切 `$jsr-recover`。
 - 如果最终写入点还没证明清楚，应退回 `$jsr-locate`。
 
@@ -28,6 +33,7 @@ description: Use when browser execution and local execution diverge because of m
 - 任何运行时分类任务都要读 `references/runtime-diagnosis.md`。
 - 只要要设计最小清单、确定补项范围、判断是否允许纯算迁移，就要读 `references/minimal-env-design.md`。
 - 只要涉及反调试、栈校验、指纹诱发风控、正常态 / 风控态分叉，就要读 `references/anti-debug-and-risk-branches.md`。
+- 只要任务命中 `sdenv` 形态：离线 `html/js/ts` 回放、远程 jsdom、页面生命周期产状态、导航后产 cookie / token，就要读 `references/sdenv-fit-check-and-routing.md`。
 - 创建或刷新 `总览.md`、`验证记录.md` 前，要读 `references/record-overview-and-validation.md`。
 - 问题从一种类别扩大到另一种类别时，先补读新匹配的参考，再继续推进。
 
@@ -58,22 +64,36 @@ Constraints:
 - `Suspected consumer`
 - `Suspected branch point`
 
+如果已经怀疑要走 `sdenv`、远程 jsdom，或状态由页面生命周期产出，还要补：
+
+- `Candidate runtime route`
+- `Known state-close signal`
+
 ## 默认顺序
 
 1. 先拿浏览器正常态样本，再补本地运行时。
 2. 先给失败分类：缺对象、缺状态、反调试、不稳定源、风控分支。
-3. 先做纯算迁移前检查：上游响应、`HttpOnly cookie`、一次性 challenge、浏览器内部状态、指纹采集、时间窗 / 序号。
-4. 只有检查项全部闭合，才允许判定为“可纯算迁移”。
-5. 对指纹敏感目标，先画 `surface -> collector -> aggregator -> consumer -> target field / risk branch`。
-6. 先固定时间和随机源，再比较中间值。
-7. 先补状态，再补对象；很多环境问题本质上是会话未闭合。
-8. 每新增一项依赖，都要验证它是否真的影响结果。
+3. 如果目标可能适配 `sdenv`，先做适配检查，再决定是否迁移。
+4. 如果存在反调试或生命周期陷阱，先选最小匹配规则，记下命中表面，再决定是否需要 patch。
+5. 如果路线依赖页面生命周期或导航产状态，必须只选择一种执行模式：离线本地回放、远程被动、或远程主动。
+6. 在大范围补环境前，先记录注入时机、状态闭合信号和状态载体。
+7. 先做纯算迁移前检查：上游响应、`HttpOnly cookie`、一次性 challenge、浏览器内部状态、指纹采集、时间窗 / 序号。
+8. 只有检查项全部闭合，才允许判定为“可纯算迁移”。
+9. 对指纹敏感目标，先画 `surface -> collector -> aggregator -> consumer -> target field / risk branch`。
+10. 先固定时间和随机源，再比较中间值。
+11. 先补状态，再补对象；很多环境问题本质上是会话未闭合。
+12. 每新增一项依赖，都要验证它是否真的影响结果。
+13. 如果路线通过导航、exit 或回调信号产状态，必须先用产出的状态做二跳验证，再接受这条路线。
+14. 如果用了导航类或生命周期 patch，要在接受结论前复验移除 patch 后链路是否仍然闭合。
 
 ## 交付要求
 
 - 说明当前问题属于哪类运行时问题。
 - 给出最小运行时清单，而不是模糊大列表。
 - 说明每个补项的必要性、证据和可移除性。
+- 如果命中了 `sdenv` 形态，要给出适配检查结论和最终选中的执行模式。
+- 说明最终选中的反调试规则、命中表面，以及导航类 / 生命周期 patch 的复验结果（如果用了）。
+- 如果状态由页面生命周期或导航事件产出，要给出注入时机、状态闭合信号、状态载体和二跳验证结果。
 - 明确当前是否允许纯算迁移；若不允许，要指出阻塞项。
 - 指纹 / 风控场景给出指纹归因矩阵。
 - 给出稳定复现条件：时间、随机源、状态、输入样本。
@@ -85,6 +105,7 @@ Constraints:
 ```yaml
 status: ready | partial | blocked
 stage: runtime
+code:
 summary:
 evidence:
   - ...
@@ -106,13 +127,14 @@ next_action:
 - 不得覆盖、合并、重命名、清理其他 `会话N/` 目录。
 - `references/record-overview-and-validation.md` 负责定义 `总览.md` 和 `验证记录.md` 的精确骨架。
 - `总览.md` 记录阶段快照、问题分类、卡点、下一步、风险，以及当前 blocked / partial 状态块。
-- `运行时依赖.md` 只记录最小清单、纯算迁移前检查、可移除项和当前链路需要的 runtime 事实。
-- `验证记录.md` 在补项开关、状态闭合或分叉点需要证明时开始记录。
+- `运行时依赖.md` 只记录适配检查、执行模式、最小清单、纯算迁移前检查、可移除项和当前链路需要的 runtime 事实。
+- `验证记录.md` 在补项开关、状态闭合、二跳验证或分叉点需要证明时开始记录。
 - 第一个诊断动作前刷新 `总览.md`，讨论依赖或补项时刷新 `运行时依赖.md`，进入验证时刷新 `验证记录.md`。
 
 ## 结束条件
 
 - 已知根因属于哪类运行时问题。
 - 已知最小运行时清单。
+- 如果命中了 `sdenv` 或远程 jsdom，已能自洽说明为什么选这条路线。
 - 固定输入与固定源后，中间值可稳定复现。
 - 下一阶段无需重新做运行时诊断。

@@ -10,7 +10,7 @@ Do not write the following here:
 - broad recovery notes
 - general progress summaries
 
-This file should explain only what the current chain needs to run and why.
+This file should explain only what the current chain needs to run, why it needs it, which route is selected, and how that route is validated.
 
 ## Record Path
 
@@ -18,15 +18,15 @@ Write records under the current task working directory:
 
 ```text
 reverse-records/
-├─ 会话1/
-│  ├─ 总览.md
-│  ├─ 请求链路.md
-│  ├─ 运行时依赖.md
-│  ├─ 恢复记录.md
-│  └─ 验证记录.md
-├─ 会话2/
-│  └─ ...
-└─ ...
+├── 会话1/
+│   ├── 总览.md
+│   ├── 请求链路.md
+│   ├── 运行时依赖.md
+│   ├── 恢复记录.md
+│   └── 验证记录.md
+├── 会话2/
+│   └── ...
+└── ...
 ```
 
 Session rules:
@@ -44,6 +44,10 @@ Session rules:
 - Record anti-debug points only if they affect the current chain.
 - Record fingerprint surfaces only if a consumer uses them.
 - Record risk branches only if they affect the current chain.
+- If the chain may fit `sdenv` or remote jsdom, record the fit check before broad patch lists.
+- If the chain depends on page lifecycle or navigation-produced state, record exactly one execution mode.
+- Record the injection point, state-close signal, and produced state carrier whenever runtime state is produced by lifecycle or navigation.
+- If a high-fidelity browser profile is required, record which profile was chosen and why.
 - Every dependency item must answer `必要性`, `证据`, and `去掉后现象`.
 
 ## Runtime Skeleton
@@ -55,6 +59,16 @@ Session rules:
 - 目标请求 / 函数：
 - 浏览器现象：
 - 本地现象：
+
+## 路线分类（按需）
+- 适配检查：
+  - 结论：
+  - 证据：
+- 执行模式：`local / remote-passive / remote-active`
+- 浏览器画像：
+- 注入时机：
+- 状态闭合信号：
+- 状态载体：
 
 ## 必需对象
 - `对象1`
@@ -99,6 +113,7 @@ Session rules:
   - 现象：
   - 是否影响业务值：
   - 最小处理：
+  - 命中表面：
 
 ## 指纹归因（按需）
 - `表面1`
@@ -121,6 +136,7 @@ Session rules:
 ## 验证联动（按需）
 - 对应验证记录：`reverse-records/会话N/验证记录.md`
 - 需要验证的补项：
+- 二跳验证：
 - 固定输入要求：
 ```
 
@@ -129,6 +145,7 @@ Session rules:
 - Objects and state are separated.
 - Fixed sources are explicit.
 - Pure-compute migration checks are explicit.
+- Fit check and execution mode are explicit when `sdenv`-style routing is used.
 - Anti-debug, fingerprint, and risk sections are present only when needed.
 - Every dependency item states necessity and evidence.
 - Detailed validation checkpoints live in `验证记录.md`, not only in this file.

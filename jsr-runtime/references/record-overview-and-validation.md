@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`总览.md` records the stage snapshot for the current runtime session. `验证记录.md` records the proof that a patch item, state closure, or branch diagnosis is correct.
+`总览.md` records the stage snapshot for the current runtime session. `验证记录.md` records the proof that a patch item, state closure, route choice, or branch diagnosis is correct.
 
 Keep the minimal runtime manifest itself in `运行时依赖.md`. Do not move the manifest into `总览.md`.
 
@@ -12,15 +12,15 @@ Write records under the current task working directory:
 
 ```text
 reverse-records/
-├─ 会话1/
-│  ├─ 总览.md
-│  ├─ 请求链路.md
-│  ├─ 运行时依赖.md
-│  ├─ 恢复记录.md
-│  └─ 验证记录.md
-├─ 会话2/
-│  └─ ...
-└─ ...
+├── 会话1/
+│   ├── 总览.md
+│   ├── 请求链路.md
+│   ├── 运行时依赖.md
+│   ├── 恢复记录.md
+│   └── 验证记录.md
+├── 会话2/
+│   └── ...
+└── ...
 ```
 
 ## Overview Skeleton
@@ -55,6 +55,7 @@ reverse-records/
 ## 当前状态块
 - status：`ready / partial / blocked`
 - stage：`runtime`
+- code：
 - summary：
 - evidence：
 - impact：
@@ -66,15 +67,24 @@ reverse-records/
 ```markdown
 # 验证记录
 
-## 验证项1
+## 验证项
 - 验证目标：
-- 所属阶段：runtime
+- 触发阶段：runtime / validation
+- 归属阶段：validation
 
 ### 固定输入
 - 输入样本：
 - 时间源：
 - 随机源：
 - 会话状态：
+
+### 路线证明（按需）
+- 适配检查：
+- 执行模式：
+- 注入时机：
+- 状态闭合信号：
+- 状态载体：
+- 二跳验证：
 
 ### 补项开关
 - 补项1：
@@ -95,11 +105,14 @@ reverse-records/
 
 - `总览.md` owns `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证` and the current blocked or partial status block.
 - `运行时依赖.md` owns the manifest, pure-compute precheck, removable items, and only the runtime facts needed for the chain.
-- `验证记录.md` starts as soon as a patch toggle, state closure, or divergence point must be proved.
+- `验证记录.md` starts as soon as a patch toggle, state closure, route choice, or divergence point must be proved.
+- `验证记录.md` may be started during Runtime, but its owning stage and completion gate remain Validation.
 
 ## Quality Check
 
 - `总览.md` has all six required stage fields.
+- `总览.md` keeps a filled current status block whenever the stage is partial or blocked.
 - `运行时依赖.md` remains focused on runtime facts only.
 - `验证记录.md` records fixed inputs and patch toggles explicitly.
+- `验证记录.md` records route proof explicitly when `sdenv`-style routing is used.
 - Validation details do not live only in `运行时依赖.md`.
