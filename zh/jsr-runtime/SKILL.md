@@ -1,9 +1,15 @@
 ---
 name: jsr-runtime
-description: Use when browser execution and local execution diverge because of missing objects, missing state, anti-debugging, unstable sources, risk-branch conditions, or page-lifecycle-produced state.
+description: Use when browser execution and local execution diverge because of missing objects, missing state, anti-debugging, unstable sources, risk-branch conditions, page-lifecycle-produced state, or RS/瑞数-style hasDebug and basearr differences.
 ---
 
 # JSR Runtime
+
+## 瑞数专项补充
+
+- 遇到 `hasDebug`、host 相关 `basearr`、`encryptLens`、`lastWord`、`flag`、首跳产状态后二跳消费时，优先读取 `references/rs-runtime-and-basearr-fit.md`。
+- 这类任务先做阻塞分类，再决定走本地回放、远程被动、远程主动还是 `sdenv` 路线。
+- `basearr` 或二跳验证没闭合时，只能记为 `部分完成`，不能宣称运行时问题已收敛。
 
 ## 概述
 
@@ -17,12 +23,16 @@ description: Use when browser execution and local execution diverge because of m
 - 缺对象和缺状态必须分开分类。
 - 在决定迁移到 `sdenv`、远程 jsdom 或任何浏览器画像方案前，先做适配检查。
 - 只要存在反调试或生命周期陷阱，就优先选择改变调查路径的最小匹配规则，不做大范围 patch。
+- 对瑞数目标，`hasDebug` 或额外 debugger 变体要单独当成一条运行时分叉，不能并进泛化反调试噪音。
 - 对比输出前先固定时间、随机数和种子。
+- 对瑞数 cookie 生成链，`basearr`、`encryptLens`、`lastWord`、`flag` 都是闭合项；其中任何一项没证实，路线只能停在 `部分完成`。
+- 在瑞数目标上做大范围浏览器表面 patch 之前，先固定一小组高频运行时事实：`window.name`、`maxTouchPoints`、`battery`、`connection`、`currentTime`、`runTime`、`startTime`、`random`，以及循环次数或执行窗口替身。
 - 只有纯算迁移前检查闭合后，才能把链路定义成纯算。
 - 遇到 `deviceId`、`blackbox`、`sensor_data`、挑战、滑块、风控 cookie，要先做指纹归因矩阵，不要统称“缺浏览器环境”。
 - 对指纹敏感目标，优先锁定单一高保真浏览器画像，不做多画像泛化模拟。
 - 每个补项都要回答：去掉它会发生什么。
 - 如果运行时状态是通过页面生命周期或导航事件产出的，必须明确记录注入时机、状态闭合信号和状态载体。
+- 瑞数风控 cookie 或 token 路线，如果没有拿产出状态做二跳验证，就不能接收这条路线。
 - 如果导航类或生命周期 patch 改变了页面状态，应在条件允许时移除 patch 并重新验证请求链路。
 - 如果真实难点藏在 `jsvmp`、`worker`、`wasm`、协议壳里，应切 `$jsr-recover`。
 - 如果最终写入点还没证明清楚，应退回 `$jsr-locate`。
@@ -34,6 +44,7 @@ description: Use when browser execution and local execution diverge because of m
 - 只要要设计最小清单、确定补项范围、判断是否允许纯算迁移，就要读 `references/minimal-env-design.md`。
 - 只要涉及反调试、栈校验、指纹诱发风控、正常态 / 风控态分叉，就要读 `references/anti-debug-and-risk-branches.md`。
 - 只要任务命中 `sdenv` 形态：离线 `html/js/ts` 回放、远程 jsdom、页面生命周期产状态、导航后产 cookie / token，就要读 `references/sdenv-fit-check-and-routing.md`。
+- 只要出现瑞数特征：`hasDebug`、host 相关 `basearr`、`encryptLens`、`lastWord`、`flag`，或首跳产状态、二跳消费状态，就要读 `references/rs-runtime-and-basearr-fit.md`。
 - 创建或刷新 `总览.md`、`验证记录.md` 前，要读 `references/record-overview-and-validation.md`。
 - 问题从一种类别扩大到另一种类别时，先补读新匹配的参考，再继续推进。
 
@@ -69,22 +80,30 @@ description: Use when browser execution and local execution diverge because of m
 - `候选运行时路线`
 - `已知状态闭合信号`
 
+如果已经怀疑是瑞数路线，还要补：
+
+- `已观测瑞数特征`
+- `已观测 cookie key 后缀`
+- `二跳结果`
+
 ## 默认顺序
 
 1. 先拿浏览器正常态样本，再补本地运行时。
 2. 先给失败分类：缺对象、缺状态、反调试、不稳定源、风控分支。
-3. 如果目标可能适配 `sdenv`，先做适配检查，再决定是否迁移。
-4. 如果存在反调试或生命周期陷阱，先选最小匹配规则，记下命中表面，再决定是否需要 patch。
-5. 如果路线依赖页面生命周期或导航产状态，必须只选择一种执行模式：离线本地回放、远程被动、或远程主动。
-6. 在大范围补环境前，先记录注入时机、状态闭合信号和状态载体。
-7. 先做纯算迁移前检查：上游响应、`HttpOnly cookie`、一次性 challenge、浏览器内部状态、指纹采集、时间窗 / 序号。
-8. 只有检查项全部闭合，才允许判定为“可纯算迁移”。
-9. 对指纹敏感目标，先画 `surface -> collector -> aggregator -> consumer -> target field / risk branch`。
-10. 先固定时间和随机源，再比较中间值。
-11. 先补状态，再补对象；很多环境问题本质上是会话未闭合。
-12. 每新增一项依赖，都要验证它是否真的影响结果。
-13. 如果路线通过导航、exit 或回调信号产状态，必须先用产出的状态做二跳验证，再接受这条路线。
-14. 如果用了导航类或生命周期 patch，要在接受结论前复验移除 patch 后链路是否仍然闭合。
+3. 如果存在瑞数特征，先判断阻塞属于 `hasDebug`、`basearr` 闭合、固定运行时事实，还是首跳产状态、二跳消费，再决定是否扩到更大路线。
+4. 如果目标可能适配 `sdenv`，先做适配检查，再决定是否迁移。
+5. 如果存在反调试或生命周期陷阱，先选最小匹配规则，记下命中表面，再决定是否需要 patch。
+6. 如果路线依赖页面生命周期或导航产状态，必须只选择一种执行模式：离线本地回放、远程被动、或远程主动。
+7. 在大范围补环境前，先记录注入时机、状态闭合信号和状态载体。
+8. 先做纯算迁移前检查：上游响应、`HttpOnly cookie`、一次性 challenge、浏览器内部状态、指纹采集、时间窗 / 序号。
+9. 只有检查项全部闭合，才允许判定为“可纯算迁移”。
+10. 对指纹敏感目标，先画 `surface -> collector -> aggregator -> consumer -> target field / risk branch`。
+11. 先固定时间和随机源，再比较中间值。
+12. 瑞数任务里，要在宣称 cookie 稳定前闭合 `basearr`、`encryptLens`、`lastWord`、`flag` 和固定源假设。
+13. 先补状态，再补对象；很多环境问题本质上是会话未闭合。
+14. 每新增一项依赖，都要验证它是否真的影响结果。
+15. 如果路线通过导航、exit 或回调信号产状态，必须先用产出的状态做二跳验证，再接受这条路线。
+16. 如果用了导航类或生命周期 patch，要在接受结论前复验移除 patch 后链路是否仍然闭合。
 
 ## 交付要求
 
@@ -92,6 +111,7 @@ description: Use when browser execution and local execution diverge because of m
 - 给出最小运行时清单，而不是模糊大列表。
 - 说明每个补项的必要性、证据和可移除性。
 - 如果命中了 `sdenv` 形态，要给出适配检查结论和最终选中的执行模式。
+- 瑞数任务要说明 `hasDebug` 路线判断、`basearr` 闭合状态、当前正在验证的固定运行时事实，以及二跳验证结果。
 - 说明最终选中的反调试规则、命中表面，以及导航类 / 生命周期 patch 的复验结果（如果用了）。
 - 如果状态由页面生命周期或导航事件产出，要给出注入时机、状态闭合信号、状态载体和二跳验证结果。
 - 明确当前是否允许纯算迁移；若不允许，要指出阻塞项。
@@ -115,6 +135,7 @@ description: Use when browser execution and local execution diverge because of m
 
 - `部分完成`：已经知道问题类别，但还有阻塞依赖没闭合。
 - `阻塞`：还没有浏览器正常态样本、还没找到首个分叉点，或问题类别还无法自洽。
+- 瑞数任务里，如果 `hasDebug`、`basearr`、固定运行时事实或二跳验证还没闭合，只能记 `部分完成`。
 - 在对象缺口、状态缺口和不稳定源没拆清前，不得宣称最小运行时清单已经成立。
 
 ## 工作目录落盘

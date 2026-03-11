@@ -1,0 +1,115 @@
+const parser = require('../parser/');
+const gv = require('../globalVarible');
+
+const {
+  fixedValue20,
+  factorial,
+  fibonacci,
+  numToNumarr2,
+  numToNumarr4,
+  numToNumarr8,
+  uuid,
+  string2ascii,
+  execRandomByNumber,
+  execNumberByTime,
+  hexnum,
+  ascii2string,
+  getFixedNumber,
+  numarrAddTime,
+  decode,
+  decrypt,
+  encryptMode1,
+  encryptMode2,
+  numarrJoin,
+  numarr2string,
+  numarrEncrypt,
+  xor,
+} = parser;
+
+function getBasearr(hostname, config) {
+  if (!gv.config.adapt?.flag) throw new Error('适配器配置项flag值未定义');
+  return numarrJoin(
+    3,
+    numarrJoin(
+      1,
+      config['window.navigator.maxTouchPoints'],
+      config['window.eval.toString().length'],
+      128,
+      ...numToNumarr4(uuid(config['window.navigator.userAgent'])),
+      string2ascii(config['window.navigator.platform']),
+      ...numToNumarr4(config.execNumberByTime),
+      ...execRandomByNumber(98, config.random),
+      0,
+      0,
+      ...numToNumarr4(Number(hexnum('3136373737323136'))),
+    ),
+    10,
+    (() => {
+      const flag = +ascii2string(gv.keys[24]);
+      return [
+        flag > 0 && flag < 8 ? 1 : 0,
+        13,
+        ...numToNumarr4(config.r2mkaTime + config.runTime - config.startTime),
+        ...numToNumarr4(+ascii2string(gv.keys[19])),
+        ...numToNumarr8(Math.floor((config.random || Math.random()) * 1048575) * 4294967296 + (((config.currentTime + 0) & 4294967295) >>> 0)),
+        flag,
+      ];
+    })(),
+    7,
+    [
+      ...numToNumarr4(16777216),
+      ...numToNumarr4(0),
+      ...numToNumarr2(gv.config.adapt.flag),
+      ...numToNumarr2(config.codeUid),
+    ],
+    0,
+    [0],
+    6,
+    [
+      1,
+      ...numToNumarr2(0),
+      ...numToNumarr2(0),
+      config['window.document.hidden'] ? 0 : 1,
+      ...encryptMode2(decrypt(ascii2string(gv.keys[22])), numarrAddTime(gv.keys[16])[0]),
+      ...numToNumarr2(+decode(decrypt(ascii2string(gv.keys[22])))),
+    ],
+    2,
+    fixedValue20(),
+    9,
+    (() => {
+      const { connType } = config['window.navigator.connection'];
+      const { charging, chargingTime, level } = config['window.navigator.battery']
+      const connTypeIdx = ['bluetooth', 'cellular', 'ethernet', 'wifi', 'wimax'].indexOf(connType) + 1;
+      let oper = 0;
+      if (level) oper |= 2;
+      if (charging) oper |= 1;
+      if (connTypeIdx !== undefined) oper |= 8
+      return [
+        oper,
+        level * 100,
+        ...numToNumarr2(chargingTime),
+        connTypeIdx,
+      ]
+    })(),
+    13,
+    [0],
+  )
+}
+
+Object.assign(getBasearr, {
+  adapt: ["V1RJWBdeVk8XWlc=", "S1BPXEtKXFpMS1BNQBdaVlQ="],
+  "V1RJWBdeVk8XWlc=": {
+    lastWord: 'T',
+    flag: 3344,
+    devUrl: 'UU1NSUoDFhZOTk4XV1RJWBdeVk8XWlcW',
+  },
+  "S1BPXEtKXFpMS1BNQBdaVlQ=": {
+    lastWord: 'P',
+    flag: 5903,
+    devUrl: "UU1NSUoDFhZOTk4XS1BPXEtKXFpMS1BNQBdaVlQW",
+  },
+  lens: 103,
+  example: [3,29,1,0,33,128,159,173,0,238,8,77,97,99,73,110,116,101,108,0,0,4,53,52,0,0,0,1,0,0,0,10,19,1,13,104,248,97,196,203,56,127,72,0,8,94,52,10,139,185,228,4,7,12,1,0,0,0,0,0,0,0,13,16,78,220,0,1,0,6,16,1,0,0,0,0,1,38,155,138,57,100,100,5,0,0,0,2,4,181,102,11,203,9,5,11,100,0,0,0,13,1,0]
+});
+
+module.exports = getBasearr;

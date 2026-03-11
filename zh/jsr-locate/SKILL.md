@@ -1,6 +1,6 @@
 ---
 name: jsr-locate
-description: Use when a dynamic request field, header, cookie, websocket frame, worker message, or challenge token must be traced to its real write boundary and upstream state dependencies.
+description: Use when a dynamic request field, header, cookie, websocket frame, worker message, challenge token, or RS/瑞数-style two-hop artifact chain must be traced to its real write boundary and upstream state dependencies.
 ---
 
 # JSR Locate
@@ -10,6 +10,12 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 - 遇到 `sign`、`token`、动态请求头、加密参数入口定位时，优先读取 `references/crypto-entry-locating.md`。
 - 这类任务先走 `请求 -> initiator / 调用栈 -> 候选帧 -> 参数证据`，再做大范围源码搜索。
 - 该专项只负责证明入口和写入关系，不负责完整算法还原；语义被壳层遮住时切到 `$jsr-recover`。
+
+## 瑞数专项补充
+
+- 遇到 `204` 落地页、内联 `$_ts.nsd/cd`、`meta[r=m]`、外链 `r2mKa`、`$_ts.l__`，或首跳产状态、二跳消费状态时，优先读取 `references/rs-collection-and-two-hop-routing.md`。
+- 这类任务先把 `204/落地页 -> 内联 $_ts -> r2mKa -> $_ts.l__ -> 二跳` 采集链补齐，再做代码级定位。
+- 只拿到首跳样本、还没证明 `meta[r=m]` 或二跳闭合时，只能记为 `部分完成`，不能算 locate 完成。
 
 ## 概述
 
@@ -28,7 +34,10 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 - 先找最近写入边界，再回溯 `builder` 和 `entry`。
 - 遇到 `sign`、`token`、动态请求头、加密参数入口定位时，先从真实请求和它的 initiator 栈入手，再做大范围文本搜索。
 - 先拿到正常态样本，再分析风控态分叉。
+- 对瑞数目标，先把 `204/落地页 -> 内联 $_ts -> 外链 r2mKa -> $_ts.l__ appcode -> 二跳` 视为一条完整定位链，再讨论代码细节。
 - 只要目标依赖响应字段、`Set-Cookie`、`HttpOnly`、challenge、session、device state，就先写状态链，再讨论纯算。
+- 如果页面里存在 `meta[r=m]`，要把它当作路由或状态线索解析记录，不能当页面噪音跳过。
+- 首跳产物如果要在二跳消费，就不能把只有首跳样本的链路当成闭合。
 - 如果入口只能通过动态别名或 resolver 找到，必须先记下包装链、触发条件、最小运行时前置条件和残余风险，才能把它当工作入口。
 - 只要任务涉及风控分支，正常态 / 风控态分叉图就是必交付。
 - `WebSocket`、`protobuf`、长连接、心跳、续期场景，先建连接状态链和消息族，再谈单包 payload。
@@ -43,6 +52,7 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 - 只要涉及请求参数、请求头、`cookie`、`HttpOnly`、上游响应、依赖展开、连接信息，就要读 `references/request-chain-recording.md`。
 - 只要问题是“从哪观察、从哪 hook、要不要断点”，就要读 `references/hook-and-boundary-patterns.md`。
 - 只要任务要证明真实请求里的签名、token、header 或加密参数是从哪里生成的，就要读 `references/crypto-entry-locating.md`。
+- 只要出现瑞数特征：`204` 落地页、内联 `$_ts.nsd/cd`、`meta[r=m]`、`r2mKa`、`$_ts.l__`，或首跳产状态、二跳消费状态，就要读 `references/rs-collection-and-two-hop-routing.md`。
 - 创建或刷新 `总览.md`、`验证记录.md` 前，要读 `references/record-overview-and-validation.md`。
 - 任务范围一旦扩大，要先补读新匹配的参考，再继续推进。
 
@@ -74,6 +84,12 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 - `消息类型`
 - `当前连接状态`
 
+瑞数任务额外补：
+
+- `首跳 URL 或 204 页面`
+- `瑞数特征`
+- `二跳证据`
+
 ## 先做四个判断
 
 1. 最终落点是什么：`query`、`body`、`header`、`cookie`、`storage`、`WebSocket` 帧、`worker` 回传、还是隐藏 DOM 字段。
@@ -84,15 +100,17 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 ## 定位顺序
 
 1. 先抓一轮完整正常态样本，保留请求顺序、响应摘要、页面动作和时间点。
-2. 遇到签名、token、header 或加密参数入口任务时，先按 `references/crypto-entry-locating.md` 的 `request -> initiator -> candidate frame -> argument proof` 顺序走，再做大范围源码搜索。
-3. 一旦涉及响应字段、`Set-Cookie`、`HttpOnly`、challenge、session、device state，立即打开当前会话的 `请求链路.md`，先写状态链，再继续看代码。
-4. 先找最近写入边界，不要一上来搜 `md5`、`aes`、`sign`。
-5. 从 sink 向上回溯，分清谁触发、谁组装、谁最终写入。
-6. 每个字段都要打标签：固定、动态、加密、本地计算、响应获取、环境产生。
-7. 一旦字段来自上游响应或 `Set-Cookie`，立刻展开整条依赖链。
-8. 协议 / 长连接场景先拆包络层、消息族、连接状态，再看 payload 逻辑。
-9. 同时记录正常态 builder 路径、风控态 fallback 路径、分叉起点和缺失状态。
-10. 若链路已清楚但内部语义被壳遮住，切 `$jsr-recover`；若链路已清楚但复现不稳，切 `$jsr-runtime`。
+2. 如果存在瑞数特征，先采集首跳 HTML、内联 `$_ts`、`meta[r=m]`、外链 `r2mKa` 和 `$_ts.l__` appcode，再做大范围源码搜索。
+3. 如果首跳产物要在后续消费，必须继续采集产出的 cookie、跳转目标或路由线索，把二跳证据当成必需定位材料。
+4. 遇到签名、token、header 或加密参数入口任务时，先按 `references/crypto-entry-locating.md` 的 `request -> initiator -> candidate frame -> argument proof` 顺序走，再做大范围源码搜索。
+5. 一旦涉及响应字段、`Set-Cookie`、`HttpOnly`、challenge、session、device state，立即打开当前会话的 `请求链路.md`，先写状态链，再继续看代码。
+6. 先找最近写入边界，不要一上来搜 `md5`、`aes`、`sign`。
+7. 从 sink 向上回溯，分清谁触发、谁组装、谁最终写入。
+8. 每个字段都要打标签：固定、动态、加密、本地计算、响应获取、环境产生。
+9. 一旦字段来自上游响应或 `Set-Cookie`，立刻展开整条依赖链。
+10. 协议 / 长连接场景先拆包络层、消息族、连接状态，再看 payload 逻辑。
+11. 同时记录正常态 builder 路径、风控态 fallback 路径、分叉起点和缺失状态。
+12. 若链路已清楚但内部语义被壳遮住，切 `$jsr-recover`；若链路已清楚但复现不稳，切 `$jsr-runtime`。
 
 ## 交付要求
 
@@ -100,6 +118,7 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 - 说明 `entry -> builder -> writer` 关系。
 - 如果入口不是稳定路径而是 resolver / 动态别名，还要补包装链、resolver 触发条件、最小运行时前置条件和残余风险。
 - 给出状态链，证明是否依赖响应、`HttpOnly cookie`、challenge、session、device state。
+- 瑞数目标要补一条首跳 / 二跳路由记录，至少写清 `204/落地 URL`、内联 `$_ts`、`meta[r=m]`、`r2mKa`、`$_ts.l__ appcode`、产出的 cookie 或跳转目标，以及下游应以哪一跳为准。
 - 说明前置请求、响应字段、状态载体和触发动作。
 - 给出正常态 / 风控态分叉图，写清分叉起点、正常路径、fallback 路径、缺失状态。
 - 协议 / 长连接场景补齐连接状态链、消息族和目标消息包络边界。
@@ -122,6 +141,7 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 
 - `部分完成`：已经有候选链，但 sink 证明、来源证明或分叉证明还没闭合。
 - `阻塞`：还没有可用正常态样本、没有 sink 候选，或上游状态链还没闭合。
+- 瑞数任务里，如果只拿到首跳材料，或 `meta[r=m]` / 二跳闭合还没证明，只能记 `部分完成`。
 - 在 sink 没证明、风控分支没排除或没画清之前，不得宣称 locate 完成。
 
 ## 工作目录落盘

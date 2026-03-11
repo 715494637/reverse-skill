@@ -1,6 +1,6 @@
 ---
 name: jsr-runtime
-description: Use when browser execution and local execution diverge because of missing objects, missing state, anti-debugging, unstable sources, risk-branch conditions, or page-lifecycle-produced state.
+description: Use when browser execution and local execution diverge because of missing objects, missing state, anti-debugging, unstable sources, risk-branch conditions, page-lifecycle-produced state, or RS/瑞数-style hasDebug and basearr differences.
 ---
 
 # JSR Runtime
@@ -17,12 +17,16 @@ Runtime work is successful only when it can explain why the browser path works, 
 - Missing objects and missing state must be classified separately.
 - Run a fit check before committing to `sdenv`, remote jsdom, or any browser-profile migration route.
 - When anti-debugging is present, choose the narrowest matching rule that changes the investigation path instead of applying broad patches.
+- For RS/瑞数-style tasks, treat `hasDebug` or extra-debugger variants as a dedicated route fork, not generic anti-debug noise.
 - Stabilize time, randomness, and seeds before comparing outputs.
+- For RS-style cookie generation, `basearr`, `encryptLens`, `lastWord`, and `flag` are closure items; if any remain unproven, the runtime route stays partial.
+- Before broad browser-surface patching on RS targets, first freeze the small set of runtime facts that usually matter: `window.name`, `maxTouchPoints`, `battery`, `connection`, `currentTime`, `runTime`, `startTime`, `random`, and loop-count or execution-window surrogates.
 - A chain can be treated as pure computation only after the pre-migration dependency check is closed.
 - For `deviceId`, `blackbox`, `sensor_data`, challenge, slider, or risk cookies, build a fingerprint-attribution matrix instead of calling everything “missing browser environment”.
 - For fingerprint-sensitive targets, prefer one high-fidelity browser profile over broad multi-profile simulation.
 - Every patch item must answer what breaks when it is removed.
 - If runtime state is produced by page lifecycle or navigation, record the injection point, state-close signal, and produced state carrier explicitly.
+- No RS-style cookie or token route is accepted without second-hop validation using the produced state.
 - If a navigation or lifecycle patch changes page state, remove the patch and re-validate the request chain when feasible.
 - If the real obstacle is hidden inside `jsvmp`, `worker`, `wasm`, or a protocol shell, switch to `$jsr-recover`.
 - If the final sink is not yet proven, step back to `$jsr-locate`.
@@ -34,6 +38,7 @@ Runtime work is successful only when it can explain why the browser path works, 
 - Read `references/minimal-env-design.md` when designing the minimal manifest, deciding patch scope, or checking whether pure-compute migration is allowed.
 - Read `references/anti-debug-and-risk-branches.md` when anti-debugging, stack checks, fingerprint-triggered risk branches, or normal/risk divergence is involved.
 - Read `references/sdenv-fit-check-and-routing.md` when the target matches `sdenv`-style runtime work: offline `html/js/ts` replay, remote jsdom execution, page-lifecycle-produced state, or navigation-produced cookies or tokens.
+- Read `references/rs-runtime-and-basearr-fit.md` when RS/瑞数 indicators appear: `hasDebug`, host-specific `basearr`, `encryptLens`, `lastWord`, `flag`, or first-hop state that must be accepted on a second hop.
 - Read `references/record-overview-and-validation.md` before creating or refreshing `总览.md` or `验证记录.md`.
 - When the problem expands from one class to another, load the newly relevant reference before continuing.
 
@@ -69,22 +74,30 @@ If `sdenv`, remote jsdom, or page-lifecycle-produced state is already suspected,
 - `Candidate runtime route`
 - `Known state-close signal`
 
+If RS/瑞数-style routing is already suspected, also add:
+
+- `Observed RS indicators`
+- `Observed cookie key suffix`
+- `Second-hop result`
+
 ## Default Order
 
 1. Capture a browser normal-state sample before patching any local runtime.
 2. Classify the failure: missing object, missing state, anti-debugging, unstable source, or risk branch.
-3. If the target may fit `sdenv`, run a fit check before selecting any migration route.
-4. If anti-debugging or lifecycle traps are present, choose the narrowest matching rule, record the exact hit surface, and do not widen the patch scope yet.
-5. If the route depends on page lifecycle or navigation-produced state, classify exactly one execution mode: offline local replay, remote passive, or remote active.
-6. Record the injection point, state-close signal, and produced state carrier before broad environment patching.
-7. Run the pure-compute precheck: upstream response fields, `HttpOnly` cookies, one-time challenge, browser-internal state, fingerprint collection, and time-window or sequence dependencies.
-8. Only if all precheck items are closed may the current builder be classified as pure-compute migratable.
-9. For fingerprint-sensitive targets, map `surface -> collector -> aggregator -> consumer -> target field or risk branch`.
-10. Stabilize time and randomness before comparing intermediate values.
-11. Patch state before patching objects; many apparent environment failures are actually unclosed session state.
-12. After every new dependency, verify whether it truly affects the result.
-13. If the chosen route produces state through navigation, exit, or callback signals, validate the second hop with the produced state before accepting the route.
-14. If a navigation or lifecycle patch was used, remove it and re-check whether the request chain still closes before accepting the diagnosis.
+3. If RS/瑞数 indicators are present, classify whether the blocker belongs to `hasDebug`, `basearr` closure, fixed runtime facts, or second-hop state consumption before selecting a broader route.
+4. If the target may fit `sdenv`, run a fit check before selecting any migration route.
+5. If anti-debugging or lifecycle traps are present, choose the narrowest matching rule, record the exact hit surface, and do not widen the patch scope yet.
+6. If the route depends on page lifecycle or navigation-produced state, classify exactly one execution mode: offline local replay, remote passive, or remote active.
+7. Record the injection point, state-close signal, and produced state carrier before broad environment patching.
+8. Run the pure-compute precheck: upstream response fields, `HttpOnly` cookies, one-time challenge, browser-internal state, fingerprint collection, and time-window or sequence dependencies.
+9. Only if all precheck items are closed may the current builder be classified as pure-compute migratable.
+10. For fingerprint-sensitive targets, map `surface -> collector -> aggregator -> consumer -> target field or risk branch`.
+11. Stabilize time and randomness before comparing intermediate values.
+12. On RS-style tasks, close `basearr`, `encryptLens`, `lastWord`, `flag`, and fixed-source assumptions before claiming cookie stability.
+13. Patch state before patching objects; many apparent environment failures are actually unclosed session state.
+14. After every new dependency, verify whether it truly affects the result.
+15. If the chosen route produces state through navigation, exit, or callback signals, validate the second hop with the produced state before accepting the route.
+16. If a navigation or lifecycle patch was used, remove it and re-check whether the request chain still closes before accepting the diagnosis.
 
 ## Deliverables
 
@@ -92,6 +105,7 @@ If `sdenv`, remote jsdom, or page-lifecycle-produced state is already suspected,
 - A minimal runtime manifest rather than a broad “maybe needed” list.
 - The necessity, evidence, and removability of each patch item.
 - The fit-check result and the chosen execution mode when `sdenv`-style routing is involved.
+- For RS/瑞数 tasks, the `hasDebug` route decision, `basearr` closure state, fixed runtime facts under test, and second-hop validation result.
 - The selected anti-debug rule, its hit surface, and the re-validation result if a navigation or lifecycle patch was used.
 - The injection point, state-close signal, produced state carrier, and second-hop validation result when runtime state is generated by page lifecycle or navigation.
 - A clear statement on whether pure-compute migration is allowed and which dependency blocks it if not.
@@ -115,6 +129,7 @@ next_action:
 
 Use `partial` when the runtime class is known but one or more blocking dependencies remain open.
 Use `blocked` when there is no browser normal-state sample, no first divergence point, or no defensible runtime classification yet.
+Use `partial` for RS/瑞数 tasks when `hasDebug`, `basearr`, fixed runtime facts, or second-hop validation remains unresolved.
 Do not claim a minimal manifest until object gaps, state gaps, and unstable sources have been separated clearly enough to test.
 
 ## Record Files

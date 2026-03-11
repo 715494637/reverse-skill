@@ -1,6 +1,6 @@
 ---
 name: jsr-recover
-description: Use when real business logic is hidden by jsvmp, AST transforms, control-flow flattening, worker, wasm, webpack/runtime loaders, or protocol wrappers.
+description: Use when real business logic is hidden by jsvmp, AST transforms, control-flow flattening, worker, wasm, webpack/runtime loaders, protocol wrappers, or RS/瑞数-style r2mKa and cp/appcode shells.
 ---
 
 # JSR Recover
@@ -10,6 +10,12 @@ description: Use when real business logic is hidden by jsvmp, AST transforms, co
 - 遇到 AST 去混淆、字符串表恢复、helper 内联、控制流平坦化、bundle 拆包时，优先读取 `references/ast-deobfuscation-playbook.md`。
 - 这类任务先做混淆指纹判断，再决定变换顺序，并为每一步维护输入、输出、保持不变项和验证证据。
 - 该专项只负责可验证的语义恢复，不把“代码变好看”当成完成。
+
+## 瑞数专项补充
+
+- 遇到 `r2mKa`、`$_ts` 的 `cp` 字段、keys 派生路径、`$_ts.l__` appcode 时，优先读取 `references/rs-recovery-anchors.md`。
+- 这类任务优先锚定 `r2mKa -> cp 解码 -> keys 路径 -> $_ts.l__`，不要先从大块 beautify 代码里盲找。
+- 只拿到弱锚点、还不足以支持下游继续推进时，只能记为 `部分完成`，不能宣称 recover 完成。
 
 ## 概述
 
@@ -24,6 +30,8 @@ description: Use when real business logic is hidden by jsvmp, AST transforms, co
 - 先判断恢复级别 `A / B / C`，从最低有效级别开始。
 - 遇到 AST 重度遮蔽时，先做混淆家族指纹判断，再按顺序执行变换，并为每一步保留记录和验证点。
 - 对 `worker`、`wasm`、`webpack/runtime`、协议壳，先写桥接契约卡片，再进入内部实现。
+- 对瑞数壳层，优先从 `r2mKa`、`cp0/cp2/cp6`、`cp3 -> dynamicTaskOffset -> keys`、`$_ts.l__` appcode 入手，而不是从大块 beautify 源码倒推。
+- `$_ts.l__` 渲染或 appcode 包装层要当桥接工件处理，它可能承载业务文本或解密后的代码，不是页面噪音。
 - 在模块边界和输入输出契约稳定时，优先考虑黑盒复用，不默认全量反编译。
 - 只恢复当前问题真正需要的那一段。
 - 每恢复一层都要留下等价性检查点。
@@ -37,6 +45,7 @@ description: Use when real business logic is hidden by jsvmp, AST transforms, co
 - 只要主恢复工作是 AST 去混淆、字符串表恢复、helper 内联、控制流还原或 bundle 拆包，就要读 `references/ast-deobfuscation-playbook.md`。
 - 只要遮蔽层涉及 `worker`、`wasm`、`webpack`、runtime loader，就要读 `references/wasm-worker-webpack.md`。
 - 只要是协议包络、`WebSocket`、`protobuf`、长连接、心跳、ack、续期问题，就要读 `references/protocol-and-long-connection.md`。
+- 只要出现瑞数特征：`r2mKa`、`$_ts` 的 cp 字段、keys 派生路径、`$_ts.l__` appcode，就要读 `references/rs-recovery-anchors.md`。
 - 只要需要证明桥接契约、关键函数、关键算子的等价性，就要读 `references/equivalence-and-validation.md`。
 - 创建或刷新 `总览.md`、`验证记录.md` 前，要读 `references/record-overview-and-validation.md`。
 
@@ -74,6 +83,12 @@ description: Use when real business logic is hidden by jsvmp, AST transforms, co
 - `webpack/runtime`：模块入口、懒加载点、模块边界
 - `protocol`：握手、业务包、续期或 ack 证据
 
+瑞数壳层额外补：
+
+- `$_ts 样本`
+- `r2mKa 锚点`
+- `AppCode 锚点`
+
 ## 六层视角
 
 1. `外层容器`：`webpack`、IIFE、loader、模块启动、懒加载
@@ -87,19 +102,21 @@ description: Use when real business logic is hidden by jsvmp, AST transforms, co
 
 1. 先判断当前到底是哪一层在遮蔽真实逻辑。
 2. 先选恢复级别：`A` 关键 `opcode` 抽离，`B` dispatcher + 关键状态载体，`C` 最小反编译 / 最小解释器。
-3. 如果当前主工作是 AST 重度恢复，先按 `references/ast-deobfuscation-playbook.md` 做指纹判断，再按保留证据的顺序拆包或变换。
-4. 先确认当前层的入口、输入、输出，再决定是否扩大恢复范围。
-5. 对 `worker`、`wasm`、`webpack`、协议壳，先写桥接契约卡片和模块边界说明。
-6. 先证明桥接契约或调度关系，再提炼核心算子。
-7. 在把算子迁成纯算前，重新检查上游响应、`HttpOnly cookie`、challenge、浏览器状态、指纹、时间窗依赖。
-8. 每恢复一层，都补一条等价性检查点。
-9. 若 sink 不清楚，退回 `$jsr-locate`；若结果不稳定且受运行时状态影响，切 `$jsr-runtime`。
+3. 如果存在瑞数壳层，默认按 `r2mKa dispatcher -> cp 解码 -> keys 路径 -> $_ts.l__ appcode` 的顺序恢复，除非证据明确否定这条顺序。
+4. 如果当前主工作是 AST 重度恢复，先按 `references/ast-deobfuscation-playbook.md` 做指纹判断，再按保留证据的顺序拆包或变换。
+5. 先确认当前层的入口、输入、输出，再决定是否扩大恢复范围。
+6. 对 `worker`、`wasm`、`webpack`、协议壳，先写桥接契约卡片和模块边界说明。
+7. 先证明桥接契约或调度关系，再提炼核心算子。
+8. 在把算子迁成纯算前，重新检查上游响应、`HttpOnly cookie`、challenge、浏览器状态、指纹、时间窗依赖。
+9. 每恢复一层，都补一条等价性检查点。
+10. 若 sink 不清楚，退回 `$jsr-locate`；若结果不稳定且受运行时状态影响，切 `$jsr-runtime`。
 
 ## 交付要求
 
 - 说明当前遮蔽层属于 `jsvmp`、`ast`、`worker`、`wasm`、协议壳还是容器壳。
 - 说明当前恢复级别 `A / B / C` 以及为什么停在这里。
 - 说明当前层的入口、桥接边界、状态载体和关键算子。
+- 瑞数任务要给出可复用的 `r2mKa`、`cp0/cp2/cp6`、keys 派生路径，以及对下游有用的 `$_ts.l__` appcode 锚点。
 - `worker`、`wasm`、`webpack`、协议壳场景给出桥接契约卡片；需要时补模块闭包边界。
 - 给出关键函数卡片和等价性验证记录。
 - 恢复结果要足够支撑下游继续推进，不再重新拆同一层壳。
@@ -121,6 +138,7 @@ description: Use when real business logic is hidden by jsvmp, AST transforms, co
 
 - `部分完成`：已经分清遮蔽层，但桥接、状态载体或关键算子还没闭合。
 - `阻塞`：还没有稳定入口、没有边界锚点，或当前级别缺少验证样本。
+- 瑞数任务里，如果 `r2mKa`、cp、keys 路径或 appcode 锚点已见到但还不足以支持下游推进，只能记 `部分完成`。
 - 在 `A / B / C` 停止级别没说清前，不得宣称 recover 完成。
 
 ## 工作目录落盘

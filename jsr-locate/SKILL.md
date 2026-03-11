@@ -1,6 +1,6 @@
 ---
 name: jsr-locate
-description: Use when a dynamic request field, header, cookie, websocket frame, worker message, or challenge token must be traced to its real write boundary and upstream state dependencies.
+description: Use when a dynamic request field, header, cookie, websocket frame, worker message, challenge token, or RS/瑞数-style two-hop artifact chain must be traced to its real write boundary and upstream state dependencies.
 ---
 
 # JSR Locate
@@ -22,7 +22,10 @@ Locate work is complete only when it can answer all of the following:
 - Start from the nearest write boundary, then walk backward through `builder` and `entry`.
 - For signature, token, header, or encrypted-parameter entry tasks, start from a live request and its initiator stack before doing broad text search.
 - Capture a normal-state sample before analyzing risk-state divergence.
+- For RS/瑞数-style targets, capture `204/landing page -> inline $_ts -> external r2mKa js -> $_ts.l__ appcode -> second hop` as one locate chain before code reasoning.
 - If the target depends on response fields, `Set-Cookie`, `HttpOnly` cookies, challenge tokens, session state, or device state, build the state chain before discussing pure computation.
+- If `meta[r=m]` exists, parse and record it as a route or state clue, not as page noise.
+- When first-hop output is consumed on a second hop, do not accept a one-hop sample as chain closure.
 - If the entrypoint is only reachable through a dynamic alias or resolver, record the wrapper chain, trigger condition, minimum runtime preconditions, and residual risk before accepting it as the working entry.
 - A normal-state versus risk-state fork map is mandatory output whenever the task touches risk branching.
 - For `WebSocket`, `protobuf`, long connections, heartbeats, or renewal flows, build the connection state chain and message-family map before analyzing a single packet payload.
@@ -37,6 +40,7 @@ Locate work is complete only when it can answer all of the following:
 - Read `references/request-chain-recording.md` whenever request parameters, headers, cookies, `HttpOnly` cookies, upstream responses, dependency expansion, or connection metadata are involved.
 - Read `references/hook-and-boundary-patterns.md` whenever the main question is where to observe, where to hook, or whether a breakpoint is justified.
 - Read `references/crypto-entry-locating.md` when the task is to prove where a live request's signature, token, header, or encrypted parameter is generated.
+- Read `references/rs-collection-and-two-hop-routing.md` when RS/瑞数 indicators appear: `204` landing pages, inline `$_ts.nsd/cd`, `meta[r=m]`, `r2mKa`, `$_ts.l__`, or produced state that is consumed on a second hop.
 - Read `references/record-overview-and-validation.md` before creating or refreshing `总览.md` or `验证记录.md`.
 - When task scope expands, load the newly relevant reference before continuing.
 
@@ -68,6 +72,12 @@ For protocol or long-connection tasks, also add:
 - `Message type`
 - `Current connection state`
 
+For RS/瑞数-style tasks, also add:
+
+- `First-hop URL or 204 page`
+- `RS indicators`
+- `Second-hop evidence`
+
 ## Preflight Classification
 
 1. Identify the final sink: `query`, `body`, `header`, `cookie`, `storage`, `WebSocket` frame, `worker` reply, or hidden DOM field.
@@ -78,15 +88,17 @@ For protocol or long-connection tasks, also add:
 ## Operating Order
 
 1. Capture one complete normal-state sample with request order, response summaries, page actions, and timing.
-2. For signature, token, header, or encrypted-parameter entry tasks, follow `request -> initiator -> candidate frame -> argument proof` from `references/crypto-entry-locating.md` before broad source search.
-3. As soon as response fields, `Set-Cookie`, `HttpOnly` cookies, challenge state, session state, or device state becomes relevant, open the current session `请求链路.md` and write the state chain before deeper code reading.
-4. Find the nearest write boundary instead of starting with `md5`, `aes`, `sign`, or generic crypto searches.
-5. Walk upward from the sink and separate who triggers execution, who assembles the value, and who performs the final write.
-6. Label every field as fixed, dynamic, encrypted, locally computed, response-derived, or environment-derived.
-7. When a field comes from an upstream response or `Set-Cookie`, expand the full dependency chain immediately.
-8. For protocol and long-connection tasks, separate envelope layer, message families, and connection state before payload logic.
-9. Record the normal-state builder path, the risk-state fallback path, the fork point, and the missing state for the same target.
-10. If the chain is clear but internal semantics remain hidden, switch to `$jsr-recover`; if the chain is clear but replay is unstable, switch to `$jsr-runtime`.
+2. When RS/瑞数 indicators exist, capture first-hop HTML, inline `$_ts`, `meta[r=m]`, external `r2mKa` js, and `$_ts.l__` appcode before broad source search.
+3. If first-hop output is consumed later, capture the produced cookie, redirect target, or route clue and treat second-hop evidence as mandatory locate material.
+4. For signature, token, header, or encrypted-parameter entry tasks, follow `request -> initiator -> candidate frame -> argument proof` from `references/crypto-entry-locating.md` before broad source search.
+5. As soon as response fields, `Set-Cookie`, `HttpOnly` cookies, challenge state, session state, or device state becomes relevant, open the current session `请求链路.md` and write the state chain before deeper code reading.
+6. Find the nearest write boundary instead of starting with `md5`, `aes`, `sign`, or generic crypto searches.
+7. Walk upward from the sink and separate who triggers execution, who assembles the value, and who performs the final write.
+8. Label every field as fixed, dynamic, encrypted, locally computed, response-derived, or environment-derived.
+9. When a field comes from an upstream response or `Set-Cookie`, expand the full dependency chain immediately.
+10. For protocol and long-connection tasks, separate envelope layer, message families, and connection state before payload logic.
+11. Record the normal-state builder path, the risk-state fallback path, the fork point, and the missing state for the same target.
+12. If the chain is clear but internal semantics remain hidden, switch to `$jsr-recover`; if the chain is clear but replay is unstable, switch to `$jsr-runtime`.
 
 ## Deliverables
 
@@ -94,6 +106,7 @@ For protocol or long-connection tasks, also add:
 - The `entry -> builder -> writer` relation.
 - For resolver-based entries, a record of the wrapper chain, resolver trigger, minimum runtime preconditions, and residual risk.
 - A state chain proving whether the target depends on upstream responses, `HttpOnly` cookies, challenge state, session state, or device state.
+- For RS/瑞数 targets, a first-hop / second-hop route note with `204/landing URL`, inline `$_ts`, `meta[r=m]`, `r2mKa` js, `$_ts.l__` appcode, produced cookie or redirect target, and the canonical hop for downstream work.
 - The full set of prerequisite requests, response fields, state carriers, and triggering actions.
 - A normal-state versus risk-state fork map with fork point, normal path, fallback path, and missing state.
 - For protocol and long-connection tasks, a connection state chain, message-family map, and target-message envelope boundary.
@@ -116,6 +129,7 @@ next_action:
 
 Use `partial` when there is a candidate chain but sink proof, source proof, or fork proof is still incomplete.
 Use `blocked` when no usable normal-state sample, no sink candidate, or no upstream state closure exists yet.
+Use `partial` for RS/瑞数 targets when only first-hop artifacts are known or `meta[r=m]` or second-hop closure is still unresolved.
 Do not claim locate closure until the sink is proven and risk branching is either ruled out or mapped.
 
 ## Record Files
