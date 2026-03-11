@@ -118,10 +118,10 @@ Session rules:
   - 去掉后现象：
   - 结论：
 
-## 验证点
-- `验证1`
-  - 开关：
-  - 结果：
+## 验证联动（按需）
+- 对应验证记录：`reverse-records/会话N/验证记录.md`
+- 需要验证的补项：
+- 固定输入要求：
 ```
 
 ## Quality Check
@@ -131,4 +131,4 @@ Session rules:
 - Pure-compute migration checks are explicit.
 - Anti-debug, fingerprint, and risk sections are present only when needed.
 - Every dependency item states necessity and evidence.
-- Non-runtime content is not mixed into this file.
+- Detailed validation checkpoints live in `验证记录.md`, not only in this file.

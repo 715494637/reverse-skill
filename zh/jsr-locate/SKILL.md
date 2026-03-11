@@ -1,6 +1,6 @@
 ---
 name: jsr-locate
-description: Use when a dynamic request field, header, cookie, websocket frame, worker message, or challenge token must be traced back to its real write boundary, triggering action, upstream response dependency, or state source before discussing pure computation, replay, or environment patching. Use for locating sinks, hooks, request chains, HttpOnly cookie dependencies, upstream expansion, and source proof.
+description: Use when a dynamic request field, header, cookie, websocket frame, worker message, or challenge token must be traced to its real write boundary and upstream state dependencies.
 ---
 
 # JSR Locate
@@ -22,7 +22,7 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 - 先找最近写入边界，再回溯 `builder` 和 `entry`。
 - 先拿到正常态样本，再分析风控态分叉。
 - 只要目标依赖响应字段、`Set-Cookie`、`HttpOnly`、challenge、session、device state，就先写状态链，再讨论纯算。
-- 正常态 / 风控态分叉图是必交付。
+- 只要任务涉及风控分支，正常态 / 风控态分叉图就是必交付。
 - `WebSocket`、`protobuf`、长连接、心跳、续期场景，先建连接状态链和消息族，再谈单包 payload。
 - 发现上游依赖后，必须一直展开到能拿到正常响应的那条链。
 - 若边界被 `jsvmp`、`worker`、`wasm`、控制流平坦化遮住，切 `$jsr-recover`。
@@ -34,7 +34,36 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 - 任何来源追踪任务都要读 `references/locate-workflow.md`。
 - 只要涉及请求参数、请求头、`cookie`、`HttpOnly`、上游响应、依赖展开、连接信息，就要读 `references/request-chain-recording.md`。
 - 只要问题是“从哪观察、从哪 hook、要不要断点”，就要读 `references/hook-and-boundary-patterns.md`。
+- 创建或刷新 `总览.md`、`验证记录.md` 前，要读 `references/record-overview-and-validation.md`。
 - 任务范围一旦扩大，要先补读新匹配的参考，再继续推进。
+
+## 最小输入
+
+开始前至少收齐下面这块输入：
+
+```text
+Target request:
+Target field:
+Final sink (if known):
+Trigger action:
+Current state: normal / risk / unknown
+Known evidence:
+Constraints:
+```
+
+必填：
+
+- `Target request`
+- `Target field`
+- `Current state`（未知时明确写 `unknown`）
+- `Known evidence`（没有就写 `none`）
+- `Constraints`（没有就写 `none`）
+
+协议或长连接任务额外补：
+
+- `Connection family`
+- `Message type`
+- `Current connection state`
 
 ## 先做四个判断
 
@@ -65,47 +94,37 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 - 协议 / 长连接场景补齐连接状态链、消息族和目标消息包络边界。
 - 留下中文逆向记录，保证下游不用重新做定位。
 
+## 失败输出
+
+如果定位工作停住、只能部分收敛，或还不能证明 sink，就返回并落盘下面这个平铺状态块：
+
+```yaml
+status: ready | partial | blocked
+stage: locate
+summary:
+evidence:
+  - ...
+impact:
+next_action:
+```
+
+- `partial`：已经有候选链，但 sink 证明、来源证明或分叉证明还没闭合。
+- `blocked`：还没有可用正常态样本、没有 sink 候选，或上游状态链还没闭合。
+- 在 sink 没证明、风控分支没排除或没画清之前，不得宣称 locate 完成。
+
 ## 工作目录落盘
 
 所有逆向记录都写入当前任务工作目录下的 `reverse-records/`，并使用中文。
-
-目录结构：
-
-```text
-reverse-records/
-├─ 会话1/
-│  ├─ 总览.md
-│  ├─ 请求链路.md
-│  ├─ 运行时依赖.md
-│  ├─ 恢复记录.md
-│  └─ 验证记录.md
-├─ 会话2/
-│  └─ ...
-└─ ...
-```
-
-会话规则：
 
 - 一个逆向会话只使用一个 `会话N/` 目录。
 - 用户指定了 `会话N`，就只读写那个目录。
 - 用户未指定时，创建下一个未占用的 `会话N/` 目录，并且只写入那个目录。
 - 不得覆盖、合并、重命名、清理其他 `会话N/` 目录。
-- 协议 / 长连接状态写入当前会话 `请求链路.md` 的专门章节，不再单独创建 `协议状态.md`。
-
-当前会话中与定位直接相关的文件：
-
-- `reverse-records/会话N/总览.md`
-- `reverse-records/会话N/请求链路.md`
-- `reverse-records/会话N/验证记录.md`（需要验证时）
-
-更新规则：
-
-- 第一个实质动作前先创建或更新当前会话 `总览.md`。
-- 一旦开始展开依赖链，就创建或更新当前会话 `请求链路.md`。
-- 每次阶段切换、发现上游依赖、状态链闭合变化、确认正常态 / 风控态分叉、确认 sink、卡点变化、下一步变化、拿到验证结果后，都要立即回写记录。
-- 每次回写都要重写 `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证`。
-- 不得在当前会话 `总览.md` 或 `请求链路.md` 已过期的情况下持续长时间分析。
-- 协议 / 长连接场景要在当前会话 `请求链路.md` 内维护专门章节，同步记录连接状态、消息族、序号 / ack / 续期规则。
+- `references/record-overview-and-validation.md` 负责定义 `总览.md` 和 `验证记录.md` 的精确骨架。
+- `总览.md` 记录阶段快照、卡点、下一步、风险、待验证，以及正常态 / 风控态对比表和分叉图。
+- `请求链路.md` 只记录请求区块、状态数组、`来源/去向`、上游展开和按需连接信息。
+- `验证记录.md` 在 sink 假设、状态闭合或分叉假设需要证明时开始记录。
+- 第一个实质动作前刷新 `总览.md`，开始展开依赖链时刷新 `请求链路.md`，进入验证时刷新 `验证记录.md`。
 
 ## 结束条件
 

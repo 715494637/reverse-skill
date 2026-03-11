@@ -1,5 +1,4 @@
 interface:
   display_name: "JSR Recover"
   short_description: "Reverse skill for semantic recovery of JSVMP, AST transforms, worker, WASM, webpack shells, and protocol wrappers"
-  default_prompt: "Use $jsr-recover to recover the obscuring layer, bridge contract, key operators, and equivalence checkpoints of the target logic."
-
+  default_prompt: "Use $jsr-recover only after collecting this input block: Target, Artifact, Shell type (if known), Recovery goal, Known anchor, Validation sample, Constraints. Then recover the obscuring layer, bridge contract, key operators, and equivalence checkpoints of the target logic."

@@ -1,6 +1,6 @@
 ---
 name: jsr-runtime
-description: Use when browser execution and local execution diverge because of missing objects, hidden browser state, anti-debugging, timing or randomness, fingerprint surfaces, or risk-control branching, and you need a minimal runtime manifest instead of broad simulation. Use for environment patching, anti-debugging, state dependencies, minimal environment design, and risk-branch analysis.
+description: Use when browser execution and local execution diverge because of missing objects, missing state, anti-debugging, unstable sources, or risk-branch conditions.
 ---
 
 # JSR Runtime
@@ -28,7 +28,35 @@ description: Use when browser execution and local execution diverge because of m
 - 任何运行时分类任务都要读 `references/runtime-diagnosis.md`。
 - 只要要设计最小清单、确定补项范围、判断是否允许纯算迁移，就要读 `references/minimal-env-design.md`。
 - 只要涉及反调试、栈校验、指纹诱发风控、正常态 / 风控态分叉，就要读 `references/anti-debug-and-risk-branches.md`。
+- 创建或刷新 `总览.md`、`验证记录.md` 前，要读 `references/record-overview-and-validation.md`。
 - 问题从一种类别扩大到另一种类别时，先补读新匹配的参考，再继续推进。
+
+## 最小输入
+
+开始前至少收齐下面这块输入：
+
+```text
+Target chain or function:
+Browser behavior:
+Local behavior:
+Current blocker or symptom:
+Known evidence:
+Constraints:
+```
+
+必填：
+
+- `Target chain or function`
+- `Browser behavior`
+- `Local behavior`
+- `Current blocker or symptom`
+- `Known evidence`（没有就写 `none`）
+- `Constraints`（没有就写 `none`）
+
+如果已经怀疑是指纹、挑战或风控分支，还要补：
+
+- `Suspected consumer`
+- `Suspected branch point`
 
 ## 默认顺序
 
@@ -50,30 +78,37 @@ description: Use when browser execution and local execution diverge because of m
 - 指纹 / 风控场景给出指纹归因矩阵。
 - 给出稳定复现条件：时间、随机源、状态、输入样本。
 
+## 失败输出
+
+如果运行时工作停住、只能部分收敛，或还不能闭合缺口，就返回并落盘下面这个平铺状态块：
+
+```yaml
+status: ready | partial | blocked
+stage: runtime
+summary:
+evidence:
+  - ...
+impact:
+next_action:
+```
+
+- `partial`：已经知道问题类别，但还有阻塞依赖没闭合。
+- `blocked`：还没有浏览器正常态样本、还没找到首个分叉点，或问题类别还无法自洽。
+- 在对象缺口、状态缺口和不稳定源没拆清前，不得宣称最小运行时清单已经成立。
+
 ## 工作目录落盘
 
 所有逆向记录都写入当前任务工作目录下的 `reverse-records/`，并使用中文。
-
-会话规则：
 
 - 一个逆向会话只使用一个 `会话N/` 目录。
 - 用户指定了 `会话N`，就只读写那个目录。
 - 用户未指定时，创建下一个未占用的 `会话N/` 目录，并且只写入那个目录。
 - 不得覆盖、合并、重命名、清理其他 `会话N/` 目录。
-
-当前会话中与运行时分析直接相关的文件：
-
-- `reverse-records/会话N/总览.md`
-- `reverse-records/会话N/运行时依赖.md`
-- `reverse-records/会话N/验证记录.md`（需要验证时）
-
-更新规则：
-
-- 第一个运行时诊断动作前先更新当前会话 `总览.md`。
-- 一旦开始讨论依赖、状态缺口、反调试点、补丁项、指纹归因，就创建或更新当前会话 `运行时依赖.md`。
-- 每次重分类、依赖变化、补项决策、反调试发现、正常态 / 风控态分叉更新、卡点变化、下一步变化、拿到验证结果后，都要立即回写记录。
-- 每次回写都要重写 `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证`。
-- 不得在当前会话 `总览.md` 或 `运行时依赖.md` 已过期的情况下持续长时间分析。
+- `references/record-overview-and-validation.md` 负责定义 `总览.md` 和 `验证记录.md` 的精确骨架。
+- `总览.md` 记录阶段快照、问题分类、卡点、下一步、风险，以及当前 blocked / partial 状态块。
+- `运行时依赖.md` 只记录最小清单、纯算迁移前检查、可移除项和当前链路需要的 runtime 事实。
+- `验证记录.md` 在补项开关、状态闭合或分叉点需要证明时开始记录。
+- 第一个诊断动作前刷新 `总览.md`，讨论依赖或补项时刷新 `运行时依赖.md`，进入验证时刷新 `验证记录.md`。
 
 ## 结束条件
 

@@ -1,6 +1,6 @@
 ---
 name: jsr-recover
-description: Use when real business logic is hidden by jsvmp, ast transforms, control-flow flattening, worker, wasm, webpack/runtime loaders, protobuf envelopes, or protocol wrappers, and you need to recover semantic layers, bridge contracts, state carriers, or dispatcher behavior instead of only beautifying code. Use for semantic recovery, JSVMP, AST, WASM, worker, protocol semantics, and bridge recovery.
+description: Use when real business logic is hidden by jsvmp, AST transforms, control-flow flattening, worker, wasm, webpack/runtime loaders, or protocol wrappers.
 ---
 
 # JSR Recover
@@ -30,6 +30,41 @@ Recovery is complete only when the current layer’s role, bridge boundary, stat
 - Read `references/wasm-worker-webpack.md` when the hiding layer includes `worker`, `wasm`, `webpack`, or runtime loaders.
 - Read `references/protocol-and-long-connection.md` when the shell is a protocol envelope, `WebSocket`, `protobuf`, long connection, heartbeat, ack, or renewal chain.
 - Read `references/equivalence-and-validation.md` whenever key functions, bridge contracts, or extracted operators need equivalence proof.
+- Read `references/record-overview-and-validation.md` before creating or refreshing `总览.md` or `验证记录.md`.
+
+## Minimum Input
+
+Provide the smallest usable intake block before starting:
+
+```text
+Target:
+Artifact:
+Shell type (if known):
+Recovery goal: semantic_explanation / key_operator_extraction / minimal_rebuild
+Known anchor:
+Validation sample:
+Constraints:
+```
+
+Required fields:
+
+- `Target`
+- `Artifact`
+
+Recommended fields:
+
+- `Shell type`
+- `Recovery goal`
+- `Known anchor`
+- `Validation sample`
+- `Constraints` (use `none` if there are no extra constraints)
+
+For known shell families, add the tightest available anchor:
+
+- `worker`: message direction, bridge entry, shared state
+- `wasm`: imports, exports, wrapper layer
+- `webpack/runtime`: module entry, lazy-load point, module boundary
+- `protocol`: handshake, business packet, renewal or ack evidence
 
 ## Six-Layer View
 
@@ -60,31 +95,37 @@ Recovery is complete only when the current layer’s role, bridge boundary, stat
 - Key-function cards and equivalence-validation records.
 - Enough recovered structure that downstream work does not need to reopen the same shell.
 
+## Failure Output
+
+If recovery work stops, stays partial, or cannot yet justify the current level, return and record a flat status block:
+
+```yaml
+status: ready | partial | blocked
+stage: recover
+summary:
+evidence:
+  - ...
+impact:
+next_action:
+```
+
+Use `partial` when the obscuring layer is classified but the bridge, state carrier, or key operator is still incomplete.
+Use `blocked` when no stable entry, no boundary anchor, or no validation sample exists for the current level.
+Do not claim recovery closure until the stopping level `A / B / C` is justified and downstream work can continue directly.
+
 ## Record Files
 
 All reverse records must be written in Chinese under the current task working directory `reverse-records/`.
-
-Session rules:
 
 - One reverse session must use exactly one `会话N/` folder.
 - If the user names a session folder, read and write only that folder.
 - If the user does not name one, create the next unused `会话N/` folder and use only that folder.
 - Never overwrite, merge, rename, or clean another `会话N/` folder.
-- Protocol and long-connection state must be written in the current session `请求链路.md`; protocol-shell bridge recovery and semantic notes stay in `恢复记录.md`.
-
-Required files for recovery work in the current session:
-
-- `reverse-records/会话N/总览.md`
-- `reverse-records/会话N/恢复记录.md`
-- `reverse-records/会话N/验证记录.md`
-
-Update rules:
-
-- Refresh the current session `总览.md` before the first recovery action.
-- Create or refresh the current session `恢复记录.md` as soon as the obscuring layer, bridge contract, key-function card, or module boundary is identified.
-- Refresh records immediately after any recovery-level change, new bridge finding, state-carrier finding, key-operator extraction, equivalence result, blocker change, or next-step change.
-- Rewrite `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证` on every record refresh.
-- Do not continue long recovery work while the current session `总览.md`, `恢复记录.md`, or `验证记录.md` is stale.
+- Read `references/record-overview-and-validation.md` for the exact `总览.md` and `验证记录.md` skeletons.
+- `总览.md` stores stage snapshot, current recovery goal, blockers, next action, risk notes, and the current blocked or partial status block.
+- `恢复记录.md` stores structure cards: obscuring layer, bridge boundary, state carrier, module note, and key-function cards.
+- `验证记录.md` stores fixed inputs, checkpoints, equivalence results, and gap locations once validation begins.
+- Refresh `总览.md` before the first recovery action, `恢复记录.md` as soon as the first layer or bridge finding is known, and `验证记录.md` when equivalence work begins.
 
 ## Completion Criteria
 

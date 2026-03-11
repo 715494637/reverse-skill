@@ -1,6 +1,6 @@
 ---
 name: jsr-locate
-description: Use when a dynamic request field, header, cookie, websocket frame, worker message, or challenge token must be traced back to its real write boundary, triggering action, upstream response dependency, or state source before discussing pure computation, replay, or environment patching. Use for locating sinks, hooks, request chains, HttpOnly cookie dependencies, upstream expansion, and source proof.
+description: Use when a dynamic request field, header, cookie, websocket frame, worker message, or challenge token must be traced to its real write boundary and upstream state dependencies.
 ---
 
 # JSR Locate
@@ -22,7 +22,7 @@ Locate work is complete only when it can answer all of the following:
 - Start from the nearest write boundary, then walk backward through `builder` and `entry`.
 - Capture a normal-state sample before analyzing risk-state divergence.
 - If the target depends on response fields, `Set-Cookie`, `HttpOnly` cookies, challenge tokens, session state, or device state, build the state chain before discussing pure computation.
-- A normal-state versus risk-state fork map is mandatory output.
+- A normal-state versus risk-state fork map is mandatory output whenever the task touches risk branching.
 - For `WebSocket`, `protobuf`, long connections, heartbeats, or renewal flows, build the connection state chain and message-family map before analyzing a single packet payload.
 - Expand every upstream dependency until the chain reaches the request that produces a normal response.
 - If the boundary is hidden by `jsvmp`, `worker`, `wasm`, or control-flow flattening, switch to `$jsr-recover`.
@@ -34,7 +34,36 @@ Locate work is complete only when it can answer all of the following:
 - Read `references/locate-workflow.md` for any source-tracing task.
 - Read `references/request-chain-recording.md` whenever request parameters, headers, cookies, `HttpOnly` cookies, upstream responses, dependency expansion, or connection metadata are involved.
 - Read `references/hook-and-boundary-patterns.md` whenever the main question is where to observe, where to hook, or whether a breakpoint is justified.
+- Read `references/record-overview-and-validation.md` before creating or refreshing `总览.md` or `验证记录.md`.
 - When task scope expands, load the newly relevant reference before continuing.
+
+## Minimum Input
+
+Provide the smallest usable intake block before starting:
+
+```text
+Target request:
+Target field:
+Final sink (if known):
+Trigger action:
+Current state: normal / risk / unknown
+Known evidence:
+Constraints:
+```
+
+Required fields:
+
+- `Target request`
+- `Target field`
+- `Current state` (use `unknown` if not yet known)
+- `Known evidence` (use `none` if nothing is known yet)
+- `Constraints` (use `none` if there are no extra constraints)
+
+For protocol or long-connection tasks, also add:
+
+- `Connection family`
+- `Message type`
+- `Current connection state`
 
 ## Preflight Classification
 
@@ -65,47 +94,37 @@ Locate work is complete only when it can answer all of the following:
 - For protocol and long-connection tasks, a connection state chain, message-family map, and target-message envelope boundary.
 - Chinese reverse records that let downstream work continue without repeating locate work.
 
+## Failure Output
+
+If locate work stops, stays partial, or cannot yet prove the sink, return and record a flat status block:
+
+```yaml
+status: ready | partial | blocked
+stage: locate
+summary:
+evidence:
+  - ...
+impact:
+next_action:
+```
+
+Use `partial` when there is a candidate chain but sink proof, source proof, or fork proof is still incomplete.
+Use `blocked` when no usable normal-state sample, no sink candidate, or no upstream state closure exists yet.
+Do not claim locate closure until the sink is proven and risk branching is either ruled out or mapped.
+
 ## Record Files
 
 All reverse records must be written in Chinese under the current task working directory `reverse-records/`.
-
-Session layout:
-
-```text
-reverse-records/
-├─ 会话1/
-│  ├─ 总览.md
-│  ├─ 请求链路.md
-│  ├─ 运行时依赖.md
-│  ├─ 恢复记录.md
-│  └─ 验证记录.md
-├─ 会话2/
-│  └─ ...
-└─ ...
-```
-
-Session rules:
 
 - One reverse session must use exactly one `会话N/` folder.
 - If the user names a session folder, read and write only that folder.
 - If the user does not name one, create the next unused `会话N/` folder and use only that folder.
 - Never overwrite, merge, rename, or clean another `会话N/` folder.
-- Protocol and long-connection state must be written as dedicated sections inside the current session `请求链路.md`, not as a separate file.
-
-Required files for locate work in the current session:
-
-- `reverse-records/会话N/总览.md`
-- `reverse-records/会话N/请求链路.md`
-- `reverse-records/会话N/验证记录.md` when validating
-
-Update rules:
-
-- Create or refresh the current session `总览.md` before the first substantial action.
-- Create or refresh the current session `请求链路.md` as soon as dependency expansion starts.
-- Refresh records immediately after any phase change, upstream dependency discovery, state-chain closure change, normal/risk fork confirmation, sink confirmation, blocker change, next-step change, or validation result.
-- Rewrite `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证` on every record refresh.
-- Do not continue long analysis on a branch while the current session `总览.md` or `请求链路.md` is stale.
-- For protocol and long-connection tasks, maintain dedicated sections in the current session `请求链路.md` for connection state, message families, and sequence/ack/renewal rules.
+- Read `references/record-overview-and-validation.md` for the exact `总览.md` and `验证记录.md` skeletons.
+- `总览.md` stores stage snapshot, blockers, next action, risk notes, validation backlog, and the normal/risk comparison plus fork map.
+- `请求链路.md` stores request blocks, status arrays, `来源/去向`, upstream expansion, and protocol connection metadata only.
+- `验证记录.md` stores proof checks once a sink hypothesis, state-chain closure, or fork hypothesis must be verified.
+- Refresh `总览.md` before the first substantial action, `请求链路.md` as soon as dependency expansion starts, and `验证记录.md` when validation begins.
 
 ## Completion Criteria
 

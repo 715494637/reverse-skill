@@ -1,6 +1,6 @@
 ---
 name: jsr-runtime
-description: Use when browser execution and local execution diverge because of missing objects, hidden browser state, anti-debugging, timing or randomness, fingerprint surfaces, or risk-control branching, and you need a minimal runtime manifest instead of broad simulation. Use for environment patching, anti-debugging, state dependencies, minimal environment design, and risk-branch analysis.
+description: Use when browser execution and local execution diverge because of missing objects, missing state, anti-debugging, unstable sources, or risk-branch conditions.
 ---
 
 # JSR Runtime
@@ -28,7 +28,35 @@ Runtime work is successful only when it can explain why the browser path works, 
 - Read `references/runtime-diagnosis.md` for runtime-problem classification.
 - Read `references/minimal-env-design.md` when designing the minimal manifest, deciding patch scope, or checking whether pure-compute migration is allowed.
 - Read `references/anti-debug-and-risk-branches.md` when anti-debugging, stack checks, fingerprint-triggered risk branches, or normal/risk divergence is involved.
+- Read `references/record-overview-and-validation.md` before creating or refreshing `总览.md` or `验证记录.md`.
 - When the problem expands from one class to another, load the newly relevant reference before continuing.
+
+## Minimum Input
+
+Provide the smallest usable intake block before starting:
+
+```text
+Target chain or function:
+Browser behavior:
+Local behavior:
+Current blocker or symptom:
+Known evidence:
+Constraints:
+```
+
+Required fields:
+
+- `Target chain or function`
+- `Browser behavior`
+- `Local behavior`
+- `Current blocker or symptom`
+- `Known evidence` (use `none` if nothing is known yet)
+- `Constraints` (use `none` if there are no extra constraints)
+
+If fingerprint, challenge, or risk branching is already suspected, also add:
+
+- `Suspected consumer`
+- `Suspected branch point`
 
 ## Default Order
 
@@ -50,30 +78,37 @@ Runtime work is successful only when it can explain why the browser path works, 
 - A fingerprint-attribution matrix for fingerprint or risk-control tasks.
 - Stable reproduction conditions for time, randomness, state, and input sample.
 
+## Failure Output
+
+If runtime work stops, stays partial, or cannot yet close the gap, return and record a flat status block:
+
+```yaml
+status: ready | partial | blocked
+stage: runtime
+summary:
+evidence:
+  - ...
+impact:
+next_action:
+```
+
+Use `partial` when the runtime class is known but one or more blocking dependencies remain open.
+Use `blocked` when there is no browser normal-state sample, no first divergence point, or no defensible runtime classification yet.
+Do not claim a minimal manifest until object gaps, state gaps, and unstable sources have been separated clearly enough to test.
+
 ## Record Files
 
 All reverse records must be written in Chinese under the current task working directory `reverse-records/`.
-
-Session rules:
 
 - One reverse session must use exactly one `会话N/` folder.
 - If the user names a session folder, read and write only that folder.
 - If the user does not name one, create the next unused `会话N/` folder and use only that folder.
 - Never overwrite, merge, rename, or clean another `会话N/` folder.
-
-Required files for runtime work in the current session:
-
-- `reverse-records/会话N/总览.md`
-- `reverse-records/会话N/运行时依赖.md`
-- `reverse-records/会话N/验证记录.md` when validating
-
-Update rules:
-
-- Refresh the current session `总览.md` before the first runtime diagnosis step.
-- Create or refresh the current session `运行时依赖.md` as soon as dependencies, state gaps, anti-debug points, patch items, or fingerprint attribution are discussed.
-- Refresh records immediately after any problem reclassification, dependency change, patch decision, anti-debug finding, normal/risk fork update, blocker change, next-step change, or validation result.
-- Rewrite `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证` on every record refresh.
-- Do not continue long runtime analysis while the current session `总览.md` or `运行时依赖.md` is stale.
+- Read `references/record-overview-and-validation.md` for the exact `总览.md` and `验证记录.md` skeletons.
+- `总览.md` stores stage snapshot, problem class, blockers, next action, risk notes, and the current blocked or partial status block.
+- `运行时依赖.md` stores the minimal manifest, pure-compute precheck, removable items, and only the runtime facts needed for the current chain.
+- `验证记录.md` stores patch toggles, fixed inputs, checkpoints, and pass/fail proof once validation begins.
+- Refresh `总览.md` before the first runtime diagnosis step, `运行时依赖.md` as soon as dependencies or patch items are discussed, and `验证记录.md` when validation begins.
 
 ## Completion Criteria
 

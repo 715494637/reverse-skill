@@ -1,6 +1,6 @@
 ---
 name: jsr-recover
-description: Use when real business logic is hidden by jsvmp, ast transforms, control-flow flattening, worker, wasm, webpack/runtime loaders, protobuf envelopes, or protocol wrappers, and you need to recover semantic layers, bridge contracts, state carriers, or dispatcher behavior instead of only beautifying code. Use for semantic recovery, JSVMP, AST, WASM, worker, protocol semantics, and bridge recovery.
+description: Use when real business logic is hidden by jsvmp, AST transforms, control-flow flattening, worker, wasm, webpack/runtime loaders, or protocol wrappers.
 ---
 
 # JSR Recover
@@ -30,6 +30,41 @@ description: Use when real business logic is hidden by jsvmp, ast transforms, co
 - 只要遮蔽层涉及 `worker`、`wasm`、`webpack`、runtime loader，就要读 `references/wasm-worker-webpack.md`。
 - 只要是协议包络、`WebSocket`、`protobuf`、长连接、心跳、ack、续期问题，就要读 `references/protocol-and-long-connection.md`。
 - 只要需要证明桥接契约、关键函数、关键算子的等价性，就要读 `references/equivalence-and-validation.md`。
+- 创建或刷新 `总览.md`、`验证记录.md` 前，要读 `references/record-overview-and-validation.md`。
+
+## 最小输入
+
+开始前至少收齐下面这块输入：
+
+```text
+Target:
+Artifact:
+Shell type (if known):
+Recovery goal: semantic_explanation / key_operator_extraction / minimal_rebuild
+Known anchor:
+Validation sample:
+Constraints:
+```
+
+必填：
+
+- `Target`
+- `Artifact`
+
+建议补齐：
+
+- `Shell type`
+- `Recovery goal`
+- `Known anchor`
+- `Validation sample`
+- `Constraints`（没有就写 `none`）
+
+如果已经知道壳层家族，再补最紧的锚点：
+
+- `worker`：消息方向、桥接入口、共享状态
+- `wasm`：imports、exports、wrapper 层
+- `webpack/runtime`：模块入口、懒加载点、模块边界
+- `protocol`：握手、业务包、续期或 ack 证据
 
 ## 六层视角
 
@@ -60,31 +95,37 @@ description: Use when real business logic is hidden by jsvmp, ast transforms, co
 - 给出关键函数卡片和等价性验证记录。
 - 恢复结果要足够支撑下游继续推进，不再重新拆同一层壳。
 
+## 失败输出
+
+如果恢复工作停住、只能部分收敛，或还不能证明当前恢复级别足够，就返回并落盘下面这个平铺状态块：
+
+```yaml
+status: ready | partial | blocked
+stage: recover
+summary:
+evidence:
+  - ...
+impact:
+next_action:
+```
+
+- `partial`：已经分清遮蔽层，但桥接、状态载体或关键算子还没闭合。
+- `blocked`：还没有稳定入口、没有边界锚点，或当前级别缺少验证样本。
+- 在 `A / B / C` 停止级别没说清前，不得宣称 recover 完成。
+
 ## 工作目录落盘
 
 所有逆向记录都写入当前任务工作目录下的 `reverse-records/`，并使用中文。
-
-会话规则：
 
 - 一个逆向会话只使用一个 `会话N/` 目录。
 - 用户指定了 `会话N`，就只读写那个目录。
 - 用户未指定时，创建下一个未占用的 `会话N/` 目录，并且只写入那个目录。
 - 不得覆盖、合并、重命名、清理其他 `会话N/` 目录。
-- 协议 / 长连接状态写入当前会话 `请求链路.md`；协议壳桥接、语义恢复、关键函数结论写入当前会话 `恢复记录.md`。
-
-当前会话中与恢复直接相关的文件：
-
-- `reverse-records/会话N/总览.md`
-- `reverse-records/会话N/恢复记录.md`
-- `reverse-records/会话N/验证记录.md`
-
-更新规则：
-
-- 第一个恢复动作前先更新当前会话 `总览.md`。
-- 一旦识别出遮蔽层、桥接契约、关键函数卡片或模块边界，就创建或更新当前会话 `恢复记录.md`。
-- 每次恢复级别变化、桥接发现变化、状态载体发现、关键算子抽离、等价性结果变化、卡点变化、下一步变化后，都要立即回写记录。
-- 每次回写都要重写 `当前阶段 / 已确认 / 当前卡点 / 下一步 / 风险 / 待验证`。
-- 不得在当前会话 `总览.md`、`恢复记录.md` 或 `验证记录.md` 已过期的情况下持续长时间恢复。
+- `references/record-overview-and-validation.md` 负责定义 `总览.md` 和 `验证记录.md` 的精确骨架。
+- `总览.md` 记录阶段快照、当前恢复目标、卡点、下一步、风险，以及当前 blocked / partial 状态块。
+- `恢复记录.md` 记录结构卡片：遮蔽层、桥接边界、状态载体、模块说明和关键函数卡片。
+- `验证记录.md` 在等价性工作或固定输入检查开始时记录。
+- 第一个恢复动作前刷新 `总览.md`，第一条层级或桥接发现出现时刷新 `恢复记录.md`，开始等价性验证时刷新 `验证记录.md`。
 
 ## 结束条件
 

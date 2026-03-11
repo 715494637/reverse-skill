@@ -69,9 +69,11 @@ Example:
 - Expand upstream requests after the target request.
 - One request block per section.
 - Within each request block, use only these parts: `请求头`, `Query参数`, `Body参数`, `Cookie`, `响应输出`.
-- Every field must include `状态`, `来源`, and `证据`.
+- Every request-input field must include `状态`, `来源`, and `证据`.
+- Every `响应输出` field must include `状态`, `去向`, and `证据`.
 - Keep `状态` as an array, not prose.
 - Write `来源` as `来源字段 -> 目标字段`.
+- Write `去向` as `当前响应字段 -> 下游目标字段`.
 - If a request has no upstream request, write `上游请求：无`.
 - If a section has no fields, write `- 无`.
 
@@ -81,7 +83,7 @@ Do not create separate sections for:
 - current conclusion
 - normal/risk comparison
 
-Dependency is already expressed by per-field `来源` and per-request `上游请求`.
+Dependency is already expressed by per-field `来源/去向` and per-request `上游请求`.
 
 ## Request Skeleton
 
@@ -170,7 +172,7 @@ For `WebSocket`, `protobuf`, SSE, heartbeat, or renewal flows, keep the ordinary
 
 - The target request is first.
 - Every field has a status array.
-- Every field has a concrete source chain.
+- Every field has a concrete source chain or downstream target.
 - Every field has at least one evidence anchor.
 - Upstream expansion is readable without adding separate summary sections.
 - Progress, forks, runtime notes, and recovery notes are not mixed into this file.
