@@ -42,32 +42,32 @@ description: Use when browser execution and local execution diverge because of m
 开始前至少收齐下面这块输入：
 
 ```text
-Target chain or function:
-Browser behavior:
-Local behavior:
-Current blocker or symptom:
-Known evidence:
-Constraints:
+目标链路或函数：
+浏览器表现：
+本地表现：
+当前阻塞或现象：
+已知证据：
+约束：
 ```
 
 必填：
 
-- `Target chain or function`
-- `Browser behavior`
-- `Local behavior`
-- `Current blocker or symptom`
-- `Known evidence`（没有就写 `none`）
-- `Constraints`（没有就写 `none`）
+- `目标链路或函数`
+- `浏览器表现`
+- `本地表现`
+- `当前阻塞或现象`
+- `已知证据`（没有就写 `无`）
+- `约束`（没有就写 `无`）
 
 如果已经怀疑是指纹、挑战或风控分支，还要补：
 
-- `Suspected consumer`
-- `Suspected branch point`
+- `疑似消费点`
+- `疑似分叉点`
 
 如果已经怀疑要走 `sdenv`、远程 jsdom，或状态由页面生命周期产出，还要补：
 
-- `Candidate runtime route`
-- `Known state-close signal`
+- `候选运行时路线`
+- `已知状态闭合信号`
 
 ## 默认顺序
 
@@ -103,18 +103,18 @@ Constraints:
 如果运行时工作停住、只能部分收敛，或还不能闭合缺口，就返回并落盘下面这个平铺状态块：
 
 ```yaml
-status: ready | partial | blocked
-stage: runtime
-code:
-summary:
-evidence:
+状态: 就绪 | 部分完成 | 阻塞
+阶段: 运行时
+代码:
+摘要:
+证据:
   - ...
-impact:
-next_action:
+影响:
+下一动作:
 ```
 
-- `partial`：已经知道问题类别，但还有阻塞依赖没闭合。
-- `blocked`：还没有浏览器正常态样本、还没找到首个分叉点，或问题类别还无法自洽。
+- `部分完成`：已经知道问题类别，但还有阻塞依赖没闭合。
+- `阻塞`：还没有浏览器正常态样本、还没找到首个分叉点，或问题类别还无法自洽。
 - 在对象缺口、状态缺口和不稳定源没拆清前，不得宣称最小运行时清单已经成立。
 
 ## 工作目录落盘
@@ -125,11 +125,11 @@ next_action:
 - 用户指定了 `会话N`，就只读写那个目录。
 - 用户未指定时，创建下一个未占用的 `会话N/` 目录，并且只写入那个目录。
 - 不得覆盖、合并、重命名、清理其他 `会话N/` 目录。
-- `references/record-overview-and-validation.md` 负责定义 `总览.md` 和 `验证记录.md` 的精确骨架。
+- `运行态清单.md` 的唯一骨架以 `references/minimal-env-design.md` 为准；`总览.md` 与 `验证记录.md` 的唯一骨架以 `references/record-overview-and-validation.md` 为准。
 - `总览.md` 记录阶段快照、问题分类、卡点、下一步、风险，以及当前 blocked / partial 状态块。
-- `运行时依赖.md` 只记录适配检查、执行模式、最小清单、纯算迁移前检查、可移除项和当前链路需要的 runtime 事实。
+- `运行态清单.md` 只记录适配检查、执行模式、最小清单、纯算迁移前检查、可移除项和当前链路需要的运行时事实。
 - `验证记录.md` 在补项开关、状态闭合、二跳验证或分叉点需要证明时开始记录。
-- 第一个诊断动作前刷新 `总览.md`，讨论依赖或补项时刷新 `运行时依赖.md`，进入验证时刷新 `验证记录.md`。
+- 第一个诊断动作前刷新 `总览.md`，讨论依赖或补项时刷新 `运行态清单.md`，进入验证时刷新 `验证记录.md`。
 
 ## 结束条件
 

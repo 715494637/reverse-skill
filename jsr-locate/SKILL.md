@@ -126,7 +126,7 @@ All reverse records must be written in Chinese under the current task working di
 - If the user names a session folder, read and write only that folder.
 - If the user does not name one, create the next unused `会话N/` folder and use only that folder.
 - Never overwrite, merge, rename, or clean another `会话N/` folder.
-- Read `references/record-overview-and-validation.md` for the exact `总览.md` and `验证记录.md` skeletons.
+- Use `references/request-chain-recording.md` as the canonical schema for `请求链路.md`, and use `references/record-overview-and-validation.md` as the canonical schema for `总览.md` and `验证记录.md`.
 - `总览.md` stores stage snapshot, blockers, next action, risk notes, validation backlog, and the normal/risk comparison plus fork map.
 - `请求链路.md` stores request blocks, status arrays, `来源/去向`, upstream expansion, and protocol connection metadata only.
 - `验证记录.md` stores proof checks once a sink hypothesis, state-chain closure, or fork hypothesis must be verified.

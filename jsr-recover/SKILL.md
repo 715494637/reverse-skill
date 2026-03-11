@@ -125,7 +125,7 @@ All reverse records must be written in Chinese under the current task working di
 - If the user names a session folder, read and write only that folder.
 - If the user does not name one, create the next unused `会话N/` folder and use only that folder.
 - Never overwrite, merge, rename, or clean another `会话N/` folder.
-- Read `references/record-overview-and-validation.md` for the exact `总览.md` and `验证记录.md` skeletons.
+- Use `references/equivalence-and-validation.md` as the canonical schema for `恢复记录.md`, and use `references/record-overview-and-validation.md` as the canonical schema for `总览.md` and `验证记录.md`.
 - `总览.md` stores stage snapshot, current recovery goal, blockers, next action, risk notes, and the current blocked or partial status block.
 - `恢复记录.md` stores structure cards: obscuring layer, bridge boundary, state carrier, module note, and key-function cards.
 - `验证记录.md` stores fixed inputs, checkpoints, equivalence results, and gap locations once validation begins.

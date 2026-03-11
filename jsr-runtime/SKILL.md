@@ -125,11 +125,11 @@ All reverse records must be written in Chinese under the current task working di
 - If the user names a session folder, read and write only that folder.
 - If the user does not name one, create the next unused `会话N/` folder and use only that folder.
 - Never overwrite, merge, rename, or clean another `会话N/` folder.
-- Read `references/record-overview-and-validation.md` for the exact `总览.md` and `验证记录.md` skeletons.
+- Use `references/minimal-env-design.md` as the canonical schema for `运行态清单.md`, and use `references/record-overview-and-validation.md` as the canonical schema for `总览.md` and `验证记录.md`.
 - `总览.md` stores stage snapshot, problem class, blockers, next action, risk notes, and the current blocked or partial status block.
-- `运行时依赖.md` stores the fit check, execution mode, minimal manifest, pure-compute precheck, removable items, and only the runtime facts needed for the current chain.
+- `运行态清单.md` stores the fit check, execution mode, minimal manifest, pure-compute precheck, removable items, and only the runtime facts needed for the current chain.
 - `验证记录.md` stores patch toggles, fixed inputs, state-close proof, second-hop validation, checkpoints, and pass/fail proof once validation begins.
-- Refresh `总览.md` before the first runtime diagnosis step, `运行时依赖.md` as soon as dependencies or patch items are discussed, and `验证记录.md` when validation begins.
+- Refresh `总览.md` before the first runtime diagnosis step, `运行态清单.md` as soon as dependencies or patch items are discussed, and `验证记录.md` when validation begins.
 
 ## Completion Criteria
 

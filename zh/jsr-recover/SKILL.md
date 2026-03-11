@@ -45,27 +45,27 @@ description: Use when real business logic is hidden by jsvmp, AST transforms, co
 开始前至少收齐下面这块输入：
 
 ```text
-Target:
-Artifact:
-Shell type (if known):
-Recovery goal: semantic_explanation / key_operator_extraction / minimal_rebuild
-Known anchor:
-Validation sample:
-Constraints:
+目标：
+目标工件：
+壳层类型（若已知）：
+恢复目标：语义说明 / 关键算子提炼 / 最小重建
+已知锚点：
+验证样本：
+约束：
 ```
 
 必填：
 
-- `Target`
-- `Artifact`
+- `目标`
+- `目标工件`
 
 建议补齐：
 
-- `Shell type`
-- `Recovery goal`
-- `Known anchor`
-- `Validation sample`
-- `Constraints`（没有就写 `none`）
+- `壳层类型`
+- `恢复目标`
+- `已知锚点`
+- `验证样本`
+- `约束`（没有就写 `无`）
 
 如果已经知道壳层家族，再补最紧的锚点：
 
@@ -109,18 +109,18 @@ Constraints:
 如果恢复工作停住、只能部分收敛，或还不能证明当前恢复级别足够，就返回并落盘下面这个平铺状态块：
 
 ```yaml
-status: ready | partial | blocked
-stage: recover
-code:
-summary:
-evidence:
+状态: 就绪 | 部分完成 | 阻塞
+阶段: 恢复
+代码:
+摘要:
+证据:
   - ...
-impact:
-next_action:
+影响:
+下一动作:
 ```
 
-- `partial`：已经分清遮蔽层，但桥接、状态载体或关键算子还没闭合。
-- `blocked`：还没有稳定入口、没有边界锚点，或当前级别缺少验证样本。
+- `部分完成`：已经分清遮蔽层，但桥接、状态载体或关键算子还没闭合。
+- `阻塞`：还没有稳定入口、没有边界锚点，或当前级别缺少验证样本。
 - 在 `A / B / C` 停止级别没说清前，不得宣称 recover 完成。
 
 ## 工作目录落盘
@@ -131,7 +131,7 @@ next_action:
 - 用户指定了 `会话N`，就只读写那个目录。
 - 用户未指定时，创建下一个未占用的 `会话N/` 目录，并且只写入那个目录。
 - 不得覆盖、合并、重命名、清理其他 `会话N/` 目录。
-- `references/record-overview-and-validation.md` 负责定义 `总览.md` 和 `验证记录.md` 的精确骨架。
+- `恢复记录.md` 的唯一骨架以 `references/equivalence-and-validation.md` 为准；`总览.md` 与 `验证记录.md` 的唯一骨架以 `references/record-overview-and-validation.md` 为准。
 - `总览.md` 记录阶段快照、当前恢复目标、卡点、下一步、风险，以及当前 blocked / partial 状态块。
 - `恢复记录.md` 记录结构卡片：遮蔽层、桥接边界、状态载体、模块说明和关键函数卡片。
 - `验证记录.md` 在等价性工作或固定输入检查开始时记录。

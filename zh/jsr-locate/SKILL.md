@@ -51,28 +51,28 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 开始前至少收齐下面这块输入：
 
 ```text
-Target request:
-Target field:
-Final sink (if known):
-Trigger action:
-Current state: normal / risk / unknown
-Known evidence:
-Constraints:
+目标请求：
+目标字段：
+最终写入点（若已知）：
+触发动作：
+当前状态：正常态 / 风控态 / 未知
+已知证据：
+约束：
 ```
 
 必填：
 
-- `Target request`
-- `Target field`
-- `Current state`（未知时明确写 `unknown`）
-- `Known evidence`（没有就写 `none`）
-- `Constraints`（没有就写 `none`）
+- `目标请求`
+- `目标字段`
+- `当前状态`（未知时明确写 `未知`）
+- `已知证据`（没有就写 `无`）
+- `约束`（没有就写 `无`）
 
 协议或长连接任务额外补：
 
-- `Connection family`
-- `Message type`
-- `Current connection state`
+- `连接族`
+- `消息类型`
+- `当前连接状态`
 
 ## 先做四个判断
 
@@ -110,18 +110,18 @@ Constraints:
 如果定位工作停住、只能部分收敛，或还不能证明 sink，就返回并落盘下面这个平铺状态块：
 
 ```yaml
-status: ready | partial | blocked
-stage: locate
-code:
-summary:
-evidence:
+状态: 就绪 | 部分完成 | 阻塞
+阶段: 定位
+代码:
+摘要:
+证据:
   - ...
-impact:
-next_action:
+影响:
+下一动作:
 ```
 
-- `partial`：已经有候选链，但 sink 证明、来源证明或分叉证明还没闭合。
-- `blocked`：还没有可用正常态样本、没有 sink 候选，或上游状态链还没闭合。
+- `部分完成`：已经有候选链，但 sink 证明、来源证明或分叉证明还没闭合。
+- `阻塞`：还没有可用正常态样本、没有 sink 候选，或上游状态链还没闭合。
 - 在 sink 没证明、风控分支没排除或没画清之前，不得宣称 locate 完成。
 
 ## 工作目录落盘
@@ -132,7 +132,7 @@ next_action:
 - 用户指定了 `会话N`，就只读写那个目录。
 - 用户未指定时，创建下一个未占用的 `会话N/` 目录，并且只写入那个目录。
 - 不得覆盖、合并、重命名、清理其他 `会话N/` 目录。
-- `references/record-overview-and-validation.md` 负责定义 `总览.md` 和 `验证记录.md` 的精确骨架。
+- `请求链路.md` 的唯一骨架以 `references/request-chain-recording.md` 为准；`总览.md` 与 `验证记录.md` 的唯一骨架以 `references/record-overview-and-validation.md` 为准。
 - `总览.md` 记录阶段快照、卡点、下一步、风险、待验证，以及正常态 / 风控态对比表和分叉图。
 - `请求链路.md` 只记录请求区块、状态数组、`来源/去向`、上游展开和按需连接信息。
 - `验证记录.md` 在 sink 假设、状态闭合或分叉假设需要证明时开始记录。

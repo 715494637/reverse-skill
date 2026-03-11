@@ -2,7 +2,9 @@
 
 ## Purpose
 
-`运行时依赖.md` records only the minimal runtime manifest for the current chain.
+`运行态清单.md` is the canonical runtime artifact for the current chain.
+
+This reference is the canonical schema for `运行态清单.md`.
 
 Do not write the following here:
 
@@ -10,142 +12,119 @@ Do not write the following here:
 - broad recovery notes
 - general progress summaries
 
-This file should explain only what the current chain needs to run, why it needs it, which route is selected, and how that route is validated.
-
-## Record Path
-
-Write records under the current task working directory:
-
-```text
-reverse-records/
-├── 会话1/
-│   ├── 总览.md
-│   ├── 请求链路.md
-│   ├── 运行时依赖.md
-│   ├── 恢复记录.md
-│   └── 验证记录.md
-├── 会话2/
-│   └── ...
-└── ...
-```
-
-Session rules:
-
-- One reverse session uses one `会话N/` folder only.
-- If the user specifies `会话N`, use only that folder.
-- If the user does not specify one, create the next unused `会话N/` folder.
-- Never overwrite or edit another `会话N/` folder.
-
 ## Writing Rules
 
-- Start with the target chain, not with a list of browser objects.
-- Separate `必需对象` from `必需状态`.
-- Record fixed time, random, and seed sources explicitly.
-- Record anti-debug points only if they affect the current chain.
-- Record fingerprint surfaces only if a consumer uses them.
-- Record risk branches only if they affect the current chain.
-- If the chain may fit `sdenv` or remote jsdom, record the fit check before broad patch lists.
-- If the chain depends on page lifecycle or navigation-produced state, record exactly one execution mode.
-- Record the injection point, state-close signal, and produced state carrier whenever runtime state is produced by lifecycle or navigation.
-- If a high-fidelity browser profile is required, record which profile was chosen and why.
-- Every dependency item must answer `必要性`, `证据`, and `去掉后现象`.
+- start with the target chain, not with a generic browser-object list
+- separate `必需对象` from `必需状态`
+- record fixed time, random, and seed sources explicitly
+- record anti-debug points only if they affect the current chain
+- record fingerprint surfaces only if a consumer uses them
+- record risk branches only if they affect the current chain
+- if the chain may fit `sdenv` or remote jsdom, record the fit check before broad patch lists
+- if the chain depends on page lifecycle or navigation-produced state, record exactly one execution mode
+- record the injection point, state-close signal, and produced state carrier whenever runtime state is produced by lifecycle or navigation
+- if a high-fidelity browser profile is required, record which profile was chosen and why
+- every dependency item must answer `必要性 / 证据 / 去掉后现象`
 
 ## Runtime Skeleton
 
 ```markdown
-# 运行时依赖
+# 运行态清单
 
-## 目标链路
-- 目标请求 / 函数：
+- 样本编号：
+- 证据编号：
+- 目标链路 / 函数：
 - 浏览器现象：
 - 本地现象：
-
-## 路线分类（按需）
 - 适配检查：
-  - 结论：
-  - 证据：
-- 执行模式：`local / remote-passive / remote-active`
+- 执行模式：本地回放 / 远程被动 / 远程主动 / 不适用
 - 浏览器画像：
 - 注入时机：
 - 状态闭合信号：
 - 状态载体：
 
 ## 必需对象
-- `对象1`
+- 对象1：
   - 必要性：
   - 证据：
   - 去掉后现象：
 
 ## 必需状态
-- `状态1`
-  - 状态：`["动态","响应获取","HttpOnly","会话相关"]`
+- 状态1：
+  - 状态标签：
   - 来源：
   - 证据：
   - 去掉后现象：
 
 ## 固定源
-- 时间：
-- 随机：
+- 时间源：
+- 随机源：
 - 种子：
 
 ## 纯算迁移前检查
 - 上游响应：
-  - 结论：
-  - 证据：
 - HttpOnly：
-  - 结论：
-  - 证据：
 - 一次性 challenge / nonce / ticket：
-  - 结论：
-  - 证据：
 - 浏览器内部状态：
-  - 结论：
-  - 证据：
 - 指纹采集：
-  - 结论：
-  - 证据：
 - 时间窗 / 序号 / 续期：
-  - 结论：
-  - 证据：
 
 ## 反调试（按需）
-- `点1`
+- 点1：
   - 现象：
   - 是否影响业务值：
   - 最小处理：
   - 命中表面：
+  - 证据：
 
 ## 指纹归因（按需）
-- `表面1`
+- 表面1：
   - 采集器：
+  - 聚合点：
   - 消费点：
   - 是否必需：
   - 证据：
 
 ## 风控分支（按需）
-- `分支点1`
+- 分支点1：
   - 触发条件：
   - 结果：
   - 证据：
 
 ## 可移除项
-- `项1`
+- 项1：
   - 去掉后现象：
   - 结论：
+  - 证据：
 
 ## 验证联动（按需）
-- 对应验证记录：`reverse-records/会话N/验证记录.md`
+- 验证记录引用：
 - 需要验证的补项：
 - 二跳验证：
 - 固定输入要求：
 ```
 
+## Required Sections
+
+`运行态清单.md` must be able to record all of the following:
+
+- target chain, browser behavior, and local behavior
+- fit check, execution mode, browser profile, injection point, and state-close signal
+- required objects
+- required state
+- fixed time, random, and seed sources
+- pure-compute precheck
+- anti-debug points when relevant
+- fingerprint attribution when relevant
+- risk branches when relevant
+- removable items
+- validation linkage
+
 ## Quality Check
 
-- Objects and state are separated.
-- Fixed sources are explicit.
-- Pure-compute migration checks are explicit.
-- Fit check and execution mode are explicit when `sdenv`-style routing is used.
-- Anti-debug, fingerprint, and risk sections are present only when needed.
-- Every dependency item states necessity and evidence.
-- Detailed validation checkpoints live in `验证记录.md`, not only in this file.
+- no runtime artifact may use the old filename `运行时依赖.md`
+- `必需对象` and `必需状态` are not mixed together
+- each dependency item has `必要性 / 证据 / 去掉后现象`
+- pure-compute migration is never claimed while any precheck class remains open
+- runtime facts stay in `运行态清单.md`, not in `总览.md`
+- detailed validation still lives in `验证记录.md`
