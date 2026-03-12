@@ -7,44 +7,21 @@ description: Use when browser execution and local execution diverge because of m
 
 ## Overview
 
-This skill identifies the minimal runtime gap of the current execution chain and produces a verifiable manifest of required objects, required state, fixed sources, and risk-branch conditions.
+Use this skill when browser execution works but local execution diverges and the real problem is a runtime gap, not a missing sink or hidden algorithm.
 
-Runtime work is successful only when it can explain why the browser path works, why the local path diverges, and which smallest set of dependencies closes that gap.
+Runtime work is complete only when you can explain why the browser path works, why the local path diverges, and which smallest set of dependencies closes that gap.
 
-## Core Principles
+## Self-Contained Rule
 
-- Environment patching is subtraction, not accumulation.
-- Missing objects and missing state must be classified separately.
-- Run a fit check before committing to `sdenv`, remote jsdom, or any browser-profile migration route.
-- When anti-debugging is present, choose the narrowest matching rule that changes the investigation path instead of applying broad patches.
-- For RS/瑞数-style tasks, treat `hasDebug` or extra-debugger variants as a dedicated route fork, not generic anti-debug noise.
-- Stabilize time, randomness, and seeds before comparing outputs.
-- For RS-style cookie generation, `basearr`, `encryptLens`, `lastWord`, and `flag` are closure items; if any remain unproven, the runtime route stays partial.
-- Before broad browser-surface patching on RS targets, first freeze the small set of runtime facts that usually matter: `window.name`, `maxTouchPoints`, `battery`, `connection`, `currentTime`, `runTime`, `startTime`, `random`, and loop-count or execution-window surrogates.
-- A chain can be treated as pure computation only after the pre-migration dependency check is closed.
-- For `deviceId`, `blackbox`, `sensor_data`, challenge, slider, or risk cookies, build a fingerprint-attribution matrix instead of calling everything “missing browser environment”.
-- For fingerprint-sensitive targets, prefer one high-fidelity browser profile over broad multi-profile simulation.
-- Every patch item must answer what breaks when it is removed.
-- If runtime state is produced by page lifecycle or navigation, record the injection point, state-close signal, and produced state carrier explicitly.
-- No RS-style cookie or token route is accepted without second-hop validation using the produced state.
-- If a navigation or lifecycle patch changes page state, remove the patch and re-validate the request chain when feasible.
-- If the real obstacle is hidden inside `jsvmp`, `worker`, `wasm`, or a protocol shell, switch to `$jsr-recover`.
-- If the final sink is not yet proven, step back to `$jsr-locate`.
-
-## Required Reference Loading
-
-- Never stop at `SKILL.md`. Before diagnosing the runtime gap, load at least one matching reference.
-- Read `references/runtime-diagnosis.md` for runtime-problem classification.
-- Read `references/minimal-env-design.md` when designing the minimal manifest, deciding patch scope, or checking whether pure-compute migration is allowed.
-- Read `references/anti-debug-and-risk-branches.md` when anti-debugging, stack checks, fingerprint-triggered risk branches, or normal/risk divergence is involved.
-- Read `references/sdenv-fit-check-and-routing.md` when the target matches `sdenv`-style runtime work: offline `html/js/ts` replay, remote jsdom execution, page-lifecycle-produced state, or navigation-produced cookies or tokens.
-- Read `references/rs-runtime-and-basearr-fit.md` when RS/瑞数 indicators appear: `hasDebug`, host-specific `basearr`, `encryptLens`, `lastWord`, `flag`, or first-hop state that must be accepted on a second hop.
-- Read `references/record-overview-and-validation.md` before creating or refreshing `总览.md` or `验证记录.md`.
-- When the problem expands from one class to another, load the newly relevant reference before continuing.
+- Assume only this `SKILL.md` is guaranteed to be loaded.
+- Do not block on opening `references/`.
+- The record skeletons below are canonical even if no other file is opened.
+- All execution records must be written in Chinese directly under `reverse-records/`.
+- Do not create per-session subfolders; update the current task files in place.
 
 ## Minimum Input
 
-Provide the smallest usable intake block before starting:
+Start from this intake block:
 
 ```text
 Target chain or function:
@@ -55,101 +32,241 @@ Known evidence:
 Constraints:
 ```
 
-Required fields:
+Required:
 
 - `Target chain or function`
 - `Browser behavior`
 - `Local behavior`
 - `Current blocker or symptom`
-- `Known evidence` (use `none` if nothing is known yet)
-- `Constraints` (use `none` if there are no extra constraints)
+- `Known evidence`
+- `Constraints`
 
-If fingerprint, challenge, or risk branching is already suspected, also add:
+Add these when relevant:
 
 - `Suspected consumer`
 - `Suspected branch point`
-
-If `sdenv`, remote jsdom, or page-lifecycle-produced state is already suspected, also add:
-
 - `Candidate runtime route`
 - `Known state-close signal`
-
-If RS/瑞数-style routing is already suspected, also add:
-
 - `Observed RS indicators`
 - `Observed cookie key suffix`
 - `Second-hop result`
 
-## Default Order
+## Runtime Classification
 
-1. Capture a browser normal-state sample before patching any local runtime.
-2. Classify the failure: missing object, missing state, anti-debugging, unstable source, or risk branch.
-3. If RS/瑞数 indicators are present, classify whether the blocker belongs to `hasDebug`, `basearr` closure, fixed runtime facts, or second-hop state consumption before selecting a broader route.
-4. If the target may fit `sdenv`, run a fit check before selecting any migration route.
-5. If anti-debugging or lifecycle traps are present, choose the narrowest matching rule, record the exact hit surface, and do not widen the patch scope yet.
-6. If the route depends on page lifecycle or navigation-produced state, classify exactly one execution mode: offline local replay, remote passive, or remote active.
-7. Record the injection point, state-close signal, and produced state carrier before broad environment patching.
-8. Run the pure-compute precheck: upstream response fields, `HttpOnly` cookies, one-time challenge, browser-internal state, fingerprint collection, and time-window or sequence dependencies.
-9. Only if all precheck items are closed may the current builder be classified as pure-compute migratable.
+Classify the blocker first:
+
+- missing object
+- missing state
+- anti-debugging
+- unstable source
+- risk branch
+
+Do not merge these classes into one vague “browser environment” answer.
+
+## Core Working Order
+
+1. Capture one browser normal-state sample before patching local runtime.
+2. Classify the first divergence into object, state, anti-debug, unstable source, or risk branch.
+3. If RS/瑞数 indicators exist, classify whether the blocker belongs to `hasDebug`, `basearr` closure, fixed runtime facts, or second-hop state consumption.
+4. Run a fit check before selecting `sdenv`, remote jsdom, or any route that depends on lifecycle-produced state.
+5. When anti-debugging or lifecycle traps exist, choose the narrowest matching rule first; do not widen patch scope early.
+6. If state is produced through lifecycle or navigation, select exactly one execution mode: offline local replay, remote passive, or remote active.
+7. Record injection point, state-close signal, and produced state carrier before broad patching.
+8. Run the pure-compute precheck: upstream response fields, `HttpOnly`, one-time challenge, browser-internal state, fingerprint collection, and time-window or sequence dependencies.
+9. Only when all precheck items are closed may the chain be treated as pure-compute migratable.
 10. For fingerprint-sensitive targets, map `surface -> collector -> aggregator -> consumer -> target field or risk branch`.
-11. Stabilize time and randomness before comparing intermediate values.
-12. On RS-style tasks, close `basearr`, `encryptLens`, `lastWord`, `flag`, and fixed-source assumptions before claiming cookie stability.
-13. Patch state before patching objects; many apparent environment failures are actually unclosed session state.
-14. After every new dependency, verify whether it truly affects the result.
-15. If the chosen route produces state through navigation, exit, or callback signals, validate the second hop with the produced state before accepting the route.
-16. If a navigation or lifecycle patch was used, remove it and re-check whether the request chain still closes before accepting the diagnosis.
+11. Stabilize time, randomness, and seeds before comparing intermediate values.
+12. For RS tasks, do not claim closure before `basearr`, `encryptLens`, `lastWord`, `flag`, and fixed runtime facts are tested.
+13. Patch state before patching objects whenever possible.
+14. After every new dependency, verify whether it truly changes the result.
+15. When a route produces state for a second hop, validate the second hop before accepting the route.
+16. If semantics are hidden by `jsvmp`, `worker`, `wasm`, or protocol shell, hand off to `$jsr-recover`.
+17. If the final sink is not proven, hand back to `$jsr-locate`.
+
+## Required Record Files
+
+### 总览.md
+
+```markdown
+# 总览
+
+- 当前阶段：运行时
+- 当前状态：🟡 待确认（部分完成） / ✅ 已确认 / ⛔ 阻塞
+- 目标链路 / 函数：
+- 当前结论：
+- 关键证据：
+- ➡️ 下一步：
+
+## ✅ 已确认
+- ...
+
+## 🟡 待确认
+- ...
+
+## ⛔ 风险 / 阻塞
+- ...
+
+## 🔍 待验证
+- ...
+```
+
+### 运行态清单.md
+
+```markdown
+# 运行态清单
+
+- 当前状态：🟡 待确认（部分完成）
+- 目标链路 / 函数：
+- 浏览器现象：
+- 本地现象：
+- 适配检查：
+- 执行模式：本地回放 / 远程被动 / 远程主动 / 不适用
+- 浏览器画像：
+- 注入时机：
+- 状态闭合信号：
+- 状态载体：
+- ➡️ 下一步：
+
+## 执行路线摘要
+| 项目 | 内容 |
+|---|---|
+| 适配检查 |  |
+| 执行模式 |  |
+| 浏览器画像 |  |
+| 注入时机 |  |
+| 状态闭合信号 |  |
+| 状态载体 |  |
+
+## ✅ 必需对象
+| 对象 | 必要性 | 证据 | 去掉后现象 |
+|---|---|---|---|
+| `对象1` |  |  |  |
+
+## ✅ 必需状态
+| 状态 | 状态标签 | 来源 | 证据 | 去掉后现象 |
+|---|---|---|---|---|
+| `状态1` | `["会话相关"]` |  |  |  |
+
+## 固定源
+| 项目 | 内容 |
+|---|---|
+| 时间源 |  |
+| 随机源 |  |
+| 种子 |  |
+
+## 🔍 纯算迁移前检查
+| 检查项 | 结论 | 证据 |
+|---|---|---|
+| 上游响应 |  |  |
+| HttpOnly |  |  |
+| 一次性 challenge / nonce / ticket |  |  |
+| 浏览器内部状态 |  |  |
+| 指纹采集 |  |  |
+| 时间窗 / 序号 / 续期 |  |  |
+
+## 🟡 反调试 / 指纹 / 风控（按需）
+- 只写当前链路实际命中的点
+
+## 🔍 可移除项与验证联动
+| 项目 | 去掉后现象 | 结论 | 证据 |
+|---|---|---|---|
+| 项1 |  |  |  |
+
+- 验证记录引用：
+- 固定输入要求：
+- 二跳验证：
+```
+
+### 验证记录.md
+
+```markdown
+# 验证记录
+
+## 验证项1｜名称
+- 触发阶段：运行时 / 验证
+- 归属阶段：验证
+- 当前结果：🔍 待验证 / ✅ 一致 / 🟡 部分一致 / ⛔ 不一致
+- 验证目标：
+
+### 固定输入
+| 项目 | 内容 |
+|---|---|
+| 输入样本 |  |
+| 时间源 |  |
+| 随机源 |  |
+| 会话状态 |  |
+
+### 路线证明（按需）
+| 项目 | 内容 |
+|---|---|
+| 适配检查 |  |
+| 执行模式 |  |
+| 注入时机 |  |
+| 状态闭合信号 |  |
+| 状态载体 |  |
+| 二跳验证 |  |
+
+### 检查点
+- `检查点1`
+- `检查点2`
+- `检查点3`
+
+### 结果
+| 项目 | 内容 |
+|---|---|
+| 浏览器侧输出 |  |
+| 本地侧输出 |  |
+| 失败样本 |  |
+| 差异定位 |  |
+| 验证结论 |  |
+| ➡️ 后续动作 |  |
+```
 
 ## Deliverables
 
-- The runtime-problem class of the current task.
-- A minimal runtime manifest rather than a broad “maybe needed” list.
-- The necessity, evidence, and removability of each patch item.
-- The fit-check result and the chosen execution mode when `sdenv`-style routing is involved.
-- For RS/瑞数 tasks, the `hasDebug` route decision, `basearr` closure state, fixed runtime facts under test, and second-hop validation result.
-- The selected anti-debug rule, its hit surface, and the re-validation result if a navigation or lifecycle patch was used.
-- The injection point, state-close signal, produced state carrier, and second-hop validation result when runtime state is generated by page lifecycle or navigation.
-- A clear statement on whether pure-compute migration is allowed and which dependency blocks it if not.
-- A fingerprint-attribution matrix for fingerprint or risk-control tasks.
-- Stable reproduction conditions for time, randomness, state, and input sample.
+- runtime-problem class
+- minimal runtime manifest, not a broad maybe-list
+- necessity, evidence, and removability of each dependency
+- fit-check result and chosen execution mode when route selection matters
+- `hasDebug` decision, `basearr` closure state, fixed runtime facts, and second-hop result for RS tasks
+- selected anti-debug rule and hit surface when used
+- whether pure-compute migration is allowed and what blocks it if not
+- stable reproduction conditions for time, randomness, state, and input
 
 ## Failure Output
 
-If runtime work stops, stays partial, or cannot yet close the gap, return and record a flat status block:
+When runtime work is incomplete, record:
 
 ```yaml
-status: ready | partial | blocked
-stage: runtime
-code:
-summary:
-evidence:
+状态: 就绪 | 部分完成 | 阻塞
+阶段: 运行时
+代码:
+摘要:
+证据:
   - ...
-impact:
-next_action:
+影响:
+下一动作:
 ```
 
-Use `partial` when the runtime class is known but one or more blocking dependencies remain open.
-Use `blocked` when there is no browser normal-state sample, no first divergence point, or no defensible runtime classification yet.
-Use `partial` for RS/瑞数 tasks when `hasDebug`, `basearr`, fixed runtime facts, or second-hop validation remains unresolved.
-Do not claim a minimal manifest until object gaps, state gaps, and unstable sources have been separated clearly enough to test.
+Use `部分完成` when the runtime class is known but blocking dependencies remain open.
+Use `阻塞` when there is no browser normal-state sample, no first divergence point, or no defensible runtime classification.
+Use `部分完成` for RS tasks when `hasDebug`, `basearr`, fixed runtime facts, or second-hop validation remains unresolved.
 
-## Record Files
+## Optional Extensions
 
-All reverse records must be written in Chinese under the current task working directory `reverse-records/`.
+If `references/` are available, use them only as extensions:
 
-- One reverse session must use exactly one `会话N/` folder.
-- If the user names a session folder, read and write only that folder.
-- If the user does not name one, create the next unused `会话N/` folder and use only that folder.
-- Never overwrite, merge, rename, or clean another `会话N/` folder.
-- Use `references/minimal-env-design.md` as the canonical schema for `运行态清单.md`, and use `references/record-overview-and-validation.md` as the canonical schema for `总览.md` and `验证记录.md`.
-- `总览.md` stores stage snapshot, problem class, blockers, next action, risk notes, and the current blocked or partial status block.
-- `运行态清单.md` stores the fit check, execution mode, minimal manifest, pure-compute precheck, removable items, and only the runtime facts needed for the current chain.
-- `验证记录.md` stores patch toggles, fixed inputs, state-close proof, second-hop validation, checkpoints, and pass/fail proof once validation begins.
-- Refresh `总览.md` before the first runtime diagnosis step, `运行态清单.md` as soon as dependencies or patch items are discussed, and `验证记录.md` when validation begins.
+- `references/runtime-diagnosis.md`
+- `references/minimal-env-design.md`
+- `references/anti-debug-and-risk-branches.md`
+- `references/sdenv-fit-check-and-routing.md`
+- `references/rs-runtime-and-basearr-fit.md`
+- `references/record-overview-and-validation.md`
 
 ## Completion Criteria
 
-- The root cause class is known.
-- The minimal runtime manifest is known.
-- The route is justified when `sdenv` or remote jsdom is involved.
-- Intermediate values become stable under fixed input and fixed sources.
-- The next stage does not need to re-diagnose the runtime gap.
+- the root-cause class is known
+- the minimal runtime manifest is known
+- the chosen route is justified
+- intermediate values become stable under fixed input and fixed sources
+- downstream work does not need to re-diagnose the same runtime gap

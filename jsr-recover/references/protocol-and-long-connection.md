@@ -79,7 +79,7 @@ ack 规则：
 载荷结构：
 ```
 
-Write this block into the current session `reverse-records/会话N/请求链路.md` under a dedicated `协议 / 长连接状态` section.
+Write this block into `reverse-records/请求链路.md` under a dedicated `协议 / 长连接状态` section.
 
 ## 4. State Transition Must Be Recorded Separately
 

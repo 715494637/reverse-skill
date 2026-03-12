@@ -7,46 +7,26 @@ description: Use when a dynamic request field, header, cookie, websocket frame, 
 
 ## Overview
 
-This skill reconstructs a provable source chain for dynamic fields and establishes the final write boundary, triggering action, upstream dependency chain, and the relation between normal-state and risk-state execution.
+Use this skill to prove the real source chain of a dynamic field and close the locate stage at the real write boundary.
 
-Locate work is complete only when it can answer all of the following:
+Locate is complete only when you can answer:
 
 - where the value is finally written
 - where the value comes from
 - which upstream state closes the chain
-- whether normal-state and risk-state requests follow the same or different builders
+- whether normal-state and risk-state flows use the same or different builders
 
-## Core Principles
+## Self-Contained Rule
 
-- Define the target as `field + sink + trigger + current state`, not as a function name.
-- Start from the nearest write boundary, then walk backward through `builder` and `entry`.
-- For signature, token, header, or encrypted-parameter entry tasks, start from a live request and its initiator stack before doing broad text search.
-- Capture a normal-state sample before analyzing risk-state divergence.
-- For RS/瑞数-style targets, capture `204/landing page -> inline $_ts -> external r2mKa js -> $_ts.l__ appcode -> second hop` as one locate chain before code reasoning.
-- If the target depends on response fields, `Set-Cookie`, `HttpOnly` cookies, challenge tokens, session state, or device state, build the state chain before discussing pure computation.
-- If `meta[r=m]` exists, parse and record it as a route or state clue, not as page noise.
-- When first-hop output is consumed on a second hop, do not accept a one-hop sample as chain closure.
-- If the entrypoint is only reachable through a dynamic alias or resolver, record the wrapper chain, trigger condition, minimum runtime preconditions, and residual risk before accepting it as the working entry.
-- A normal-state versus risk-state fork map is mandatory output whenever the task touches risk branching.
-- For `WebSocket`, `protobuf`, long connections, heartbeats, or renewal flows, build the connection state chain and message-family map before analyzing a single packet payload.
-- Expand every upstream dependency until the chain reaches the request that produces a normal response.
-- If the boundary is hidden by `jsvmp`, `worker`, `wasm`, or control-flow flattening, switch to `$jsr-recover`.
-- If the sink is known but local execution diverges from browser execution, or debugging destabilizes the result, switch to `$jsr-runtime`.
-
-## Required Reference Loading
-
-- Never stop at `SKILL.md`. Before substantial analysis, code reading, hook placement, or replay design, load at least one matching reference file.
-- Read `references/locate-workflow.md` for any source-tracing task.
-- Read `references/request-chain-recording.md` whenever request parameters, headers, cookies, `HttpOnly` cookies, upstream responses, dependency expansion, or connection metadata are involved.
-- Read `references/hook-and-boundary-patterns.md` whenever the main question is where to observe, where to hook, or whether a breakpoint is justified.
-- Read `references/crypto-entry-locating.md` when the task is to prove where a live request's signature, token, header, or encrypted parameter is generated.
-- Read `references/rs-collection-and-two-hop-routing.md` when RS/瑞数 indicators appear: `204` landing pages, inline `$_ts.nsd/cd`, `meta[r=m]`, `r2mKa`, `$_ts.l__`, or produced state that is consumed on a second hop.
-- Read `references/record-overview-and-validation.md` before creating or refreshing `总览.md` or `验证记录.md`.
-- When task scope expands, load the newly relevant reference before continuing.
+- Assume only this `SKILL.md` is guaranteed to be loaded.
+- Do not block on opening `references/` before acting.
+- The record skeletons below are canonical even if no other file is opened.
+- All execution records must be written in Chinese directly under `reverse-records/`.
+- Do not create per-session subfolders; update the current task files in place.
 
 ## Minimum Input
 
-Provide the smallest usable intake block before starting:
+Start from this intake block:
 
 ```text
 Target request:
@@ -58,97 +38,205 @@ Known evidence:
 Constraints:
 ```
 
-Required fields:
+Required:
 
 - `Target request`
 - `Target field`
-- `Current state` (use `unknown` if not yet known)
-- `Known evidence` (use `none` if nothing is known yet)
-- `Constraints` (use `none` if there are no extra constraints)
+- `Current state`
+- `Known evidence`
+- `Constraints`
 
-For protocol or long-connection tasks, also add:
+Add these when relevant:
 
 - `Connection family`
 - `Message type`
 - `Current connection state`
-
-For RS/瑞数-style tasks, also add:
-
 - `First-hop URL or 204 page`
 - `RS indicators`
 - `Second-hop evidence`
 
-## Preflight Classification
+## Core Working Order
 
-1. Identify the final sink: `query`, `body`, `header`, `cookie`, `storage`, `WebSocket` frame, `worker` reply, or hidden DOM field.
-2. Identify the trigger: initialization, click, form submit, response arrival, challenge pass, heartbeat, or renewal.
-3. Identify the mutation model: fixed, per-request dynamic, session-level, challenge-level, risk-level, or response-driven.
-4. Identify the current sample state: normal state, risk state, partially closed state, or unknown state.
+1. Capture one browser normal-state sample before discussing risk-state or replay.
+2. Classify the sink: `query / body / header / cookie / storage / WebSocket frame / worker reply / hidden DOM field`.
+3. Classify the trigger and mutation model.
+4. For sign, token, header, or encrypted-parameter entry work, start from `live request -> initiator stack -> candidate frame -> argument proof`, not broad text grep.
+5. For RS/瑞数-style tasks, capture `204 or landing page -> inline $_ts -> meta[r=m] -> external r2mKa -> $_ts.l__ appcode -> second hop` as one locate chain.
+6. If first-hop output is consumed later, do not accept one-hop closure; collect produced cookie, redirect target, or route clue and treat second-hop evidence as mandatory.
+7. As soon as response fields, `Set-Cookie`, `HttpOnly`, challenge, session state, or device state matter, start `请求链路.md` and expand the state chain before deeper code reading.
+8. Find the nearest sink first; then separate `entry -> builder -> writer`.
+9. Label each field as fixed, dynamic, encrypted, locally computed, response-derived, or environment-derived.
+10. Expand upstream until the chain reaches the request that produces a normal response.
+11. Record the normal path, risk fallback path, fork point, and missing state when risk branching exists.
+12. If semantics are hidden behind `jsvmp`, `worker`, `wasm`, flattening, or wrappers, hand off to `$jsr-recover`.
+13. If the sink is known but browser and local execution diverge, or debugging destabilizes the result, hand off to `$jsr-runtime`.
 
-## Operating Order
+## Required Record Files
 
-1. Capture one complete normal-state sample with request order, response summaries, page actions, and timing.
-2. When RS/瑞数 indicators exist, capture first-hop HTML, inline `$_ts`, `meta[r=m]`, external `r2mKa` js, and `$_ts.l__` appcode before broad source search.
-3. If first-hop output is consumed later, capture the produced cookie, redirect target, or route clue and treat second-hop evidence as mandatory locate material.
-4. For signature, token, header, or encrypted-parameter entry tasks, follow `request -> initiator -> candidate frame -> argument proof` from `references/crypto-entry-locating.md` before broad source search.
-5. As soon as response fields, `Set-Cookie`, `HttpOnly` cookies, challenge state, session state, or device state becomes relevant, open the current session `请求链路.md` and write the state chain before deeper code reading.
-6. Find the nearest write boundary instead of starting with `md5`, `aes`, `sign`, or generic crypto searches.
-7. Walk upward from the sink and separate who triggers execution, who assembles the value, and who performs the final write.
-8. Label every field as fixed, dynamic, encrypted, locally computed, response-derived, or environment-derived.
-9. When a field comes from an upstream response or `Set-Cookie`, expand the full dependency chain immediately.
-10. For protocol and long-connection tasks, separate envelope layer, message families, and connection state before payload logic.
-11. Record the normal-state builder path, the risk-state fallback path, the fork point, and the missing state for the same target.
-12. If the chain is clear but internal semantics remain hidden, switch to `$jsr-recover`; if the chain is clear but replay is unstable, switch to `$jsr-runtime`.
+### 总览.md
+
+Use this exact shape:
+
+```markdown
+# 总览
+
+- 当前阶段：定位
+- 当前状态：🟡 待确认（部分完成） / ✅ 已确认 / ⛔ 阻塞
+- 目标请求：
+- 目标字段：
+- 当前结论：
+- 关键证据：
+- ➡️ 下一步：
+
+## ✅ 已确认
+- ...
+
+## 🟡 待确认
+- ...
+
+## ⛔ 风险 / 阻塞
+- ...
+
+## 🔍 待验证
+- ...
+
+## 正常态 / 风控态对比（按需）
+| 项目 | 正常态 | 风控态 | 是否同链 |
+|---|---|---|---|
+| 触发动作 |  |  |  |
+| 上游请求 |  |  |  |
+| 写点 |  |  |  |
+| 组装链 |  |  |  |
+| Cookie / 状态依赖 |  |  |  |
+```
+
+### 请求链路.md
+
+Use one request per section:
+
+```markdown
+# 请求链路
+
+- 目标请求：
+- 目标对象：
+- 当前样本状态：🟡 待确认（正常态 / 风控态 / 未知）
+- 关键未闭环：
+- 样本编号：
+- 证据编号：
+
+## 请求A｜目标请求
+
+| 项目 | 内容 |
+|---|---|
+| 接口 |  |
+| 触发方式 |  |
+| 上游请求 | `请求B`、`请求C` / 无 |
+| 响应结果 |  |
+
+### 请求头
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+| `头1` | `["动态","响应获取","会话相关"]` | `请求B.response.token -> 请求A.header.头1` | `发送前对照` |
+
+### Query 参数
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+| `参数1` | `["固定","明文"]` | `页面固定值 -> 请求A.query.参数1` | `抓包` |
+
+### Body 参数
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+| `参数2` | `["动态","响应获取","一次性"]` | `请求C.response.ticket -> 请求A.body.参数2` | `响应包` |
+
+### Cookie
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+| `cookie1` | `["动态","响应获取","HttpOnly","会话相关"]` | `请求B.Set-Cookie.cookie1 -> 请求A.cookie.cookie1` | `Set-Cookie` |
+
+### 响应输出
+| 字段 | 状态 | 去向 | 证据 |
+|---|---|---|---|
+| `response.field1` | `["动态","响应获取","可复用"]` | `请求A.response.field1 -> 请求D.header.头2` | `响应包` |
+```
+
+### 验证记录.md
+
+Start this as soon as a sink hypothesis, state-chain closure, or fork claim needs proof:
+
+```markdown
+# 验证记录
+
+## 验证项1｜名称
+- 触发阶段：定位 / 验证
+- 归属阶段：验证
+- 当前结果：🔍 待验证 / ✅ 一致 / 🟡 部分一致 / ⛔ 不一致
+- 验证目标：
+
+### 固定输入
+| 项目 | 内容 |
+|---|---|
+| 输入样本 |  |
+| 会话状态 |  |
+| 页面动作 |  |
+
+### 检查点
+- `检查点1`
+- `检查点2`
+- `检查点3`
+
+### 结果
+| 项目 | 内容 |
+|---|---|
+| 浏览器侧输出 |  |
+| 本地侧输出 |  |
+| 失败样本 |  |
+| 差异定位 |  |
+| 验证结论 |  |
+| ➡️ 后续动作 |  |
+```
 
 ## Deliverables
 
-- The proven final write boundary of the target field.
-- The `entry -> builder -> writer` relation.
-- For resolver-based entries, a record of the wrapper chain, resolver trigger, minimum runtime preconditions, and residual risk.
-- A state chain proving whether the target depends on upstream responses, `HttpOnly` cookies, challenge state, session state, or device state.
-- For RS/瑞数 targets, a first-hop / second-hop route note with `204/landing URL`, inline `$_ts`, `meta[r=m]`, `r2mKa` js, `$_ts.l__` appcode, produced cookie or redirect target, and the canonical hop for downstream work.
-- The full set of prerequisite requests, response fields, state carriers, and triggering actions.
-- A normal-state versus risk-state fork map with fork point, normal path, fallback path, and missing state.
-- For protocol and long-connection tasks, a connection state chain, message-family map, and target-message envelope boundary.
-- Chinese reverse records that let downstream work continue without repeating locate work.
+- proven final sink of the target field
+- `entry -> builder -> writer` relation
+- state chain for response fields, `HttpOnly`, challenge, session state, or device state when relevant
+- first-hop / second-hop route note for RS/瑞数 tasks
+- prerequisite requests, response fields, state carriers, and triggers
+- normal/risk fork map when risk branching matters
+- connection state chain and message-family map for protocol tasks
 
 ## Failure Output
 
-If locate work stops, stays partial, or cannot yet prove the sink, return and record a flat status block:
+When locate work is incomplete, record:
 
 ```yaml
-status: ready | partial | blocked
-stage: locate
-code:
-summary:
-evidence:
+状态: 就绪 | 部分完成 | 阻塞
+阶段: 定位
+代码:
+摘要:
+证据:
   - ...
-impact:
-next_action:
+影响:
+下一动作:
 ```
 
-Use `partial` when there is a candidate chain but sink proof, source proof, or fork proof is still incomplete.
-Use `blocked` when no usable normal-state sample, no sink candidate, or no upstream state closure exists yet.
-Use `partial` for RS/瑞数 targets when only first-hop artifacts are known or `meta[r=m]` or second-hop closure is still unresolved.
-Do not claim locate closure until the sink is proven and risk branching is either ruled out or mapped.
+Use `部分完成` when there is a candidate chain but sink proof, source proof, fork proof, or RS second-hop closure is still open.
+Use `阻塞` when no usable normal sample, no sink candidate, or no upstream state closure exists.
 
-## Record Files
+## Optional Extensions
 
-All reverse records must be written in Chinese under the current task working directory `reverse-records/`.
+If `references/` are available, use them only to deepen the current work, not to decide the base workflow:
 
-- One reverse session must use exactly one `会话N/` folder.
-- If the user names a session folder, read and write only that folder.
-- If the user does not name one, create the next unused `会话N/` folder and use only that folder.
-- Never overwrite, merge, rename, or clean another `会话N/` folder.
-- Use `references/request-chain-recording.md` as the canonical schema for `请求链路.md`, and use `references/record-overview-and-validation.md` as the canonical schema for `总览.md` and `验证记录.md`.
-- `总览.md` stores stage snapshot, blockers, next action, risk notes, validation backlog, and the normal/risk comparison plus fork map.
-- `请求链路.md` stores request blocks, status arrays, `来源/去向`, upstream expansion, and protocol connection metadata only.
-- `验证记录.md` stores proof checks once a sink hypothesis, state-chain closure, or fork hypothesis must be verified.
-- Refresh `总览.md` before the first substantial action, `请求链路.md` as soon as dependency expansion starts, and `验证记录.md` when validation begins.
+- `references/locate-workflow.md`
+- `references/request-chain-recording.md`
+- `references/hook-and-boundary-patterns.md`
+- `references/crypto-entry-locating.md`
+- `references/rs-collection-and-two-hop-routing.md`
+- `references/record-overview-and-validation.md`
 
 ## Completion Criteria
 
-- The final write boundary is proven.
-- The source class is proven as local computation, upstream response, environment state, or mixed dependency.
-- If upstream dependencies exist, the chain has been expanded until the normal response is obtained.
-- The next stage can continue without repeating locate work.
+- the final sink is proven
+- the source class is proven as local, upstream, environment, or mixed
+- upstream dependencies are expanded until the normal response is reached
+- the next stage can proceed without repeating locate work

@@ -24,15 +24,11 @@ Write records under the current task working directory:
 
 ```text
 reverse-records/
-├─ 会话1/
-│  ├─ 总览.md
-│  ├─ 请求链路.md
-│  ├─ 运行态清单.md
-│  ├─ 恢复记录.md
-│  └─ 验证记录.md
-├─ 会话2/
-│  └─ ...
-└─ ...
+├─ 总览.md
+├─ 请求链路.md
+├─ 运行态清单.md
+├─ 恢复记录.md
+└─ 验证记录.md
 ```
 
 ## Overview Skeleton

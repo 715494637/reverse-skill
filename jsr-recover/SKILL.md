@@ -7,39 +7,21 @@ description: Use when real business logic is hidden by jsvmp, AST transforms, co
 
 ## Overview
 
-This skill identifies the obscuring layer around real business logic and determines the lowest recovery level and recovery order that are sufficient for the task.
+Use this skill when the real business logic is hidden behind a shell and downstream work cannot continue with surface-level beautification.
 
-Recovery is complete only when the current layer’s role, bridge boundary, state carrier, and key operator are clear enough for downstream locate or replay work to continue without reopening the shell.
+Recovery is complete only when the current layer’s role, bridge boundary, state carrier, and key operator are clear enough for downstream locate or replay work to continue.
 
-## Core Principles
+## Self-Contained Rule
 
-- Recover semantic boundaries before chasing readable appearance.
-- Identify container, dispatcher, and bridge layers before diving into business operators.
-- Classify the recovery level as `A / B / C` and start from the lowest effective level.
-- For AST-heavy shells, fingerprint the obfuscation family first, then apply ordered transforms with a per-step ledger and validation checkpoint.
-- For `worker`, `wasm`, `webpack/runtime`, and protocol shells, write the bridge-contract card before entering internals.
-- For RS/瑞数-style shells, start from `r2mKa`, `cp0/cp2/cp6`, `cp3 -> dynamicTaskOffset -> keys`, and `$_ts.l__` appcode instead of from bulk beautified source.
-- Treat `$_ts.l__` render or appcode wrappers as bridge artifacts that may carry business text or decrypted code, not as disposable page noise.
-- Prefer black-box reuse when the module boundary and contract are stable enough; do not default to full decompilation.
-- Recover only the slice required by the current problem.
-- Every recovered layer must have an equivalence checkpoint.
-- If the write-back point is still unclear, return to `$jsr-locate`; if replay remains unstable because of runtime state, switch to `$jsr-runtime`.
-
-## Required Reference Loading
-
-- Never stop at `SKILL.md`. Before serious recovery work, load at least one matching reference.
-- Read `references/recover-strategy.md` for any task that needs level selection or recovery order.
-- Read `references/jsvmp-and-ast.md` when `jsvmp`, AST transforms, or control-flow flattening is involved.
-- Read `references/ast-deobfuscation-playbook.md` when the main recovery work is AST deobfuscation, string-table recovery, helper inlining, control-flow unflattening, or bundle unpacking.
-- Read `references/wasm-worker-webpack.md` when the hiding layer includes `worker`, `wasm`, `webpack`, or runtime loaders.
-- Read `references/protocol-and-long-connection.md` when the shell is a protocol envelope, `WebSocket`, `protobuf`, long connection, heartbeat, ack, or renewal chain.
-- Read `references/rs-recovery-anchors.md` when RS/瑞数 indicators appear: `r2mKa`, `$_ts` cp fields, keys derivation paths, or `$_ts.l__` appcode.
-- Read `references/equivalence-and-validation.md` whenever key functions, bridge contracts, or extracted operators need equivalence proof.
-- Read `references/record-overview-and-validation.md` before creating or refreshing `总览.md` or `验证记录.md`.
+- Assume only this `SKILL.md` is guaranteed to be loaded.
+- Do not block on opening `references/`.
+- The record skeletons below are canonical even if no other file is opened.
+- All execution records must be written in Chinese directly under `reverse-records/`.
+- Do not create per-session subfolders; update the current task files in place.
 
 ## Minimum Input
 
-Provide the smallest usable intake block before starting:
+Start from this intake block:
 
 ```text
 Target:
@@ -51,101 +33,200 @@ Validation sample:
 Constraints:
 ```
 
-Required fields:
+Required:
 
 - `Target`
 - `Artifact`
 
-Recommended fields:
+Add these when relevant:
 
 - `Shell type`
 - `Recovery goal`
 - `Known anchor`
 - `Validation sample`
-- `Constraints` (use `none` if there are no extra constraints)
-
-For known shell families, add the tightest available anchor:
-
-- `worker`: message direction, bridge entry, shared state
-- `wasm`: imports, exports, wrapper layer
-- `webpack/runtime`: module entry, lazy-load point, module boundary
-- `protocol`: handshake, business packet, renewal or ack evidence
-
-For RS/瑞数-style shells, also add:
-
 - `$_ts sample`
 - `r2mKa anchor`
 - `Appcode anchor`
 
+## Recovery Levels
+
+- `A`: extract only the key opcode, operator, or bridge fact needed right now
+- `B`: recover dispatcher plus critical state carriers
+- `C`: minimal decompilation or minimal interpreter when lower levels are insufficient
+
+Do not climb to a higher level unless the lower level cannot support the current goal.
+
 ## Six-Layer View
 
-1. `outer container`: `webpack`, IIFE, loader, module bootstrap, lazy loading
+1. `outer container`: `webpack`, IIFE, loader, bootstrap, lazy loading
 2. `dispatcher layer`: dispatcher, state machine, bytecode loop, flattening switch
 3. `state carrier`: registers, stacks, context objects, closure pools, tables, memory areas
-4. `bridge layer`: `worker` message contract, `wasm` imports and exports, protocol codec shell
-5. `core operator`: hash, signature, encryption, fingerprint collection, serialization, challenge logic
-6. `write-back layer`: where the result is written into request, header, `cookie`, frame, or storage
+4. `bridge layer`: `worker` contract, `wasm` imports/exports, protocol codec shell
+5. `core operator`: hash, signature, encryption, fingerprint logic, serialization, challenge logic
+6. `write-back layer`: where the result lands in request, header, `cookie`, frame, or storage
 
-## Default Order
+## Core Working Order
 
-1. Identify which layer is currently obscuring the business logic.
-2. Select the current recovery level: `A` for key-opcode extraction, `B` for dispatcher plus critical state carriers, `C` for minimal decompilation or minimal interpreter.
-3. For RS/瑞数-style shells, recover in this order unless evidence contradicts it: `r2mKa dispatcher -> cp decoding -> keys path -> $_ts.l__ appcode`.
-4. When AST-heavy recovery dominates, follow `references/ast-deobfuscation-playbook.md` to fingerprint first, then unpack or transform in an evidence-preserving order.
-5. Confirm entry, input, and output of the current layer before widening the scope.
-6. For `worker`, `wasm`, `webpack`, and protocol shells, write the bridge-contract card and module-boundary note first.
-7. Prove bridge contracts or dispatcher relations before extracting the core operator.
-8. Before migrating an operator as pure computation, re-check upstream response, `HttpOnly` cookie, challenge, browser state, fingerprint, and time-window dependencies.
-9. After each recovered layer, record the equivalence checkpoint.
-10. If the sink is unclear, return to `$jsr-locate`; if the result is unstable because of runtime state, switch to `$jsr-runtime`.
+1. Identify which layer is hiding the business logic.
+2. Select the lowest viable recovery level `A / B / C`.
+3. For AST-heavy shells, fingerprint the obfuscation family first, then transform in evidence-preserving order.
+4. For `worker`, `wasm`, `webpack/runtime`, and protocol shells, write the bridge-contract card before diving into internals.
+5. For RS/瑞数-style shells, start from `r2mKa -> cp0/cp2/cp6 -> cp3 -> keys path -> $_ts.l__ appcode`, not bulk beautified source.
+6. Treat `$_ts.l__` render or appcode wrappers as bridge artifacts, not page noise.
+7. Confirm entry, input, and output of the current layer before widening scope.
+8. Prove bridge contracts or dispatcher relations before extracting the core operator.
+9. Before migrating an operator as pure computation, re-check upstream response, `HttpOnly`, challenge, browser state, fingerprint, and time-window dependencies.
+10. After each recovered layer, record one equivalence checkpoint.
+11. If the sink is still unclear, hand off to `$jsr-locate`.
+12. If replay remains unstable because of runtime state, hand off to `$jsr-runtime`.
+
+## Required Record Files
+
+### 总览.md
+
+```markdown
+# 总览
+
+- 当前阶段：恢复
+- 当前状态：🟡 待确认（部分完成） / ✅ 已确认 / ⛔ 阻塞
+- 目标：
+- 目标工件：
+- 当前结论：
+- 关键证据：
+- ➡️ 下一步：
+
+## ✅ 已确认
+- ...
+
+## 🟡 待确认
+- ...
+
+## ⛔ 风险 / 阻塞
+- ...
+
+## 🔍 待验证
+- ...
+```
+
+### 恢复记录.md
+
+```markdown
+# 恢复记录
+
+- 当前状态：🟡 待确认（部分完成）
+- 目标：
+- 目标工件：
+- 遮蔽层类型：
+- 恢复级别：A级 / B级 / C级
+- 当前结论：
+- 入口锚点：
+- ➡️ 下一恢复点：
+
+## 层级摘要
+| 项目 | 内容 |
+|---|---|
+| 停止理由 |  |
+| 语义边界 |  |
+| 桥接契约 |  |
+| 状态载体 |  |
+| 关键数据结构 |  |
+| 协议语义 |  |
+| 已确认映射 |  |
+
+## ✅ 关键函数卡片
+
+### 函数1｜名称
+| 项目 | 内容 |
+|---|---|
+| 输入 |  |
+| 输出 |  |
+| 副作用 |  |
+| 依赖 |  |
+| 证据 |  |
+
+## 🟡 未恢复缺口
+- 缺口1：
+- 缺口2：
+```
+
+### 验证记录.md
+
+```markdown
+# 验证记录
+
+## 验证项1｜名称
+- 触发阶段：恢复 / 验证
+- 归属阶段：验证
+- 当前结果：🔍 待验证 / ✅ 一致 / 🟡 部分一致 / ⛔ 不一致
+- 验证目标：
+
+### 固定输入
+| 项目 | 内容 |
+|---|---|
+| 输入样本 |  |
+| 时间源 |  |
+| 随机源 |  |
+| 会话状态 |  |
+
+### 检查点
+- `检查点1`
+- `检查点2`
+- `检查点3`
+
+### 结果
+| 项目 | 内容 |
+|---|---|
+| 浏览器侧输出 |  |
+| 本地侧输出 |  |
+| 失败样本 |  |
+| 差异定位 |  |
+| 验证结论 |  |
+| ➡️ 后续动作 |  |
+```
 
 ## Deliverables
 
-- The class of the current obscuring layer: `jsvmp`, `ast`, `worker`, `wasm`, protocol shell, or container wrapper.
-- The chosen recovery level `A / B / C` and why it stops there.
-- The entry, bridge boundary, state carrier, and key operator of the current layer.
-- For RS/瑞数 tasks, stable anchors for `r2mKa`, `cp0/cp2/cp6`, the keys derivation path, and any `$_ts.l__` appcode that matters to downstream work.
-- For `worker`, `wasm`, `webpack`, or protocol-shell tasks, a bridge-contract card and, when relevant, a module-closure boundary.
-- Key-function cards and equivalence-validation records.
-- Enough recovered structure that downstream work does not need to reopen the same shell.
+- obscuring-layer class: `jsvmp / ast / worker / wasm / protocol shell / container wrapper`
+- chosen recovery level `A / B / C` and why it stops there
+- entry, bridge boundary, state carrier, and key operator of the current layer
+- reusable RS anchors when handling `r2mKa`, `cp`, keys path, or `$_ts.l__`
+- bridge-contract card for `worker`, `wasm`, `webpack`, or protocol shells
+- key-function cards and equivalence records
 
 ## Failure Output
 
-If recovery work stops, stays partial, or cannot yet justify the current level, return and record a flat status block:
+When recovery is incomplete, record:
 
 ```yaml
-status: ready | partial | blocked
-stage: recover
-code:
-summary:
-evidence:
+状态: 就绪 | 部分完成 | 阻塞
+阶段: 恢复
+代码:
+摘要:
+证据:
   - ...
-impact:
-next_action:
+影响:
+下一动作:
 ```
 
-Use `partial` when the obscuring layer is classified but the bridge, state carrier, or key operator is still incomplete.
-Use `blocked` when no stable entry, no boundary anchor, or no validation sample exists for the current level.
-Use `partial` for RS/瑞数 tasks when `r2mKa`, `cp`, keys-path, or appcode anchors are known but not yet strong enough for downstream work.
-Do not claim recovery closure until the stopping level `A / B / C` is justified and downstream work can continue directly.
+Use `部分完成` when the obscuring layer is classified but the bridge, state carrier, key operator, or RS anchors are still insufficient.
+Use `阻塞` when there is no stable entry, no boundary anchor, or no validation sample for the current level.
 
-## Record Files
+## Optional Extensions
 
-All reverse records must be written in Chinese under the current task working directory `reverse-records/`.
+If `references/` are available, use them only as extensions:
 
-- One reverse session must use exactly one `会话N/` folder.
-- If the user names a session folder, read and write only that folder.
-- If the user does not name one, create the next unused `会话N/` folder and use only that folder.
-- Never overwrite, merge, rename, or clean another `会话N/` folder.
-- Use `references/equivalence-and-validation.md` as the canonical schema for `恢复记录.md`, and use `references/record-overview-and-validation.md` as the canonical schema for `总览.md` and `验证记录.md`.
-- `总览.md` stores stage snapshot, current recovery goal, blockers, next action, risk notes, and the current blocked or partial status block.
-- `恢复记录.md` stores structure cards: obscuring layer, bridge boundary, state carrier, module note, and key-function cards.
-- `验证记录.md` stores fixed inputs, checkpoints, equivalence results, and gap locations once validation begins.
-- Refresh `总览.md` before the first recovery action, `恢复记录.md` as soon as the first layer or bridge finding is known, and `验证记录.md` when equivalence work begins.
+- `references/recover-strategy.md`
+- `references/jsvmp-and-ast.md`
+- `references/ast-deobfuscation-playbook.md`
+- `references/wasm-worker-webpack.md`
+- `references/protocol-and-long-connection.md`
+- `references/rs-recovery-anchors.md`
+- `references/equivalence-and-validation.md`
+- `references/record-overview-and-validation.md`
 
 ## Completion Criteria
 
-- The obscuring layer is classified.
-- The key bridge boundary or dispatcher entry is known.
-- Key-function cards and equivalence checkpoints exist.
-- Downstream work can continue directly from the recovery result.
+- the obscuring layer is classified
+- the key bridge boundary or dispatcher entry is known
+- key-function cards and equivalence checkpoints exist
+- downstream work can continue directly without reopening the same shell
