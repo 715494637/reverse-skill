@@ -10,6 +10,7 @@
 - `jsr-locate`
 - `jsr-runtime`
 - `jsr-recover`
+- `jsr-reverse`
 
 安装位置：
 
@@ -31,6 +32,18 @@
 - `当前现象`
 - `已知约束`：例如 `cookie`、是否允许补环境、是否要求纯算法
 
+默认入口：
+
+- `jsr-reverse`：默认入口；先判题，再决定该读哪份 locate / recover / runtime reference
+- `jsr-locate`、`jsr-recover`、`jsr-runtime`：定向入口；只在当前阶段已经明确时直接调用
+
+1+3 架构：
+
+- `jsr-reverse` 是唯一默认入口，负责 intake、判题、阶段路由和点名当前必须读取的最小 reference 集合
+- 三个阶段 skill 是定向入口，只保留 `何时使用 / 先读哪些 reference / 何时交接`
+- 关键逆向知识放在各自 `references/`，由命中的 `SKILL.md` 明确指令读取
+- `reverse-records/` 仅作为可选输出层，不再主导 skill 结构
+
 全自动调用示例：
 
 ```text
@@ -48,6 +61,7 @@ cookie：【使用现有cookie / 优先不使用，必须则模拟完整链路�
 定向调用示例：
 
 ```text
+$jsr-reverse 先判断当前任务是来源链、壳层恢复、运行时分叉还是一致性校验，再按阶段读取最小 reference 集合推进。
 $jsr-locate 梳理请求 A 的写入边界、参数来源、上游依赖和 HttpOnly cookie 链路。
 $jsr-runtime 判断当前问题属于缺状态、缺对象、反调试还是风控分支，并给出最小环境清单。
 $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界、关键算子和等价性检查点。
@@ -55,11 +69,12 @@ $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界�
 
 按问题类型选择对应 skill：
 
-| Skill | 适合处理 | 主要产物 |
+| Skill | 负责什么 | 首读内容 |
 | --- | --- | --- |
-| `jsr-locate` | 动态字段、请求头、`cookie`、消息对象的写边界、来源链、依赖链 | `请求链路.md`、`总览.md` |
-| `jsr-runtime` | 浏览器正常、本地异常；反调试、状态缺口、时序随机源、指纹面、风控分支 | `运行态清单.md`、`验证记录.md` |
-| `jsr-recover` | `JSVMP`、`AST`、`worker`、`WASM`、`webpack/runtime`、协议壳遮蔽 | `恢复记录.md`、`验证记录.md` |
+| `jsr-reverse` | 默认总入口；先判题，再路由到 locate / recover / runtime / validation，并决定读取哪份 reference | 先读自身 `SKILL.md`，再按症状读取最小 reference 集合 |
+| `jsr-locate` | 定向入口；处理动态字段、请求头、`cookie`、消息对象的写边界、来源链、依赖链 | `locate-workflow.md` + `request-chain-recording.md`，再按症状补 `crypto-entry` / `rs-two-hop` / `hook-boundary` |
+| `jsr-runtime` | 定向入口；处理浏览器正常、本地异常、反调试、状态缺口、时序随机源、指纹面、风控分支 | `runtime-diagnosis.md` + `minimal-env-design.md`，再按症状补 `anti-debug` / `sdenv` / `rs-runtime` |
+| `jsr-recover` | 定向入口；处理 `JSVMP`、`AST`、`worker`、`WASM`、`webpack/runtime`、协议壳遮蔽 | `recover-strategy.md`，再按壳层补 `jsvmp-ast` / `wasm-worker-webpack` / `protocol` / `rs-anchors` |
 
 常见切换路径：
 
@@ -68,9 +83,11 @@ $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界�
 - `Runtime -> Recover`：已排除简单缺对象 / 缺状态，需要进入壳层恢复
 - `Recover -> Locate / Runtime`：恢复桥接边界或状态载体后，回到链路证明或运行时验证
 
-## 技能概览
+## 阶段入口
 
 ### `jsr-locate`
+
+定向入口，适合已经确认当前任务属于来源链和写边界问题时使用。
 
 - 证明目标字段、请求头、`cookie`、消息字段的真实写边界
 - 建立 `entry -> builder -> writer` 关系，展开前置请求、响应依赖和状态链
@@ -84,6 +101,8 @@ $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界�
 
 ### `jsr-runtime`
 
+定向入口，适合已经确认当前问题属于运行时分叉时使用。
+
 - 区分对象缺失、状态缺失、反调试、时间随机源、指纹面和风控分支
 - 设计最小运行时清单，说明每项依赖的必要性和可移除性
 - 建立执行模式、纯算迁移前检查和运行时验证联动
@@ -96,6 +115,8 @@ $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界�
 
 ### `jsr-recover`
 
+定向入口，适合已经确认当前任务需要穿透壳层或恢复桥接语义时使用。
+
 - 判定遮蔽层类型与最低必要恢复级别
 - 恢复 `JSVMP`、`AST`、控制流平坦化、`worker`、`WASM`、`webpack/runtime`、协议壳
 - 提取桥接契约、状态载体、关键算子和等价性检查点
@@ -106,9 +127,11 @@ $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界�
 - 需要先恢复桥接层、调度层或状态载体，才能继续定位或复现
 - 需要判断当前任务应停留在 `A / B / C` 哪一级恢复深度
 
-## 工作目录记录
+## 可选记录
 
-执行三类 skill 时，默认在当前任务工作目录维护中文记录：
+`reverse-records/` 只在需要长期留痕、跨阶段协作或显式交付记录时使用，不再作为 skill 的中心结构。默认推进顺序仍然是：先用 `jsr-reverse` 判题和路由，再由定向入口读取关键 reference。
+
+需要留痕时，在当前任务工作目录维护：
 
 ```text
 <当前任务工作目录>/reverse-records/
@@ -119,24 +142,9 @@ $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界�
 └─ 验证记录.md
 ```
 
-核心记录文件：
-
-| 文件 | 用途 |
-| --- | --- |
-| `总览.md` | 当前阶段、已确认内容、卡点、下一步、风险 |
-| `请求链路.md` | 请求区块、字段状态、来源 / 去向、上游展开、连接状态 |
-| `运行态清单.md` | 最小运行时依赖、执行模式、纯算迁移前检查、可移除项 |
-| `恢复记录.md` | 遮蔽层、恢复级别、桥接契约、状态载体、关键函数卡片 |
-| `验证记录.md` | 固定输入、检查点、对照结果、差异定位、验证结论 |
-
-记录规则：
-
-- 当前任务只使用一个 `reverse-records/` 目录
-- 已有记录时直接在该目录下续写和更新
-- 目录不存在时创建 `reverse-records/`
-- 不再创建会话子目录，也不维护多会话分层
-- 每次推进后至少更新一次当前会话 `总览.md`
-- 涉及接口复现、状态链、连接状态链时优先更新当前会话 `请求链路.md`
+- 只维护一个 `reverse-records/` 目录
+- 已有记录直接续写，不再创建会话子目录
+- records 是输出层，不替代阶段判题和 reference 路由
 
 ## 适用与边界
 

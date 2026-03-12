@@ -1,0 +1,4 @@
+interface:
+  display_name: "JSR Reverse"
+  short_description: "Front-door reverse skill that routes locate, recover, runtime, and validation work to the right reference files"
+  default_prompt: "Use $jsr-reverse as the default entry for Web JS reverse tasks. First classify whether the blocker is locate, recover, runtime, or validation. Then read only the matching reference files and keep the task on the shortest correct phase order."

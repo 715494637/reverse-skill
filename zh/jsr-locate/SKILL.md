@@ -1,237 +1,76 @@
 ---
 name: jsr-locate
-description: Use when a dynamic request field, header, cookie, websocket frame, worker message, challenge token, or RS/瑞数-style two-hop artifact chain must be traced to its real write boundary and upstream state dependencies.
+description: Use when a dynamic request field, sign, token, header, cookie, websocket frame, worker message, or RS/瑞数 two-hop artifact source is unknown and must be traced to a real write boundary and upstream state chain.
 ---
 
 # JSR Locate
 
-## 概述
+## 角色
 
-当目标问题是“这个动态字段到底写到哪里、从哪里来、依赖哪条上游状态链”时使用本 skill。
+只有当前卡点明确属于“来源证明”时才用这个 skill。
 
-Locate 完成的标准不是“看到疑似函数”，而是已经证明：
+适用场景：
 
-- 值最终写入的位置
-- 值的真实来源
-- 闭合该值的上游状态链
-- 正常态与风控态是否走同一条 builder 链
+- 最终写入边界还没证实
+- 字段来源还在猜
+- 上游响应或状态依赖还没闭合
+- 首跳 / 二跳链路还没闭合
 
-## 自包含规则
+不适用场景：
 
-- 默认只有这份 `SKILL.md` 会被实际读取。
-- 不要因为没打开 `references/` 而停住。
-- 下面给出的记录骨架就是权威格式，不依赖其他文件。
-- 所有执行记录都直接写入工作目录下的 `reverse-records/`，并且使用中文。
-- 不再创建会话子目录；当前任务的记录文件直接在该目录下持续更新。
+- sink 已证实，真正卡点是壳层恢复
+- sink 已证实，真正卡点是浏览器与本地执行分叉
 
-## 最小输入
+如果当前阶段还不明确，先走 `$jsr-reverse`。
 
-开始前先收齐这块输入：
+## 输入块
+
+先收这块输入：
 
 ```text
+URL 或目标页面：
 目标请求：
-目标字段：
-最终写点（若已知）：
+目标字段 / cookie / 消息：
 触发动作：
-当前状态：正常态 / 风控态 / 未知
-已知证据：
+当前现象：
+已有证据：
+目标：
 约束：
 ```
 
-必填：
+## 读取顺序
 
-- `目标请求`
-- `目标字段`
-- `当前状态`
-- `已知证据`
-- `约束`
-
-按需补充：
-
-- `连接家族`
-- `消息类型`
-- `当前连接状态`
-- `首跳 URL 或 204 页面`
-- `瑞数特征`
-- `二跳证据`
-
-## 核心顺序
-
-1. 先抓一份浏览器正常态样本，再讨论风控态或本地复现。
-2. 先判断最终落点属于 `query / body / header / cookie / storage / WebSocket 帧 / worker 回传 / 隐藏 DOM 字段` 哪一类。
-3. 再判断触发动作和变异模型。
-4. 如果是 `sign`、`token`、动态请求头或加密参数入口，先按 `真实请求 -> initiator 栈 -> 候选帧 -> 参数证据` 走，不要先大范围 grep。
-5. 如果命中瑞数特征，把 `204 或落地页 -> 内联 $_ts -> meta[r=m] -> 外链 r2mKa -> $_ts.l__ appcode -> 二跳` 当成一条完整 locate 链。
-6. 如果首跳产物会被后续消费，就不能接受“一跳闭合”；必须继续收集产出的 cookie、跳转目标或路由线索，并把二跳证据当必需项。
-7. 一旦涉及响应字段、`Set-Cookie`、`HttpOnly`、challenge、session state 或 device state，立刻开始写 `请求链路.md`，先展开状态链，再继续深读代码。
-8. 先找到最近写点，再拆分 `entry -> builder -> writer`。
-9. 每个字段都标清：固定、动态、加密、本地计算、响应获取、环境产出。
-10. 一直向上游展开，直到链路到达能产出正常响应的请求。
-11. 涉及风控分支时，必须同时记录正常路径、风控 fallback 路径、分叉点和缺失状态。
-12. 如果真实语义被 `jsvmp`、`worker`、`wasm`、flattening 或协议包裹遮住，切 `$jsr-recover`。
-13. 如果 sink 已清楚，但浏览器和本地执行不一致，或调试会扰动结果，切 `$jsr-runtime`。
-
-## 必交记录
-
-### `总览.md`
-
-```markdown
-# 总览
-
-- 当前阶段：定位
-- 当前状态：🟡 待确认（部分完成） / ✅ 已确认 / ⛔ 阻塞
-- 目标请求：
-- 目标字段：
-- 当前结论：
-- 关键证据：
-- ➡️ 下一步：
-
-## ✅ 已确认
-- ...
-
-## 🟡 待确认
-- ...
-
-## ⛔ 风险 / 阻塞
-- ...
-
-## 🔍 待验证
-- ...
-
-## 正常态 / 风控态对比（按需）
-| 项目 | 正常态 | 风控态 | 是否同链 |
-|---|---|---|---|
-| 触发动作 |  |  |  |
-| 上游请求 |  |  |  |
-| 写点 |  |  |  |
-| 组装链 |  |  |  |
-| Cookie / 状态依赖 |  |  |  |
-```
-
-### `请求链路.md`
-
-```markdown
-# 请求链路
-
-- 目标请求：
-- 目标对象：
-- 当前样本状态：🟡 待确认（正常态 / 风控态 / 未知）
-- 关键未闭环：
-- 样本编号：
-- 证据编号：
-
-## 请求A｜目标请求
-| 项目 | 内容 |
-|---|---|
-| 接口 |  |
-| 触发方式 |  |
-| 上游请求 | `请求B`、`请求C` / 无 |
-| 响应结果 |  |
-
-### 请求头
-| 字段 | 状态 | 来源 | 证据 |
-|---|---|---|---|
-| `头A` | `["动态","响应获取","会话相关"]` | `请求B.response.token -> 请求A.header.头A` | `发送前对照` |
-
-### Query 参数
-| 字段 | 状态 | 来源 | 证据 |
-|---|---|---|---|
-| `参数1` | `["固定","明文"]` | `页面固定值 -> 请求A.query.参数1` | `抓包` |
-
-### Body 参数
-| 字段 | 状态 | 来源 | 证据 |
-|---|---|---|---|
-| `参数2` | `["动态","响应获取","一次性"]` | `请求C.response.ticket -> 请求A.body.参数2` | `响应取证` |
-
-### Cookie
-| 字段 | 状态 | 来源 | 证据 |
-|---|---|---|---|
-| `cookie1` | `["动态","响应获取","HttpOnly","会话相关"]` | `请求B.Set-Cookie.cookie1 -> 请求A.cookie.cookie1` | `Set-Cookie` |
-
-### 响应输出
-| 字段 | 状态 | 去向 | 证据 |
-|---|---|---|---|
-| `response.field1` | `["动态","响应获取","可复用"]` | `请求A.response.field1 -> 请求D.header.头B` | `响应取证` |
-```
-
-### `验证记录.md`
-
-只要 sink 假设、状态链闭合或分叉判断需要证明，就开始写：
-
-```markdown
-# 验证记录
-
-## 验证项｜名称
-- 触发阶段：定位 / 验证
-- 归属阶段：验证
-- 当前结果：🔍 待验证 / ✅ 一致 / 🟡 部分一致 / ⛔ 不一致
-- 验证目标：
-
-### 固定输入
-| 项目 | 内容 |
-|---|---|
-| 输入样本 |  |
-| 会话状态 |  |
-| 页面动作 |  |
-
-### 检查点
-- `检查点1`
-- `检查点2`
-- `检查点3`
-
-### 结果
-| 项目 | 内容 |
-|---|---|
-| 浏览器侧输出 |  |
-| 本地侧输出 |  |
-| 失败样本 |  |
-| 差异定位 |  |
-| 验证结论 |  |
-| ➡️ 后续动作 |  |
-```
-
-## 交付要求
-
-- 证明目标字段的最终写点
-- 说明 `entry -> builder -> writer` 关系
-- 说明响应字段、`HttpOnly`、challenge、session state、device state 的依赖链
-- 瑞数任务补齐首跳 / 二跳链路说明
-- 说明前置请求、响应字段、状态载体和触发动作
-- 涉及风控时给出正常态 / 风控态分叉图
-- 协议或长连接任务补齐连接状态链和消息家族
-
-## 失败输出
-
-如果 locate 停在半路，直接落这个状态块：
-
-```yaml
-状态: 就绪 | 部分完成 | 阻塞
-阶段: 定位
-代码:
-摘要:
-证据:
-  - ...
-影响:
-下一动作:
-```
-
-- 有候选链，但 sink 证明、来源证明、分叉证明或瑞数二跳还没闭合时，用 `部分完成`
-- 没有可用正常态样本、没有 sink 候选或没有上游状态闭合时，用 `阻塞`
-
-## 可选扩展
-
-如果 `references/` 存在，只把它当扩展资料，不当作执行前提：
+### 1. 先固定读这两份
 
 - `references/locate-workflow.md`
 - `references/request-chain-recording.md`
-- `references/hook-and-boundary-patterns.md`
-- `references/crypto-entry-locating.md`
-- `references/rs-collection-and-two-hop-routing.md`
-- `references/record-overview-and-validation.md`
 
-## 结束条件
+### 2. 再按症状补一份定向 locate reference
 
-- 最终写点已经证明
-- 来源类型已经证明为本地、上游、环境或混合
-- 上游依赖已经展开到正常响应
-- 下一阶段无需重新做 locate
+- `references/crypto-entry-locating.md`：`sign`、`token`、动态 header、加密参数、请求侧 crypto 入口
+- `references/rs-collection-and-two-hop-routing.md`：`412`、`403`、挑战页、`204` 落地页、内联 `$_ts`、`meta[r=m]`、`r2mKa`、`$_ts.l__`、首跳 / 二跳 cookie 行为
+- `references/hook-and-boundary-patterns.md`：hook、断点、initiator tracing、边界观察
+
+### 3. locate 不再是主问题时立刻切换
+
+- 写入边界已经接近，但真实逻辑被 `JSVMP`、AST 壳、`worker`、`wasm`、`webpack/runtime`、协议包裹挡住时，切 `$jsr-recover`
+- sink 已证实，但浏览器和本地执行分叉时，切 `$jsr-runtime`
+
+## Locate 必须证明
+
+- 最终 sink 真实存在
+- `entry -> builder -> writer`
+- 上游响应和状态依赖
+- 正常态 / 风控态分叉
+- 瑞数场景下首跳产物是否被二跳真实消费
+
+## 护栏
+
+- 已经有真实请求和 initiator 链时，不要先做大范围 grep。
+- 真实 writer 还没证实时，不要停在 wrapper、SDK 层或 alias 层。
+- 瑞数首跳材料没有经过二跳消费验证前，不算闭合。
+- sink 和依赖链没闭合前，不要提前跳到 runtime 补环境。
+
+## 退出条件
+
+只有下游推进已经不再依赖来源证明时，才离开 locate。

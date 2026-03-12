@@ -35,3 +35,6 @@ venv/
 # Local nested repositories
 JSReverser-MCP-main/
 
+# Local git worktrees
+.worktrees/
+
