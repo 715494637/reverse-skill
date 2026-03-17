@@ -5,7 +5,7 @@ description: Use when a Web JS reverse task has unclear phase selection, mixed s
 
 # JSR Reverse
 
-## Role
+## Scope & Triggers
 
 Use this as the only default entry skill for Web JS reverse work.
 
@@ -16,7 +16,11 @@ Its job is to do four things:
 - point to the smallest reference set to read now
 - keep the task on `locate -> recover -> runtime -> validation` unless evidence forces a different route
 
-## Intake
+This skill applies when a Web JS reverse task has unclear phase selection, mixed source-chain and shell blockers, runtime divergence, validation-only work, or RS/瑞数 clues such as 412, cookie hops, sign, token, JSVMP, worker, wasm, hasDebug, or basearr.
+
+## Process
+
+### Intake
 
 Start from this block:
 
@@ -30,9 +34,24 @@ Goal:
 Constraints:
 ```
 
-## Output First
+### Init Gate (Request Chain First)
 
-Before deeper analysis, output this routing block:
+If any of these are missing, run this gate before phase routing:
+
+- the target request is not identified
+- the upstream dependency chain is unknown
+- there is no real request sample (only guesses)
+
+Do this inside `jsr-reverse` (not a separate skill):
+
+1. Use JS Reverse MCP to open the target site and perform the trigger action.
+2. Capture all requests, headers, bodies, cookies, and responses.
+3. Write the Request Chain Judgment block into `reverse-records/请求链路.md` by following `references/request-chain-recording.md`.
+4. Only then output the routing block and choose the phase.
+
+### Output First
+
+If Init Gate is required, output the Request Chain Judgment block first, then output this routing block; if Init Gate is not required, output this routing block after intake:
 
 ```text
 Current phase:
@@ -41,7 +60,7 @@ Do not enter:
 Switch when:
 ```
 
-## Default Routing Rule
+### Default Routing Rule
 
 1. If the real write boundary or upstream state chain is still unproven, start with `locate`.
 2. If the write boundary is near but the real logic is still hidden by a shell, move to `recover`.
@@ -49,7 +68,7 @@ Switch when:
 4. If the main work is checkpoint proof or final consistency proof, move to `validation`.
 5. If the user explicitly wants to avoid environment patching, treat `runtime` as a last-mile consistency check, not the main path.
 
-## RS Priority Override
+### RS Priority Override
 
 Treat the task as RS-high-priority as soon as you see any of these clues:
 
@@ -67,11 +86,11 @@ When RS clues exist:
 - start from `locate` unless the sink and shell boundary are already proven
 - read the RS-specific reference for the current phase before broadening to generic references
 
-## Reference Routing
+### Reference Routing
 
 Read references deliberately. Do not bulk-load everything.
 
-### Enter Locate
+#### Locate
 
 Read these first:
 
@@ -84,7 +103,7 @@ Then add one targeted locate reference:
 - `references/rs-collection-and-two-hop-routing.md` for `412`, `403`, `204`, inline `$_ts`, `meta[r=m]`, `r2mKa`, `$_ts.l__`, or first-hop / second-hop behavior
 - `references/hook-and-boundary-patterns.md` for hooks, breakpoints, initiator tracing, or boundary observation
 
-### Enter Recover
+#### Recover
 
 Read this first:
 
@@ -98,7 +117,7 @@ Then add the smallest matching recovery reference:
 - `references/protocol-and-long-connection.md` for WebSocket, protobuf, SSE, heartbeat, ack, or renewal state
 - `references/rs-recovery-anchors.md` for `r2mKa`, `cp0/cp2/cp6`, `cp3 -> keys`, or `$_ts.l__ appcode`
 
-### Enter Runtime
+#### Runtime
 
 Read these first:
 
@@ -111,13 +130,13 @@ Then add the smallest matching runtime reference:
 - `references/sdenv-fit-check-and-routing.md` for lifecycle-produced state, navigation-produced state, offline replay, or `sdenv` / jsdom routes
 - `references/rs-runtime-and-basearr-fit.md` for `hasDebug`, `basearr`, `encryptLens`, `lastWord`, `flag`, fixed runtime facts, or second-hop state consumption
 
-### Enter Validation
+#### Validation
 
 Read:
 
 - `references/equivalence-and-validation.md`
 
-## Fast Triage Table
+### Fast Triage Table
 
 | Symptom | Next phase | Read now |
 |---|---|---|
@@ -132,17 +151,53 @@ Read:
 | RS local load fails on `hasDebug` or `basearr` differences | `runtime` | `rs-runtime-and-basearr-fit.md` |
 | Main work is checkpoint proof only | `validation` | `equivalence-and-validation.md` |
 
-## Phase Exit Rules
+### Terminology
+
+- phase: `locate` / `recover` / `runtime` / `validation`
+- gate: Init Gate (request-chain first)
+- record: `reverse-records/请求链路.md`
+- handoff: Request Chain handoff block at file end
+
+### Consistency Rules
+
+- If Init Gate triggers, output Request Chain Judgment before the routing block.
+- Only repeat the routing block when the phase changes or the request chain updates.
+- Only reference `jsr-reverse/references/*`.
+
+## Examples
+
+```text
+Request Chain Judgment:
+- Target request: /api/verify
+- Trigger: submit login form
+- Evidence: only guessed, no real sample
+
+Current phase: locate
+Read now: references/request-chain-recording.md
+Do not enter: recover
+Switch when: request chain recorded and upstream dependency chain is real
+```
+
+## Guidelines
+
+### Phase Exit Rules
 
 - Leave `locate` only when the sink and upstream state chain are real.
 - Leave `recover` only when the shell has been reduced enough for downstream work to continue.
 - Leave `runtime` only when the first divergence point and minimum dependency set are real.
 - Leave `validation` only when the compared checkpoints are concrete and defensible.
 
-## Guardrails
+### Guardrails
 
 - Do not start from broad source grep when a live request and initiator chain already exist.
 - Do not jump into runtime patching while the write boundary is still guessed.
 - Do not fully decompile a shell when a bridge contract or operator slice is enough.
 - Do not treat RS first-hop material as complete until second-hop consumption is checked.
 - Do not treat a final output match as sufficient when intermediate checkpoints disagree.
+- Update `reverse-records/请求链路.md` immediately after each request-chain capture or change (see `references/request-chain-recording.md`).
+
+```text
+Request Chain handoff:
+Record: reverse-records/请求链路.md
+Request Chain Judgment:
+```
