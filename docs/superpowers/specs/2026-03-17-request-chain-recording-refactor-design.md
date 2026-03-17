@@ -30,10 +30,10 @@
 
 ## 2. Proposed Structure (Top-Level)
 
-1) **Purpose** — states handoff and traceability goals; forbids stage summaries or conclusions. Summary is limited to request identity and closure status (not phase conclusions).
+1) **Purpose** — states handoff and traceability goals; forbids stage summaries or conclusions. Summary is limited to request identity and closure status and lives only in the Header Skeleton.
 2) **Record Path** — only `reverse-records/请求链路.md`; no multi-file lists.
 3) **Header Skeleton** — minimal summary block for handoff entry (target request, object, sample state, open closures, ids).
-4) **Request Block Skeleton** — per-request section with compact tables and evidence requirements.
+4) **Request Block Skeleton** — per-request section with compact tables and evidence requirements; this section contains the status array vocabulary + example.
 5) **Handoff Block** — mandatory end block for continuation (current phase + next step).
 6) **Connection Info (Optional)** — only for protocol flows (WebSocket/protobuf/SSE/heartbeat/renewal).
 
@@ -71,6 +71,7 @@
 
 **Example Policy**
 - Keep one minimal example only.
+- Example must include: header summary, one target request block, at least one field in header/query/body/cookie/response tables, and the handoff block.
 - Example must show target request first, real source/evidence, and a closed upstream chain (every upstream reference in the target request has a concrete source in an earlier request or is marked `无`).
 
 **Acceptance Criteria**
