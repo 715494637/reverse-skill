@@ -24,17 +24,17 @@
 **Success Criteria**
 - Clear, short structure centered on handoff and traceability
 - Single record path enforced: `reverse-records/请求链路.md`
-- Field records always include status arrays + source/target + evidence
+- Request field records (header/query/body/cookie/response tables) always include status arrays + source/target + evidence
 
 ---
 
 ## 2. Proposed Structure (Top-Level)
 
-1) **Purpose** — states handoff and traceability goals; forbids stage summaries or conclusions.
+1) **Purpose** — states handoff and traceability goals; forbids stage summaries or conclusions. Summary is limited to request identity and closure status (not phase conclusions).
 2) **Record Path** — only `reverse-records/请求链路.md`; no multi-file lists.
-3) **Header Skeleton** — minimal summary block for handoff entry.
+3) **Header Skeleton** — minimal summary block for handoff entry (target request, object, sample state, open closures, ids).
 4) **Request Block Skeleton** — per-request section with compact tables and evidence requirements.
-5) **Handoff Block** — mandatory end block for continuation.
+5) **Handoff Block** — mandatory end block for continuation (current phase + next step).
 6) **Connection Info (Optional)** — only for protocol flows (WebSocket/protobuf/SSE/heartbeat/renewal).
 
 ---
@@ -62,7 +62,7 @@
 - Status arrays remain unchanged (no new tokens).
 - Input fields use `状态 / 来源 / 证据`.
 - Response fields use `状态 / 去向 / 证据`.
-- No empty structures: use `- 无` when a section has no fields, and `无` for no upstream.
+- No empty structures: use `- 无` when a field table (header/query/body/cookie/response) has no fields, and use `无` in the request metadata row for upstream when there is no upstream request.
 - Evidence must be verifiable (packet capture / response body / pre-send comparison); do not record guesses as evidence.
 
 ---
@@ -71,7 +71,7 @@
 
 **Example Policy**
 - Keep one minimal example only.
-- Example must show target request first, real source/evidence, and a closed upstream chain.
+- Example must show target request first, real source/evidence, and a closed upstream chain (every upstream reference in the target request has a concrete source in an earlier request or is marked `无`).
 
 **Acceptance Criteria**
 - Top-level structure matches the proposed six blocks.
@@ -79,6 +79,15 @@
 - Every field includes status + source/target + evidence.
 - Mandatory handoff block is present.
 - Optional connection info is clearly scoped to protocol flows only.
+
+---
+
+## 6. Migration Notes
+
+- Preserve existing header skeleton and request block table formats; only reorder and trim.
+- Remove or merge sections explicitly marked as low value in Section 3.
+- Keep status vocabulary unchanged; do not add tokens.
+- Handoff block remains mandatory at file end.
 
 ---
 
