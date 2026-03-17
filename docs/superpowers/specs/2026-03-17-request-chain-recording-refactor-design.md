@@ -24,7 +24,7 @@
 **Success Criteria**
 - Clear, short structure centered on handoff and traceability
 - Single record path enforced: `reverse-records/请求链路.md`
-- Request field records (header/query/body/cookie/response tables) always include status arrays + source/target + evidence
+- Request field records (header/query/body/cookie/response tables) always include status arrays + source/target + evidence (request metadata table is exempt)
 
 ---
 
@@ -145,7 +145,7 @@ Example:
 - Status arrays remain unchanged (no new tokens).
 - Input fields use `状态 / 来源 / 证据`.
 - Response fields use `状态 / 去向 / 证据`.
-- No empty structures: use `- 无` when a field table (header/query/body/cookie/response) has no fields, and use `无` in the request metadata row for upstream when there is no upstream request.
+- No empty structures: if a field table (header/query/body/cookie/response) has no fields, insert a single row `| - 无 | - | - | - |` (or `| - 无 | - | - | - |` for response tables) to keep table structure. Use `无` in the request metadata row for upstream when there is no upstream request.
 - Evidence must be verifiable (packet capture / response body / pre-send comparison); do not record guesses as evidence.
 
 ---
@@ -161,7 +161,7 @@ Example:
 **Acceptance Criteria**
 - Top-level structure matches the proposed six blocks.
 - Single record path is enforced.
-- Every field includes status + source/target + evidence.
+- Every request field table entry includes status + source/target + evidence (metadata table excluded).
 - Mandatory handoff block is present.
 - Optional connection info is clearly scoped to protocol flows only.
 
