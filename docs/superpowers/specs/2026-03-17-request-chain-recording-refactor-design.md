@@ -37,6 +37,55 @@
 5) **Handoff Block** — mandatory end block for continuation (current phase + next step).
 6) **Connection Info (Optional)** — only for protocol flows (WebSocket/protobuf/SSE/heartbeat/renewal).
 
+### Required Block Fields (verbatim)
+
+**Header Skeleton (summary lives here only)**
+```markdown
+# 请求链路
+
+- 目标请求：
+- 目标对象：
+- 当前样本状态：🟡 待确认（正常态 / 风控态 / 未知）
+- 关键未闭环：
+- 样本编号：
+- 证据编号：
+```
+
+**Closure status definition**
+- “Closure status” is the combination of `当前样本状态` + `关键未闭环` only. Do not add phase conclusions elsewhere.
+
+**Request Block Skeleton (table headers are fixed)**
+```markdown
+## 请求A｜目标请求
+
+| 项目 | 内容 |
+|---|---|
+| 接口 |  |
+| 触发方式 |  |
+| 上游请求 | `请求B`、`请求C` / 无 |
+| 响应结果 |  |
+
+### 请求头
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+
+### Query 参数
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+
+### Body 参数
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+
+### Cookie
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+
+### 响应输出
+| 字段 | 状态 | 去向 | 证据 |
+|---|---|---|---|
+```
+
 ---
 
 ## 3. Keep / Remove Rules
@@ -71,8 +120,9 @@
 
 **Example Policy**
 - Keep one minimal example only.
-- Example must include: header summary, one target request block, at least one field in header/query/body/cookie/response tables, and the handoff block.
+- Example must include: header summary, one target request block, at least one field in header/query/body/cookie/response tables. If a category is not present in the example, use `- 无` for that table.
 - Example must show target request first, real source/evidence, and a closed upstream chain (every upstream reference in the target request has a concrete source in an earlier request or is marked `无`).
+- Example must include the handoff block.
 
 **Acceptance Criteria**
 - Top-level structure matches the proposed six blocks.
@@ -85,7 +135,8 @@
 
 ## 6. Migration Notes
 
-- Preserve existing header skeleton and request block table formats; only reorder and trim.
+- Use the exact Header Skeleton and Request Block Skeleton fields defined in Section 2.
+- If any existing table headers differ, normalize to the specified columns.
 - Remove or merge sections explicitly marked as low value in Section 3.
 - Keep status vocabulary unchanged; do not add tokens.
 - Handoff block remains mandatory at file end.
