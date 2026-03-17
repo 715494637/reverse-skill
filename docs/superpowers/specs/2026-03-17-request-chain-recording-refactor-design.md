@@ -14,7 +14,7 @@
 
 **Scope**
 - Only refactor: `jsr-reverse/references/request-chain-recording.md`
-- English-only version in this round
+- This round keeps the existing Chinese template language and fields in the English doc.
 
 **Out of Scope**
 - Any other skills or references
@@ -86,15 +86,49 @@
 |---|---|---|---|
 ```
 
+**Handoff Block (mandatory end block)**
+```markdown
+## 交接块
+
+- 当前阶段：
+- 最后更新时间：
+- 目标请求与关键字段：
+- 已确认链路：
+- 未闭环点：
+- 下一步建议：
+```
+
 ---
 
 ## 3. Keep / Remove Rules
 
 **Keep (High Value)**
-- Status array vocabulary and example
+- Status array vocabulary and example (explicit list below)
 - Source/target + evidence requirements
 - One request per section + upstream expansion order
 - Mandatory handoff block
+
+**Status Vocabulary (verbatim)**
+- `未知`
+- `已知`
+- `固定`
+- `动态`
+- `明文`
+- `加密`
+- `本地计算`
+- `响应获取`
+- `环境产生`
+- `会话相关`
+- `风控相关`
+- `时序相关`
+- `一次性`
+- `可复用`
+- `HttpOnly`
+
+Example:
+```json
+["动态", "响应获取", "HttpOnly", "会话相关"]
+```
 
 **Remove / Merge (Low Value or Redundant)**
 - Visual style section
@@ -120,9 +154,9 @@
 
 **Example Policy**
 - Keep one minimal example only.
-- Example must include: header summary, one target request block, at least one field in header/query/body/cookie/response tables. If a category is not present in the example, use `- 无` for that table.
+- Example must include: header summary, one target request block, and the handoff block.
+- Example should attempt to include header/query/body/cookie/response tables; if a category is not present, use `- 无` for that table.
 - Example must show target request first, real source/evidence, and a closed upstream chain (every upstream reference in the target request has a concrete source in an earlier request or is marked `无`).
-- Example must include the handoff block.
 
 **Acceptance Criteria**
 - Top-level structure matches the proposed six blocks.
