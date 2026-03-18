@@ -2,20 +2,37 @@
 
 ## When to Use
 
-Use this reference when the RS shell is present and downstream work needs stronger semantic anchors than raw beautified source:
+Use this file only as a `recover` mount for RS-style targets.
+
+Mount it when the current recover blocker is that the RS shell still hides the semantic anchor needed for downstream work, for example:
 
 - `r2mKa` dispatcher text is available
 - `$_ts` samples are available and `cp` fields matter
 - the keys path is hidden behind `cp3`, dynamic tasks, or offsets
 - page render or app code is wrapped by `$_ts.l__`
 
-Stay inside recover scope:
+This file is a recover refinement, not a cross-stage RS workflow.
 
-- choose RS-specific anchors
-- recover only enough structure for downstream work
-- stop before broad, undirected source beautification
+## Owns
 
-## Preferred Anchor Order
+This file owns only the RS-specific recover work below:
+
+- preferred anchor order
+- anchor-specific recovery rules
+- validation checkpoints for each recovered anchor
+
+## Does Not Own
+
+This file does not own:
+
+- RS locate collection or two-hop proof
+- RS runtime fitting such as `hasDebug`, time/randomness, or second-hop acceptance
+- global recover depth rules outside RS-specific anchors
+- validation proof beyond anchor readiness
+
+## Method inside this stage
+
+### 1. Use the preferred anchor order
 
 Use this order unless evidence shows a tighter dependency:
 
@@ -28,14 +45,14 @@ Use this order unless evidence shows a tighter dependency:
 
 Do not start from the whole beautified main bundle if these anchors already exist.
 
-## Anchor-Specific Recovery Rules
+### 2. Apply anchor-specific recovery rules
 
 - Recover `r2mKa` as a dispatcher or task-tree anchor first; do not confuse it with the final business operator.
 - Decode `cp0 / cp2 / cp6` before expanding operator details; they often reveal stable names, constants, or control cues.
 - Treat the keys path as a bridge: `cp3 -> task offset -> keys`, not as an isolated string-decryption trick.
 - Treat `$_ts.l__` as a bridge artifact carrying rendered or decrypted code, not as disposable page noise.
 
-## Validation Checkpoints
+### 3. Record a validation checkpoint after each anchor
 
 After each anchor, record one checkpoint:
 
@@ -46,9 +63,10 @@ After each anchor, record one checkpoint:
 
 If no checkpoint can be stated, the current anchor is not ready to hand off.
 
-## Stop Conditions
+## Stop / handoff rule
 
-- no stable `$_ts` sample, no `r2mKa`, and no appcode anchor: `blocked`
-- anchors are known but keys path or appcode meaning is still incomplete: `partial`
-- runtime closure such as `hasDebug`, fixed time/randomness, or second-hop acceptance is the real blocker: switch to `$jsr-runtime`
-- first-hop versus second-hop artifact ownership is still unclear: switch to `$jsr-locate`
+- Stop using this file when one or more anchors are stable enough to support downstream runtime or validation work.
+- Keep recover at `blocked` when there is no stable `$_ts` sample, no `r2mKa`, and no appcode anchor.
+- Keep recover at `partial` when anchors exist but the keys path or appcode meaning is still incomplete.
+- Hand off to `runtime` with a minimal signal such as `anchor stable; remaining blocker is runtime fit or second-hop acceptance`.
+- Hand off to `locate` with a minimal signal such as `anchor exists but hop ownership / upstream artifact ownership is still unclear`.

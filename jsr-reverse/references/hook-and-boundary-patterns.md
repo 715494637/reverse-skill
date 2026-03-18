@@ -34,7 +34,7 @@ Not appropriate when:
 
 - the final sink is still unknown
 - the current sample is already a risk-state decoy chain
-- any hook immediately triggers obvious anti-debugging; in that case switch to `$jsr-runtime` first
+- any hook immediately triggers obvious anti-debugging; in that case treat the blocker as `runtime` work first
 
 ## 4. When a Breakpoint Is Worth Using
 

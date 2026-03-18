@@ -1,118 +1,102 @@
 # Protocol and Long-Connection Recovery
 
-## 1. The First Packet Is Not Enough
+## When to Use
 
-The common protocol mistake in long connections, protocol shells, and `protobuf` tasks is to infer the whole protocol from a single packet.
+Use this topic only after the current stage is already chosen in `jsr-reverse/SKILL.md`.
 
-At minimum, inspect:
+It is a cross-stage refinement for targets involving WebSocket, SSE, protobuf-like envelopes, heartbeat, ack, renewal, or other long-connection state.
 
-- handshake
-- first business packet
-- heartbeat
-- sequence and ack
-- renewal
-- error packet or retry packet
+- Mount it under `locate` when the current blocker is proving the connection state chain, message families, or the boundary of the target message.
+- Mount it under `recover` when the current blocker is separating envelope from payload, or recovering the protocol shell / semantic meaning around a proven target boundary.
 
-## Record Path
+Do not use this file as a standalone reverse workflow.
 
-Protocol and long-connection tasks must record connection state in the current session `请求链路.md`.
-Protocol-shell bridge notes, dispatcher notes, and semantic recovery notes remain in the current session `恢复记录.md`.
+## Owns
 
-Recommended contents for the `请求链路.md` protocol section:
+### Under `locate`
 
-- handshake request and response
-- first-packet type
-- heartbeat interval
-- sequence and ack rules
-- renewal conditions
-- state-transition map
-- message families
-- target-message type and payload structure
+This file owns only the protocol-specific locate refinements below:
 
-## 2. Separate Envelope Layer Before Payload Layer
+- connection state chain: handshake -> authenticated -> heartbeat / ack -> renewal -> invalidation
+- message-family separation: handshake, auth, heartbeat, business, ack / retry / error, renewal
+- target-message boundary: which message is the real target and which prior connection state it consumes
 
-### Envelope layer
+### Under `recover`
 
-Focus on:
+This file owns only the protocol-specific recover refinements below:
 
-- message type
-- length
-- sequence
-- time window
-- session identifier
-- compression or encryption flag
+- envelope-payload separation
+- protocol shell reduction that is needed to read type, length, seq, ack, flags, or payload encoding
+- semantic recovery of the target message once the boundary is already known
 
-### Payload layer
+## Does Not Own
 
-Then inspect:
+This file does not own:
 
-- field order
-- encoding method
-- `protobuf` mapping
-- decompressed body
-- real business fields
+- global stage selection
+- the full request-chain artifact contract
+- generic locate workflow outside protocol-specific boundaries
+- generic recover depth or deobfuscation strategy
+- runtime environment fitting or validation proof
 
-### Message families
+Do not let a protocol clue turn this file into a separate record system or a second main narrative.
 
-At least separate:
+## Method inside this stage
 
-- handshake / authentication
-- heartbeat / keepalive
-- business request
-- ack / retry / error
-- renewal / refresh
+### If mounted under `locate`
 
-Without message-family separation, do not treat one message as the main protocol chain.
-
-## 3. Protocol Recording Template
-
-```markdown
-连接：
-握手请求：
-握手响应：
-心跳周期：
-序号规则：
-ack 规则：
-续期条件：
-消息族：
-目标消息类型：
-载荷结构：
-```
-
-Write this block into `reverse-records/请求链路.md` under a dedicated `协议 / 长连接状态` section.
-
-## 4. State Transition Must Be Recorded Separately
-
-```markdown
-未连接 -> 握手中 -> 已认证 -> 心跳维持 -> 续期 -> 失效
-```
-
-Without state transition, renewal failures are easy to misjudge as algorithm errors.
-
-## 5. Write the Connection State Chain as a Traceable Chain
-
-Recommended form:
+1. Capture more than the first packet. At minimum inspect:
+   - handshake
+   - first business packet
+   - heartbeat
+   - sequence / ack behavior
+   - renewal or refresh
+   - error / retry packet when it exists
+2. Record the connection state chain as a traceable dependency chain, for example:
 
 ```text
-握手包 -> 握手响应(session) -> 已认证
-已认证 -> 心跳包(seq) -> ack
-ack 超时 -> 重传 / 降级
-token 临期 -> 续期包 -> 新 session
-续期失败 -> 失效 / 风控 / 强制重连
+handshake -> handshake response(session) -> authenticated
+authenticated -> heartbeat(seq) -> ack
+ack timeout -> retry / downgrade
+token near expiry -> renewal -> new session
+renewal failure -> invalid / risk / reconnect
 ```
 
-If the target message depends on prior `session`, `ack`, or renewal state, do not replay the target packet alone.
+3. Separate message families before naming the target protocol path:
+   - handshake / authentication
+   - heartbeat / keepalive
+   - business request
+   - ack / retry / error
+   - renewal / refresh
+4. State the target-message boundary explicitly:
+   - target message type
+   - prior state it consumes (`session`, seq, ack window, renewal result, route token, etc.)
+   - whether replaying the target packet alone is invalid
+5. Keep recording minimal and stage-bound: update the current request-chain artifact only with the connection state chain, message families, and target-message dependency notes that the current stage needs.
 
-## 6. Common Misjudgments
+### If mounted under `recover`
 
-- Observing only the first packet and ignoring later ack or heartbeat traffic
-- Treating envelope fields as business fields
-- Jumping directly to message schema as soon as `protobuf` is found, while ignoring the state machine
-- Misclassifying renewal failure, sequence drift, or missing ack as payload algorithm failure
+1. Split envelope from payload before reading business semantics.
+2. Recover the envelope contract first:
+   - message type
+   - length
+   - sequence
+   - time window
+   - session identifier
+   - compression / encryption flags
+3. Recover the payload contract only after the envelope is stable:
+   - field order
+   - encoding method
+   - protobuf mapping when relevant
+   - decompressed body
+   - business fields that matter to the target message
+4. Treat the protocol shell as a bridge around the proven target boundary, not as a reason to decompile the whole transport stack.
+5. If recovery shows the real blocker is still missing connection-state evidence, hand off back to `locate` with the exact missing state.
 
-## 7. Completion Standard
+## Stop / handoff rule
 
-- Envelope layer is known.
-- State transition is known.
-- Message families are known.
-- The real boundary and dependencies of the target message are known.
+- Stop `locate` use of this file when the connection state chain, message families, and target-message boundary are concrete enough for downstream recovery or runtime work.
+- Stop `recover` use of this file when envelope-payload separation and the required protocol shell / semantics are already clear enough for runtime fitting or validation.
+- Hand off to `locate` if the target still lacks handshake / ack / renewal dependency proof.
+- Hand off to `recover` if the boundary is known but the protocol shell still hides the usable message contract.
+- Do not keep this file mounted once the remaining blocker is generic runtime divergence or proof-only validation.

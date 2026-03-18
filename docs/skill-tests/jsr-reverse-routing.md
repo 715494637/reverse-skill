@@ -2,7 +2,7 @@
 
 ## 目的
 
-验证前门 skill 是否会先判题，再把动态字段任务正确路由到 `locate`，并继续读取 locate 侧 reference，而不是只读 `jsr-reverse/SKILL.md` 后直接开搜或误切到 runtime。
+验证前门 skill 是否会先判题，再把动态字段任务正确路由到 `locate` 阶段，并继续读取 locate 侧 reference，而不是只读 `jsr-reverse/SKILL.md` 后直接开搜或误切到 runtime。
 
 ## Baseline
 
@@ -24,7 +24,7 @@
 ### Prompt
 
 ```text
-$jsr-reverse 这个任务的第一目标是定位动态 sign 请求头的真实写边界和上游状态依赖。先判题并路由，再按正确阶段推进，不要直接补环境。
+$jsr-reverse 这个任务的第一目标是定位动态 sign 请求头的真实写边界和上游状态依赖。先判题并路由到 locate 阶段，再按正确 reference 推进，不要直接补环境。
 ```
 
 ### 预期读取
@@ -51,5 +51,6 @@ $jsr-reverse 这个任务的第一目标是定位动态 sign 请求头的真实�
 ## 通过判据
 
 - 能看到前门 skill 先判题
+- 能看到首阶段是 `locate`
 - 能看到它继续打开 locate 相关 reference
 - 输出里明确要求 `真实写边界` 和 `上游状态依赖`

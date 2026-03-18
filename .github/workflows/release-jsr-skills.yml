@@ -5,7 +5,7 @@ name: release-jsr-skills
     branches:
       - main
     paths:
-      - 'jsr-*/**'
+      - 'jsr-reverse/**'
       - '.github/workflows/release-jsr-skills.yml'
 
 permissions:
@@ -31,18 +31,12 @@ jobs:
 
           mkdir -p dist/jsr-skills
 
-          found=0
-          for dir in jsr-*; do
-            if [ -d "$dir" ]; then
-              cp -R "$dir" dist/jsr-skills/
-              found=1
-            fi
-          done
-
-          if [ "$found" -ne 1 ]; then
-            echo "No jsr-* skill directories found."
+          if [ ! -d "jsr-reverse" ]; then
+            echo "Required skill directory jsr-reverse not found."
             exit 1
           fi
+
+          cp -R "jsr-reverse" dist/jsr-skills/
 
           (
             cd dist
@@ -64,9 +58,7 @@ jobs:
           - Workflow: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}
           - Run number: ${RUN_NUMBER}
           - Included skills:
-            - jsr-locate
-            - jsr-runtime
-            - jsr-recover
+            - jsr-reverse
           - Asset: jsr-skills-latest.zip
           EOF
 
