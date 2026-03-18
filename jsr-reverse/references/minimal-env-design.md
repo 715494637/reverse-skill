@@ -2,31 +2,36 @@
 
 ## Purpose
 
-`运行态清单.md` is the canonical runtime artifact for the current chain.
+`运行态清单.md` is the canonical runtime workboard for the current chain.
 
-The layout should feel like a compact engineering workboard, not a long environment memo.
+Use it to record only the runtime facts that must be fitted, fixed, or ruled out for the current execution path. It should read like an execution-oriented workboard, not a routing memo or a generic reverse notebook.
 
-Do not write full request-chain expansion, recovery notes, or broad progress summaries here.
+## Artifact Boundary
 
-## Visual Style
+`运行态清单.md` owns only runtime-fit facts for the current chain, including:
 
-Use pure Markdown with light status markers:
+- target chain and observed browser/local behavior
+- execution mode and fit check
+- browser profile, injection point, state-close signal, and state carrier
+- `必需对象`
+- `必需状态`
+- fixed time, random, and seed sources
+- pure-compute precheck
+- optional anti-debug, fingerprint, and risk sections when they materially affect the current chain
+- removable items and linkage to later validation
 
-- `✅ 已确认`
-- `🟡 待确认`
-- `⛔ 阻塞`
-- `🔍 待验证`
-- `➡️ 下一步`
+It does not own request-chain expansion, recovery notes, or generic reverse reasoning.
 
 ## Writing Rules
 
-- start with the target chain, not with a generic object dump
+- start from one concrete target chain, not from a generic environment dump
 - keep `必需对象` and `必需状态` separate
-- keep fixed time, random, and seed sources explicit
-- write anti-debug, fingerprint, and risk sections only when they affect the current chain
-- if `sdenv` or remote jsdom may apply, record the fit check before broad patch lists
+- for every dependency item, state `必要性 / 证据 / 去掉后现象`
+- write only the sections that affect the current chain; optional sections stay omitted if irrelevant
+- keep fixed time, random, and seed sources explicit before later comparison
+- if `sdenv` or remote jsdom may apply, record the fit check before listing broad patches
 - if state is produced by lifecycle or navigation, record exactly one execution mode
-- every dependency item must answer `必要性 / 证据 / 去掉后现象`
+- keep entries concrete enough that another operator can execute the next fit step directly
 
 ## Runtime Skeleton
 
@@ -61,9 +66,9 @@ Use pure Markdown with light status markers:
 | `对象1` |  |  |  |
 
 ## ✅ 必需状态
-| 状态 | 状态标签 | 来源 | 证据 | 去掉后现象 |
-|---|---|---|---|---|
-| `状态1` | `["会话相关"]` |  |  |  |
+| 状态 | 状态标签 | 来源 | 必要性 | 证据 | 去掉后现象 |
+|---|---|---|---|---|---|
+| `状态1` | `["会话相关"]` |  |  |  |  |
 
 ## 固定源
 | 项目 | 内容 |
@@ -109,21 +114,29 @@ Use pure Markdown with light status markers:
 
 ## Required Coverage
 
-`运行态清单.md` must still cover:
+`运行态清单.md` must cover, when applicable:
 
 - target chain, browser behavior, and local behavior
 - fit check, execution mode, browser profile, injection point, state-close signal, and state carrier
-- required objects
-- required state
-- fixed sources
-- pure-compute precheck
-- optional anti-debug, fingerprint, and risk sections when relevant
+- `必需对象` needed by the current chain
+- `必需状态` needed by the current chain
+- fixed sources for stable comparison
+- pure-compute precheck status
+- anti-debug, fingerprint, and risk sections only when they affect the current chain
 - removable items and validation linkage
+
+The `必需对象` / `必需状态` split is mandatory:
+
+- `必需对象` = surfaces the current chain directly touches, such as `window`, `document`, `navigator`, `crypto`, DOM APIs, or runtime helpers
+- `必需状态` = values produced or carried by lifecycle, navigation, upstream response, cookie, storage, challenge flow, or browser-internal progression
+
+Do not merge these two lists.
 
 ## Quality Check
 
 - the filename stays `运行态清单.md`
+- the document stays the canonical runtime workboard for the current chain
 - `必需对象` and `必需状态` are not mixed
-- each dependency item keeps `必要性 / 证据 / 去掉后现象`
+- each dependency item keeps executable evidence and removal symptoms
 - pure-compute migration is never claimed while a precheck class remains open
-- runtime facts stay in `运行态清单.md`, not in `总览.md`
+- runtime facts stay here rather than being scattered into overview prose

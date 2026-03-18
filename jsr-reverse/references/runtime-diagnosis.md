@@ -1,6 +1,26 @@
 # Runtime Diagnosis
 
-## 1. Classify Before Patching
+## Purpose / Use Boundary
+
+`runtime` owns divergence classification for cases where the boundary and shell are already clear enough, but browser execution and local or controlled execution do not stay aligned.
+
+Use this reference to classify the first meaningful divergence and decide the minimum runtime handoff signal for the next action.
+
+This file is not the runtime workboard format and not a global routing matrix.
+
+## What Runtime Owns
+
+`runtime` owns only:
+
+- classify the current runtime problem
+- compare browser normal state with local execution and find the first divergence
+- separate missing object from missing state
+- stabilize unstable sources before later comparisons
+- state the minimum handoff signal needed for patch, fit, or validation
+
+## Default Diagnostic Model
+
+Classify before patching.
 
 Runtime problems fall into at least five classes:
 
@@ -10,109 +30,131 @@ Runtime problems fall into at least five classes:
 - `unstable source`
 - `risk branch`
 
-Most runtime failures are combinations of these classes rather than one missing object.
+Most failures are combinations of these classes rather than one missing object.
 
-For `deviceId`, `blackbox`, `sensor_data`, challenge, slider, or risk-cookie targets, add one more layer:
-
-- which fingerprint surfaces are collected
-- which surfaces are actually consumed by the aggregator
-- which consumed surfaces finally affect the risk branch or target field
-
-## 2. Recognition Signals for the Five Classes
-
-| Class | Common symptom | What must be verified |
-|---|---|---|
-| Missing object | Errors such as undefined `window`, `document`, `navigator`, or `crypto` | Whether the current chain really touches that object |
-| Missing state | No crash, but request always fails or always enters risk state | Whether `cookie`, storage, upstream response, or challenge state is missing |
-| Anti-debugging | Breakpoints freeze execution, endless `debugger`, output changes when console opens | Whether debug friction, integrity checks, or stack probes exist |
-| Unstable source | Different output on every run | Whether time, randomness, performance time, or device seed is part of the input |
-| Risk branch | Browser sometimes works, local replay or debugging always takes another path | Whether normal state and risk state have already diverged |
-
-## 3. Browser Normal State vs Local Failure Comparison
-
-Start with a comparison table:
+Start from a first-divergence comparison table:
 
 ```markdown
 | Item | Browser normal state | Local execution | Difference |
 |---|---|---|---|
 | Input parameters | same | same | no |
 | cookie / storage | complete | missing | yes |
-| Date.now | real-time | real-time | maybe |
-| Math.random | random | random | maybe |
+| Date.now | fixed sample | fixed sample | no |
+| Math.random | fixed sample | fixed sample | no |
 | Intermediate value 1 | normal | normal | no |
 | Intermediate value 2 | normal | abnormal | yes |
 | Final response | normal data | risk state | yes |
 ```
 
-This table is used to shrink the problem to the first layer where divergence appears.
+Use the table to shrink the problem to the first layer where divergence appears. Do not start from broad patch lists.
 
-## 4. Do Not Mix Missing Objects with Missing State
+## Divergence Classes
 
 ### Missing object
 
-Classification rule:
+Common signal:
 
-- the current chain really accesses that object
-- removing it reproduces the same failure point consistently
+- errors such as undefined `window`, `document`, `navigator`, `crypto`, or other directly accessed object
+
+Must verify:
+
+- the current chain really touches that object
+- removing or restoring it reproduces the same failure point consistently
 
 ### Missing state
 
-Classification rule:
+Common signal:
 
-- even with all objects present, the chain still cannot reach normal state
-- once upstream responses, `cookie`, storage, or challenge state is restored, the outcome improves clearly
+- no crash, but the request always fails, produces wrong output, or always enters a risk state
 
-Common misclassification:
+Must verify:
 
-- seeing incomplete `document.cookie` and starting full browser simulation, while the real gap is an upstream `HttpOnly` cookie
+- even with objects present, the chain still cannot reach normal state
+- once upstream response, `cookie`, storage, or challenge state is restored, the outcome improves clearly
 
-## 5. Fingerprint Problems Are Not Just 闁炽儲鍙慽ssing Environment闁?
-Split fingerprint problems into at least five layers:
+Do not confuse incomplete object surfaces with lifecycle-produced state. A missing `HttpOnly` cookie is a state gap, not an object gap.
 
-```text
-surface -> collector -> aggregator -> consumer -> target field or risk branch
-```
+### Anti-debugging
 
-Example:
+Common signal:
 
-```text
-canvas / webgl / fonts / audio / timezone
--> collectFingerprint()
--> buildDeviceProfile()
--> riskGate() / buildBlackbox()
--> deviceId / blackbox / sensor_data / challenge branch
-```
+- breakpoints freeze execution
+- endless `debugger`
+- output changes when the console opens
+- integrity checks or stack probes change branch behavior
 
-Diagnostic rules:
+Must verify:
 
-- Do not patch a surface before proving it is consumed.
-- Do not list a dependency as mandatory before proving that aggregator output affects the target field.
-- If the consumer belongs to a risk branch instead of the target builder, the problem is not a pure algorithm gap.
+- whether the observed divergence comes from debug friction itself or from another runtime dependency that only becomes visible under debugging
 
-## 6. Fix Unstable Sources First
+### Unstable source
 
-If these inputs are not stabilized first, later comparisons are weak:
+Common signal:
+
+- the same input still produces different intermediate values or outputs across runs
+
+Stabilize first:
 
 - `Date.now()`
 - `performance.now()`
 - `Math.random()`
 - device seed, fingerprint seed, install time, session sequence
 
-Stabilize first, then compare intermediate values.
+Without stabilization, later comparisons are weak.
 
-## 7. When the Main Problem Is Not Runtime
+### Risk branch
 
-Runtime is not the main contradiction when:
+Common signal:
 
-- browser normal state and local execution both reach the same layer, but internal semantics are still unclear
-- the sink is clear but the builder is hidden inside `jsvmp`, `worker`, or `wasm`
-- the remaining work is to recover protocol envelope, bytecode dispatcher, or bridge semantics
+- browser sometimes works, but local replay or debugging consistently enters another branch
 
-Switch to `$jsr-recover` in these cases.
+Must verify:
 
-## 8. Completion Standard
+- where normal state and risk state first diverge
+- whether the consumer belongs to a risk branch rather than the target builder
 
-- The problem class is clearly identified.
-- The first layer where divergence appears is known.
-- For fingerprint problems, consumed surfaces and removable surfaces are known.
-- It is clear whether the next action is patching state, patching objects, stabilizing sources, or handling a risk branch.
+## Required Diagnosis Output
+
+The diagnosis output must stay minimal and handoff-ready. It should include:
+
+- problem class or combined classes
+- first confirmed divergence point
+- whether the blocker is `missing object`, `missing state`, `anti-debugging`, `unstable source`, or `risk branch`
+- which facts must be carried into `运行态清单.md`
+- what the next action is: patch objects, restore state, stabilize source, isolate anti-debug, or validate a branch difference
+
+For fingerprint-heavy targets such as `deviceId`, `blackbox`, `sensor_data`, challenge, slider, or risk-cookie paths, keep the diagnosis compact but explicit:
+
+- which fingerprint surfaces are collected
+- which surfaces are actually consumed by the aggregator
+- which consumed surfaces affect the target field or risk branch
+
+Minimal handoff signals:
+
+- `missing object` -> name the exact object and the proof that the current chain touches it
+- `missing state` -> name the exact state carrier or upstream response that must be restored
+- `anti-debugging` -> name the blocking probe or branch and the smallest neutralization target
+- `unstable source` -> name the source that must be fixed before comparison continues
+- `risk branch` -> name the first risk split and the state difference that triggers it
+
+## Stop / Handoff Standard
+
+`runtime` can stop when all of the following are true:
+
+- the divergence class is explicit
+- the first layer where browser and local execution diverge is known
+- missing object and missing state are not mixed
+- unstable sources are either stabilized or explicitly listed as the current blocker
+- the next artifact update or validation action is clear
+
+At that point, hand off by updating `运行态清单.md` with the confirmed runtime facts and moving only the unresolved proof part into validation if needed.
+
+## Does Not Own
+
+`runtime` does not own:
+
+- proving the request chain from scratch
+- deeper shell recovery once the real blocker is still hidden logic
+- defining the full artifact template for `运行态清单.md`
+- re-explaining the global stage routing from `SKILL.md`
+- claiming equivalence based only on final output

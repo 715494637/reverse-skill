@@ -1,127 +1,113 @@
 # Anti-Debugging and Risk Branches
 
-## 1. Separate Debug Friction from Real Risk Control
+## When to Use
 
-Not every “it breaks when I debug” symptom is anti-debugging, and not every abnormal result is a risk branch.
+Use this file only as a `runtime` mounted refinement.
+
+Mount it when the current runtime blocker is one of the following:
+
+- debugging changes the observed path or output
+- a suspected risk branch changes the chain, intermediate values, or final response
+- fingerprint differences may be consumed by a real risk decision
+- a minimal anti-debug handling choice is needed before first-divergence comparison can continue
+
+This is not a second runtime workflow.
+
+## Owns
+
+This file owns only the runtime-specific refinement below:
+
+- separating debug friction from a real risk branch
+- drawing the normal / risk fork map
+- deciding whether a fingerprint difference has a real consumer
+- applying the minimal handling principle so observation can continue without broad logic rewrites
+
+## Does Not Own
+
+This file does not own:
+
+- global runtime routing
+- generic request-chain collection
+- shell recovery or deobfuscation depth
+- full environment artifact design
+- validation proof
+
+If the real blocker is hidden shell logic rather than runtime divergence, hand off to recover instead of expanding this file.
+
+## Method inside this stage
+
+### 1. Separate debug friction from real risk branch
 
 Start by separating:
 
 - `debug friction`: makes observation harder but does not necessarily change business values
 - `real risk branch`: changes the chain, intermediate values, or final response
 
-## 2. Common Anti-Debug Surfaces
+Do not call every debugger symptom anti-debugging, and do not call every abnormal result a risk branch.
 
-| Type | Symptom | Handling principle |
-|---|---|---|
-| Endless `debugger` | execution stops every step | remove only that friction point, not business logic |
-| Stack checks | local replay always takes fallback | preserve stack shape or bypass the check |
-| Console bait | value changes when console opens | do not treat bait values as real values |
-| Performance probe | debug mode changes timing significantly | fix time and performance sources |
-| Source integrity | one-line edit breaks execution | first prove whether it affects business values |
+### 2. Prove the fork instead of naming it loosely
 
-## 3. How to Recognize a Risk Branch
+The following signals mean a real risk branch is plausible:
 
-The following signals mean the chain is not in normal state:
-
-- it enters fallback before the target request is even sent
+- fallback happens before the target request is sent
 - same input, browser is normal, local replay always follows another path
-- missing one upstream request immediately causes 403, empty payload, challenge, or escalation
-- the target value is computed, but the server never accepts it
+- missing one upstream request immediately causes `403`, empty payload, challenge, or escalation
+- the target value is produced but the server never accepts it
 
-At that point, stop going deeper into the algorithm and prove which state normal execution requires.
+When that happens, stop widening patches and produce a fork map.
 
-For `deviceId`, `blackbox`, `sensor_data`, challenge, or slider tasks, continue tracing:
+### 3. Fork map is mandatory
 
-- which fingerprint surface diverges first
-- which aggregator consumes that surface
-- which `riskGate`, challenge, or fallback point starts the fork
+Record:
 
-Do not conclude from “one fingerprint value differs” alone; the consumer must be identified.
+- fork starting point: which request, response, state gap, or debug event starts the split
+- normal-state path: which builder / writer / response path normal execution follows
+- risk-state path: which fallback / challenge / degraded path the risk route follows
+- missing state: the exact state gap, not a vague “environment mismatch”
 
-## 4. Normal/Risk Fork Map Is Mandatory
-
-In addition to a comparison table, create a fork map. It must state:
-
-- which request, response, state gap, or debug event starts the fork
-- which path the normal-state builder and writer follow
-- which path the risk-state fallback or challenge follows
-- which specific state is missing instead of a vague “environment mismatch”
-
-Fork-map template:
+Minimal template:
 
 ```markdown
-分叉起点：请求 B 未返回 token / guest_id(HttpOnly) 缺失 / 调试触发风险探针
+分叉起点：
 
 正常态路径：
-请求 B 正常响应 -> builder_main() -> writer -> 正常响应
 
 风控态路径：
-请求 B 失败 / 调试触发 -> sign_fallback() -> challenge / 风控页
 
 缺失状态：
-- token
-- guest_id(HttpOnly)
-- 指纹快照
+-
 ```
 
-Comparison template:
+### 4. Fingerprint differences need a real consumer
 
-```markdown
-| 项目 | 正常态 | 风控态 | 差异解释 |
-|---|---|---|---|
-| 上游请求 B | 返回 token 与 cookie | 返回空 / 403 | 会话未闭合 |
-| builder 路径 | sign_main() | sign_fallback() | 已分叉 |
-| 最终响应 | 正常数据 | 风控页 / challenge | 非同链 |
-```
+For `deviceId`, `blackbox`, `sensor_data`, challenge, slider, or similar targets, continue only until you can state:
 
-Without the fork point and missing state, normal/risk separation is incomplete.
+- which fingerprint surface diverges first
+- which collector or aggregator consumes it
+- which risk gate, challenge point, or fallback point starts the fork
 
-## 5. Handling Principles
+Do not conclude from “one fingerprint value differs” alone.
 
-- Remove only debug friction that blocks observation. Do not rewrite broad business logic.
-- Choose the narrowest matching anti-debug rule that actually changes the investigation path.
-- As soon as a risk branch is confirmed, return to state closure and normal-state sampling.
-- Do not classify navigation or exit listeners as anti-debug by default; if they produce state, record them as the runtime state-close signal.
-- If navigation or lifecycle patches were required, record that they changed page state and re-validate the request chain without them when feasible.
-- If real logic sits inside a shell layer, stop burning time at runtime level and switch to `$jsr-recover`.
+### 5. Use the minimal handling principle
 
-## 6. Fingerprint-Induced Risk Template
+- remove only the debug friction that blocks observation
+- do not rewrite broad business logic
+- choose the narrowest matching anti-debug rule that changes the investigation path
+- if a patch changes page state, record that fact and re-validate without the patch when feasible
+- treat navigation or lifecycle listeners as anti-debug only when they actually create the fork
 
-```markdown
-指纹表面差异：
-采集器：
-聚合器：
-消费点：
-分叉起点：
-正常态路径：
-风控态路径：
-是否影响目标字段：是 / 否
-```
+### 6. Minimal handoff signal
 
-## 7. Record Template
+Use a simple handoff signal instead of old route-switch wording:
 
-```markdown
-反调试点：
-规则选择：
-命中表面：
-是否属于状态闭合信号：是 / 否
-现象：
-是否影响业务值：是 / 否
-最小处理：
-处理后变化：
-移除 patch 后复验：
+- if the fork is caused by missing upstream state, hand off with: `missing state proved; return to locate to close the chain`
+- if the real logic remains hidden inside a shell layer, hand off with: `risk consumer hidden by shell; continue in recover`
+- if the fork and consumer are already known, stay in runtime and fit only the minimum needed facts
 
-风控分支触发条件：
-正常态需要的状态：
-当前缺口：
-下一步：
-```
+## Stop / handoff rule
 
-## 8. Completion Standard
-
-- Debug friction and real risk control are separated.
-- The exact fork starting point is known.
-- For fingerprint tasks, the real consumer that triggers risk control is known.
-- The chosen anti-debug rule is minimal enough to justify itself.
-- State-close signals and anti-debug points are not mixed into one conclusion block.
-- It is clear whether the next step is patching state, patching objects, or switching skills.
+- Stop using this file when debug friction and real risk branch are already separated.
+- Stop using this file when the fork starting point and missing state are concrete enough for the next runtime action.
+- Hand off to `locate` when the real blocker is an upstream request / cookie / state gap.
+- Hand off to `recover` when the real blocker is a hidden consumer or shell-protected branch.
+- Stay in `runtime` only when the remaining work is minimum fact fitting around an already proven fork.

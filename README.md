@@ -5,12 +5,7 @@
 ## 安装
 
 1. 接入 [js-reverse-mcp](https://github.com/zhizhuodemao/js-reverse-mcp)
-2. 将以下目录复制到技能根目录：
-
-- `jsr-locate`
-- `jsr-runtime`
-- `jsr-recover`
-- `jsr-reverse`
+2. 将 `jsr-reverse` 目录复制到技能根目录
 
 安装位置：
 
@@ -18,7 +13,6 @@
 | --- | --- |
 | `Codex` | `%USERPROFILE%\.codex\skills\` |
 | `Claude Code` | `%USERPROFILE%\.claude\skills\` |
-
 
 ![示例](image.png)
 
@@ -32,22 +26,23 @@
 - `当前现象`
 - `已知约束`：例如 `cookie`、是否允许补环境、是否要求纯算法
 
-默认入口：
+唯一入口：
 
-- `jsr-reverse`：默认入口；先判题，再决定该读哪份 locate / recover / runtime reference
-- `jsr-locate`、`jsr-recover`、`jsr-runtime`：定向入口；只在当前阶段已经明确时直接调用
+- `jsr-reverse`：统一 intake、判题、阶段路由，并点名当前必须继续读取的最小 reference 集合
 
-1+3 架构：
+阶段路由：
 
-- `jsr-reverse` 是唯一默认入口，负责 intake、判题、阶段路由和点名当前必须读取的最小 reference 集合
-- 三个阶段 skill 是定向入口，只保留 `何时使用 / 先读哪些 reference / 何时交接`
-- 关键逆向知识放在各自 `references/`，由命中的 `SKILL.md` 明确指令读取
-- `reverse-records/` 仅作为可选输出层，不再主导 skill 结构
+- `locate`：证明动态字段、请求头、`cookie`、消息对象的真实写边界，展开来源链、依赖链与上游状态
+- `recover`：穿透 `JSVMP`、`AST`、`worker`、`WASM`、`webpack/runtime`、协议壳，恢复桥接契约与真实算法边界
+- `runtime`：诊断浏览器正常、本地异常时的真实运行时分歧，收敛到最小运行时清单
+- `validation`：在链路、恢复和运行时假设已经具备后，做等价性、一致性与交付前校验
+
+关键知识放在 `jsr-reverse/references/`，由 `jsr-reverse/SKILL.md` 按阶段和症状路由到最小必读集合；`reverse-records/` 仅作为可选输出层，不主导技能结构。
 
 全自动调用示例：
 
 ```text
-使用：Jsreverser Mcp 
+使用：Jsreverser Mcp
 方式：在真实浏览器插桩采集输入输出及中间态数据，与本地算法进行逻辑一致性和结果正确性对比分析。
 URL: 【https://example.com】
 目标：【接口 / 需要的数据】
@@ -58,23 +53,23 @@ cookie：【使用现有cookie / 优先不使用，必须则模拟完整链路�
 交付：Node.js 生成加密参数，Python 负责调度和发送请求，运行后打印响应数据
 ```
 
-定向调用示例：
+显式调用示例：
 
 ```text
-$jsr-reverse 先判断当前任务是来源链、壳层恢复、运行时分叉还是一致性校验，再按阶段读取最小 reference 集合推进。
-$jsr-locate 梳理请求 A 的写入边界、参数来源、上游依赖和 HttpOnly cookie 链路。
-$jsr-runtime 判断当前问题属于缺状态、缺对象、反调试还是风控分支，并给出最小环境清单。
-$jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界、关键算子和等价性检查点。
+$jsr-reverse 先判断当前任务属于 locate、recover、runtime 还是 validation，再按阶段读取最小 reference 集合推进。
+$jsr-reverse 先证明请求 A 的真实写边界、参数来源、上游依赖和 HttpOnly cookie 链路，再决定是否进入 recover 或 runtime。
+$jsr-reverse 判断当前问题属于缺状态、缺对象、反调试还是风控分支，并输出最小运行时清单与验证步骤。
+$jsr-reverse 恢复当前 jsvmp + worker + wasm 组合壳，明确桥接边界、关键算子和后续 validation 检查点。
 ```
 
-按问题类型选择对应 skill：
+按问题类型选择首阶段：
 
-| Skill | 负责什么 | 首读内容 |
+| 首阶段 | 负责什么 | 首读内容 |
 | --- | --- | --- |
-| `jsr-reverse` | 默认总入口；先判题，再路由到 locate / recover / runtime / validation，并决定读取哪份 reference | 先读自身 `SKILL.md`，再按症状读取最小 reference 集合 |
-| `jsr-locate` | 定向入口；处理动态字段、请求头、`cookie`、消息对象的写边界、来源链、依赖链 | `locate-workflow.md` + `request-chain-recording.md`，再按症状补 `crypto-entry` / `rs-two-hop` / `hook-boundary` |
-| `jsr-runtime` | 定向入口；处理浏览器正常、本地异常、反调试、状态缺口、时序随机源、指纹面、风控分支 | `runtime-diagnosis.md` + `minimal-env-design.md`，再按症状补 `anti-debug` / `sdenv` / `rs-runtime` |
-| `jsr-recover` | 定向入口；处理 `JSVMP`、`AST`、`worker`、`WASM`、`webpack/runtime`、协议壳遮蔽 | `recover-strategy.md`，再按壳层补 `jsvmp-ast` / `wasm-worker-webpack` / `protocol` / `rs-anchors` |
+| `locate` | 处理动态字段、请求头、`cookie`、消息对象的写边界、来源链、依赖链 | `jsr-reverse/SKILL.md`，再读 `locate-workflow.md` + `request-chain-recording.md`，按症状补 `crypto-entry` / `rs-two-hop` / `hook-boundary` |
+| `runtime` | 处理浏览器正常、本地异常、反调试、状态缺口、时序随机源、指纹面、风控分支 | `jsr-reverse/SKILL.md`，再读 `runtime-diagnosis.md` + `minimal-env-design.md`，按症状补 `anti-debug` / `sdenv` / `rs-runtime` |
+| `recover` | 处理 `JSVMP`、`AST`、`worker`、`WASM`、`webpack/runtime`、协议壳遮蔽 | `jsr-reverse/SKILL.md`，再读 `recover-strategy.md`，按壳层补 `jsvmp-ast` / `wasm-worker-webpack` / `protocol` / `rs-anchors` |
+| `validation` | 处理等价性校验、结果一致性、交付前验证与回归检查 | `jsr-reverse/SKILL.md`，再读 `equivalence-and-validation.md`，必要时回看当前阶段 reference |
 
 常见切换路径：
 
@@ -82,12 +77,13 @@ $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界�
 - `Locate -> Recover`：写点接近，但中间逻辑被遮蔽层包裹
 - `Runtime -> Recover`：已排除简单缺对象 / 缺状态，需要进入壳层恢复
 - `Recover -> Locate / Runtime`：恢复桥接边界或状态载体后，回到链路证明或运行时验证
+- `Recover / Runtime -> Validation`：关键假设闭合后进入一致性和交付验证
 
-## 阶段入口
+## 阶段说明
 
-### `jsr-locate`
+### `locate`
 
-定向入口，适合已经确认当前任务属于来源链和写边界问题时使用。
+适合当前任务首先要解决来源链和写边界问题时进入。
 
 - 证明目标字段、请求头、`cookie`、消息字段的真实写边界
 - 建立 `entry -> builder -> writer` 关系，展开前置请求、响应依赖和状态链
@@ -99,9 +95,9 @@ $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界�
 - 已知目标请求，但不清楚其依赖的前置请求、响应字段或状态
 - 需要将链路展开到可获得正常响应的闭合状态
 
-### `jsr-runtime`
+### `runtime`
 
-定向入口，适合已经确认当前问题属于运行时分叉时使用。
+适合当前任务首先要解决运行时分叉时进入。
 
 - 区分对象缺失、状态缺失、反调试、时间随机源、指纹面和风控分支
 - 设计最小运行时清单，说明每项依赖的必要性和可移除性
@@ -113,9 +109,9 @@ $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界�
 - 调试后值变化、执行卡死、链路跳入风控分支
 - 不清楚问题属于环境对象、会话状态、指纹消费还是风险校验
 
-### `jsr-recover`
+### `recover`
 
-定向入口，适合已经确认当前任务需要穿透壳层或恢复桥接语义时使用。
+适合当前任务首先要解决壳层穿透或桥接语义恢复时进入。
 
 - 判定遮蔽层类型与最低必要恢复级别
 - 恢复 `JSVMP`、`AST`、控制流平坦化、`worker`、`WASM`、`webpack/runtime`、协议壳
@@ -127,9 +123,23 @@ $jsr-recover 恢复当前 jsvmp + worker + wasm 组合壳，输出桥接边界�
 - 需要先恢复桥接层、调度层或状态载体，才能继续定位或复现
 - 需要判断当前任务应停留在 `A / B / C` 哪一级恢复深度
 
+### `validation`
+
+适合当前任务首先要解决一致性校验或交付前验证时进入。
+
+- 对齐浏览器、本地脚本、抓包结果与中间态产物
+- 校验输入、输出、关键中间态和状态依赖是否一致
+- 明确哪些偏差来自链路未闭合、壳未打穿或运行时缺口未收敛
+
+典型进入条件：
+
+- 链路、恢复和运行时方案已具备，需要验证等价性
+- 需要整理交付前检查项、回归检查项或失败归因
+- 需要判断当前差异属于 locate / recover / runtime 的哪一类残留问题
+
 ## 可选记录
 
-`reverse-records/` 只在需要长期留痕、跨阶段协作或显式交付记录时使用，不再作为 skill 的中心结构。默认推进顺序仍然是：先用 `jsr-reverse` 判题和路由，再由定向入口读取关键 reference。
+`reverse-records/` 只在需要长期留痕、跨阶段协作或显式交付记录时使用，不作为 skill 的中心结构。默认推进顺序仍然是：先用 `jsr-reverse` 判题和路由，再继续读取当前阶段所需 reference。
 
 需要留痕时，在当前任务工作目录维护：
 

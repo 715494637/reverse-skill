@@ -1,45 +1,39 @@
 # Equivalence Validation and Recovery Records
 
-## Purpose
+## Purpose / Use Boundary
 
-`恢复记录.md` and `验证记录.md` record recovery structure and proof only.
+`validation` owns proof, not stage discovery.
 
-The format should stay compact, structural, and proof-oriented.
+Use this reference when the main work is to prove checkpoints, record residual gaps, and separate validated conclusions from still-open recovery work.
 
-Do not mix in full request-chain expansion, runtime manifests, or broad stage summaries.
+`恢复记录.md` and `验证记录.md` should stay compact, structural, and proof-oriented. They are not the place to re-explain request-chain capture or runtime diagnosis.
 
-## Visual Style
+## What Validation Owns
 
-Use pure Markdown with light status markers:
+`validation` owns only:
 
-- `✅ 已确认`
-- `🟡 待确认`
-- `⛔ 阻塞`
-- `🔍 待验证`
-- `➡️ 下一步`
+- define concrete checkpoints
+- state what proof confirms or rejects each checkpoint
+- record residual gaps explicitly
+- keep recovery records separate from validation records
+- state the stop condition for a defensible proof claim
 
-## Record Path
+## Recovery Record Contract
 
-Write records under the current task working directory:
+`恢复记录.md` is the recovery-side contract. It should contain only the recovered structure needed for later proof:
 
-```text
-reverse-records/
-├─ 总览.md
-├─ 请求链路.md
-├─ 运行态清单.md
-├─ 恢复记录.md
-└─ 验证记录.md
-```
+- layer cards
+- boundary cards
+- recovery level
+- stop reason
+- state carriers
+- key-function cards
 
-## Writing Rules
+Keep layer names explicit, such as `外层容器`, `调度层`, `状态载体`, `桥接层`, `核心算子`, `写回层`.
 
-- `恢复记录.md` owns layer cards, boundary cards, recovery level, stop reason, state carriers, and key-function cards
-- `验证记录.md` owns checkpoints, fixed inputs, equivalence results, and remaining gaps
-- keep checkpoints concrete; do not validate only the final output
-- keep layer names explicit: `外层容器`, `调度层`, `状态载体`, `桥接层`, `核心算子`, `写回层`
-- every key-function card must state `输入 / 输出 / 副作用 / 依赖 / 证据`
+Every key-function card must state `输入 / 输出 / 副作用 / 依赖 / 证据`.
 
-## Recovery Skeleton
+Suggested skeleton:
 
 ```markdown
 # 恢复记录
@@ -80,14 +74,14 @@ reverse-records/
 - 缺口2：
 ```
 
-## Equivalence Requirements
+## Validation Proof Contract
 
-Every equivalence check must answer:
+`验证记录.md` is the proof-side contract. Each equivalence check must answer:
 
 - which input sample is fixed
 - which checkpoint is being compared
-- which gap remains if the result is only partially equivalent
 - which evidence proves the checkpoint, not just the final output
+- which gap remains if the result is only partially equivalent
 
 Typical checkpoints include:
 
@@ -96,9 +90,48 @@ Typical checkpoints include:
 - dispatcher or state-carrier transitions
 - extracted result before write-back
 
-## Quality Check
+Suggested skeleton:
 
-- recovery artifacts do not use the old runtime filename `运行时依赖.md`
-- recovery structure and validation proof remain separate
-- checkpoints are concrete enough to show where equivalence fails
-- non-recovery content is not mixed into these files
+```markdown
+# 验证记录
+
+- 当前状态：🔍 待验证 / ✅ 已确认 / ⛔ 阻塞
+- 验证目标：
+- 固定输入：
+- 对比范围：
+- 当前结论：
+- 剩余缺口：
+- ➡️ 下一验证点：
+
+## 检查点对比
+| 检查点 | 浏览器侧 | 本地/恢复侧 | 结果 | 证据 | 剩余缺口 |
+|---|---|---|---|---|---|
+| 检查点1 |  |  |  |  |  |
+
+## 结论
+- 已确认：
+- 未确认：
+- 需要补充的证据：
+```
+
+## Stop / Completion Standard
+
+Validation can stop only when all of the following are explicit:
+
+- checkpoints are concrete rather than “final output looks close”
+- fixed input is stated
+- each confirmed checkpoint has direct evidence
+- residual gaps are named instead of hidden in prose
+- recovery conclusions and validation conclusions remain separated
+
+A proof is sufficient only if the next reader can see exactly what is equivalent, what is not yet equivalent, and what evidence supports each statement.
+
+## Does Not Own
+
+`validation` does not own:
+
+- request-chain capture guidance
+- runtime divergence classification
+- runtime artifact formatting
+- global workflow routing
+- deeper recovery work that still lacks a readable contract

@@ -1,76 +1,78 @@
 # Recovery Strategy
 
-## 1. Recovery Is Not Full Decompilation
+## Purpose / Use Boundary
 
-The core deliverables of a recovery task are usually:
+`recover` is the stage that reduces shell layers around a proven boundary until the next work can proceed with a readable, callable, or testable logic contract.
 
-- which layers wrap the target field or target business path
-- which bridge layer hides the real operator
-- which input and output points can serve as validation anchors
+Use this reference only after `locate` has already made the target request, write boundary, sink, or upstream dependency chain concrete enough for reduction work.
 
-## 2. Ask Three Questions First
+`recover` is not a second global workflow. It is a stage method for deciding what to open, how deep to open it, and where to stop.
 
-1. Is the obscured layer the entry, dispatcher, bridge, state carrier, or operator?
-2. Does the current task need only semantic explanation, or does it already need a minimal rebuild?
-3. At which layer can recovery stop while still supporting downstream locate or replay work?
+## What Recover Owns
 
-## 3. Three Recovery Targets
+`recover` owns only the reduction work needed to make downstream work possible:
+
+- identify the recovery target for the current boundary
+- decide which layer to open first
+- choose the minimum recovery level `A / B / C`
+- preserve the black-box reuse boundary when decompilation is unnecessary
+- record the proof that the current stop depth is already sufficient
+
+## Default Working Model
+
+Start from three questions:
+
+1. Which obscured layer currently blocks progress: outer container, dispatcher, state carrier, bridge, or core operator?
+2. Does the task need only semantic explanation, a key-operator slice, or a minimal rebuild?
+3. At which layer can recovery stop while still supporting downstream runtime or validation work?
+
+Default order for choosing the first opening layer:
+
+| Symptom | First layer to open |
+|---|---|
+| Cannot find the real callable path yet | outer container |
+| Large switch tables or VM-style flow | dispatcher layer |
+| Calls are visible but parameters/state are opaque | state carrier |
+| Logic appears only after `worker`, `wasm`, or loader callback | bridge layer |
+| Write-back point is known but algorithm is opaque | core operator |
+
+## Recovery Targets
+
+Choose one target before going deeper:
 
 ### 1. Semantic explanation
 
-Only answer:
+Own only enough structure to answer:
 
 - which layer is responsible for what
 - which path the target value follows
 - which inputs control the output
 
-Suitable when:
-
-- locate work comes first and another skill will use the result next
-- full replay is not required immediately
+Use when downstream work needs boundary semantics, not an executable rebuild.
 
 ### 2. Key-operator extraction
 
-Recover only what is necessary:
+Recover only the minimal opaque unit that still blocks progress, such as:
 
 - critical `opcode`
 - critical serialization shell
 - critical bridge function
 
-Suitable when:
-
-- the builder is already located
-- only the core operator remains opaque
+Use when the builder is already known and only the core operator remains hidden.
 
 ### 3. Minimal rebuild
 
-Reassemble the required path into a smallest verifiable fragment.
+Reassemble the required path into the smallest verifiable fragment.
 
-Suitable when:
+Use only when input/output boundaries are already known and stable validation samples exist.
 
-- input and output boundaries are already known
-- stable validation samples already exist
+## Recovery Levels
 
-## 4. Deny Six Dependency Classes Before Pure-Compute Migration
-
-Even after extracting a key operator, pure-compute migration is allowed only after excluding:
-
-1. upstream response fields
-2. `HttpOnly cookie`
-3. one-time challenge, nonce, or ticket
-4. browser-internal state
-5. fingerprint collection result
-6. time window, sequence, or renewal dependency
-
-Rule:
-
-- If any dependency class is still open, do not write 闁炽儲绗re computation obtained闁?
-
-## 5. VMP Recovery-Level Selection
+Start from level `A` by default. Escalate only when evidence shows the current level cannot support the next stage.
 
 ### Level A: extract only critical `opcode`
 
-Suitable when:
+Use when:
 
 - the write-back boundary is already known
 - a few `opcode` semantics are enough to explain the target field
@@ -83,7 +85,7 @@ Deliverables:
 
 ### Level B: recover dispatcher plus critical state carriers
 
-Suitable when:
+Use when:
 
 - `opcode` meaning depends on dispatcher, registers, stack, or context
 - critical branches cannot be judged without state flow
@@ -96,10 +98,10 @@ Deliverables:
 
 ### Level C: minimal decompilation or minimal interpreter
 
-Suitable when:
+Use when:
 
 - multiple paths must be replayed
-- protocol rebuild, batch execution, or minimal executable rebuild is needed
+- protocol rebuild, batch execution, or minimal executable rebuild is required
 - levels `A` and `B` cannot support downstream work
 
 Deliverables:
@@ -107,13 +109,9 @@ Deliverables:
 - minimal decompiled result or minimal interpreter
 - validation samples for the critical path
 
-Rule:
+## Black-Box Reuse Boundary
 
-- Start from `A` by default. Escalate only when evidence proves that the current level is insufficient.
-
-## 6. Black-Box Reuse Boundary
-
-For `webpack/runtime`, `worker`, and some `wasm` wrappers, black-box reuse is often better than decompilation.
+For `webpack/runtime`, `worker`, and some `wasm` wrappers, black-box reuse is often better than deeper decompilation.
 
 Good signals for black-box reuse:
 
@@ -127,34 +125,50 @@ Bad signals for black-box reuse:
 - replay is unstable without recovering the state carrier
 - the module itself is another `jsvmp` or deep protocol shell
 
-Recording template:
+Record the decision in compact form:
 
 ```markdown
-婵☆垪鈧櫕鍋?/ 婵℃ぜ鍎茬敮鎾礂閵夈儱缍撻柨?闁烩晛鐡ㄧ敮瀛樼瑹濠靛﹦顩俊顖椻偓铏仴闁?runtime helper闁?闁绘粠鍨伴。銊ヮ浖閳哄绐?閺夊牊鎸搁崣鍡樼附閹寸姴顔婇柨?閺夊牊鎸搁崵顓熺附閹寸姴顔婇柨?闁绘鐗婂﹢浼存煥濮樺崬浠柨娑樻綕ash / bundle / moduleId闁挎稑顧€缁?闁哄嫷鍨伴幆渚€鏌呴崒姘€ゅ娑欏灩濞插懏寰勫鍥ㄦ殢闁挎稒纰嶅Σ?/ 闁?```
+- 复用方式：black-box reuse / deeper recovery
+- 复用边界：
+- 已知输入：
+- 已知输出：
+- 仍依赖的状态载体：
+- 不继续下钻的理由：
+```
 
-## 7. Which Layer to Open First
+## Stop / Completion Standard
 
-| Symptom | First layer to open |
-|---|---|
-| Cannot even find the real entry | outer container |
-| Large switch tables or state machines | dispatcher layer |
-| Calls are visible but parameters are strange | state carrier |
-| Logic appears only after worker, wasm, or lazy module callback | bridge layer |
-| Write-back point is known but the algorithm is opaque | core operator |
+`recover` can stop when one of the following is already true:
 
-## 8. When to Stop
+- the target-field formation path is explained well enough for downstream proof
+- the bridge contract and key operator are already sufficient for runtime fit or validation
+- the current recovery level already supports the next task without deeper opening
+- going deeper would add code volume but not improve the conclusion
 
-Stop when any of the following becomes true:
+Proof is sufficient to stop only when the record can show all of the following:
 
-- the target field formation path is already explained
-- the bridge contract and key operator are already sufficient for downstream work
-- the current recovery level already supports locate or replay work
-- going deeper adds code volume without increasing conclusion quality
+- the current layer responsibility is explicit
+- stable anchors exist for input, output, or bridge transition
+- the chosen stop depth among `A / B / C` is justified
+- black-box reuse is either ruled in or ruled out with boundary evidence
+- the remaining gap is stated as a downstream runtime or validation problem, not hidden inside recovery
 
-## 9. Completion Standard
+## Does Not Own
 
-- The current layer闁炽儲鐛?responsibility is explicit.
-- Stable validation anchors exist.
-- The stopping level among `A / B / C` is justified.
-- For bridge and runtime shells, black-box reusability and boundary are known.
-- It is clear whether the next step should return to `$jsr-locate` or `$jsr-runtime`.
+`recover` does not own:
+
+- proving the real request chain from scratch
+- re-running global stage routing
+- classifying browser/local divergence
+- defining the runtime artifact format
+- claiming equivalence without checkpoint proof
+- calling a path pure computation before runtime dependencies are excluded
+
+Before claiming a pure-compute migration, the following dependency classes must already be denied elsewhere or explicitly closed in current evidence:
+
+1. upstream response fields
+2. `HttpOnly cookie`
+3. one-time challenge, nonce, or ticket
+4. browser-internal state
+5. fingerprint collection result
+6. time window, sequence, or renewal dependency

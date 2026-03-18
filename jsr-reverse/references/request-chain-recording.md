@@ -1,8 +1,6 @@
-# Request-Chain Recording
-
 ## Purpose
 
-`请求链路.md` is the canonical request-structure artifact. Keep it compact and scan-friendly.
+`请求链路.md` is the standard evidence artifact used by `jsr-reverse` for the evidence gate and early locate work. Keep it compact, artifact-first, and handoff-ready.
 
 This file records only:
 
@@ -11,17 +9,13 @@ This file records only:
 - source and downstream proof
 - upstream expansion
 - optional connection metadata
+- current sample state and handoff-ready closure state
 
-Do not mix in stage summaries, runtime decisions, or recovery conclusions.
+Use it when the target request is still not confirmed from a real sample, the upstream chain is still partly guessed, normal and risk chains are still mixed, or the current evidence is not yet concrete enough to start locate as a method task.
 
-## Visual Style
+This artifact does not own stage routing, runtime fit, recovery conclusions, or final equivalence proof.
 
-Use pure Markdown with light status markers:
-
-- `✅ 已确认` for proven facts
-- `🟡 待确认` for open closure items
-- `⛔ 阻塞` for a missing prerequisite
-- `🔍 待验证` for proof that belongs in `验证记录.md`
+A record is ready to hand off into locate when the target request is real, request metadata is concrete, upstream has been expanded or explicitly marked as none, evidence is verifiable, and the current sample state plus key open gaps are stated clearly.
 
 ## Record Path
 
@@ -29,16 +23,29 @@ Write records under the current task working directory:
 
 ```text
 reverse-records/
-├─ 总览.md
-├─ 请求链路.md
-├─ 运行态清单.md
-├─ 恢复记录.md
-└─ 验证记录.md
+└─ 请求链路.md
 ```
 
-Use one flat `reverse-records/` directory per task. Keep updating those files in place and do not create per-session subfolders.
+Keep a single `reverse-records/` directory per task. Keep updating the file in place and do not create per-session subfolders.
 
-## Status Tags
+## Header Skeleton
+
+Start `请求链路.md` with a short summary block:
+
+```markdown
+# 请求链路
+
+- 目标请求：
+- 目标对象：
+- 当前样本状态：🟡 待确认（正常态 / 风控态 / 未知）
+- 关键未闭环：
+- 样本编号：
+- 证据编号：
+```
+
+## Request Block Skeleton
+
+### Status Vocabulary
 
 Keep `状态` as an array and use the original vocabulary:
 
@@ -64,36 +71,18 @@ Example:
 ["动态", "响应获取", "HttpOnly", "会话相关"]
 ```
 
-## Header Skeleton
+### Field & Formatting Rules
 
-Start `请求链路.md` with a short summary block:
+- Input fields use `状态 / 来源 / 证据`.
+- Response fields use `状态 / 去向 / 证据`.
+- Keep `来源` and `去向` concrete enough to show real upstream or downstream linkage; do not collapse them into vague labels.
+- If a field table has no fields, insert a single row: `| - 无 | - | - | - |`.
+- If there is no upstream request, write `无` in the request metadata row for upstream.
+- Evidence must be verifiable (packet capture / response body / pre-send comparison); do not record guesses as evidence.
+- If upstream is still being expanded, record the last proven boundary and the next unproven hop explicitly.
+- If normal and risk samples diverge, keep that split visible in request metadata or field evidence instead of merging them into one conclusion.
 
-```markdown
-# 请求链路
-
-- 目标请求：
-- 目标对象：
-- 当前样本状态：🟡 待确认（正常态 / 风控态 / 未知）
-- 关键未闭环：
-- 样本编号：
-- 证据编号：
-```
-
-## Writing Rules
-
-- put the target request first
-- expand upstream requests after the target request
-- one request per section
-- keep request metadata in a compact table
-- keep field sections in compact tables
-- input fields use `状态 / 来源 / 证据`
-- response fields use `状态 / 去向 / 证据`
-- if a section has no fields, write `- 无`
-- if there is no upstream request, write `无`
-
-Do not add separate sections for dependency summary, progress, or final conclusions.
-
-## Request Block Skeleton
+### Request Block Skeleton (tables are fixed)
 
 ```markdown
 ## 请求A｜目标请求
@@ -108,30 +97,90 @@ Do not add separate sections for dependency summary, progress, or final conclusi
 ### 请求头
 | 字段 | 状态 | 来源 | 证据 |
 |---|---|---|---|
-| `头1` | `["动态","响应获取","会话相关"]` | `请求B.response.token -> 请求A.header.头1` | `发送前对照` |
 
 ### Query 参数
 | 字段 | 状态 | 来源 | 证据 |
 |---|---|---|---|
-| `参数1` | `["固定","明文"]` | `页面固定值 -> 请求A.query.参数1` | `抓包` |
 
 ### Body 参数
 | 字段 | 状态 | 来源 | 证据 |
 |---|---|---|---|
-| `参数2` | `["动态","响应获取","一次性"]` | `请求C.response.ticket -> 请求A.body.参数2` | `响应包` |
 
 ### Cookie
 | 字段 | 状态 | 来源 | 证据 |
 |---|---|---|---|
-| `cookie1` | `["动态","响应获取","HttpOnly","会话相关"]` | `请求B.Set-Cookie.cookie1 -> 请求A.cookie.cookie1` | `Set-Cookie` |
 
 ### 响应输出
 | 字段 | 状态 | 去向 | 证据 |
 |---|---|---|---|
-| `response.field1` | `["动态","响应获取","可复用"]` | `请求A.response.field1 -> 请求D.header.头2` | `响应包` |
 ```
 
-## Protocol Addition
+### Example (minimal)
+
+```markdown
+# 请求链路
+
+- 目标请求：/api/verify
+- 目标对象：登录校验
+- 当前样本状态：🟡 待确认（正常态 / 风控态 / 未知）
+- 关键未闭环：x-token 来源未闭环
+- 样本编号：S-001
+- 证据编号：E-001
+
+## 请求A｜目标请求
+
+| 项目 | 内容 |
+|---|---|
+| 接口 | /api/verify |
+| 触发方式 | 提交登录表单 |
+| 上游请求 | 无 |
+| 响应结果 | 200 |
+
+### 请求头
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+| `x-token` | `["动态","响应获取","会话相关"]` | `请求A.response.token -> 请求A.header.x-token` | `响应包` |
+
+### Query 参数
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+| - 无 | - | - | - |
+
+### Body 参数
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+| `payload` | `["动态","响应获取","一次性"]` | `请求A.response.ticket -> 请求A.body.payload` | `响应包` |
+
+### Cookie
+| 字段 | 状态 | 来源 | 证据 |
+|---|---|---|---|
+| - 无 | - | - | - |
+
+### 响应输出
+| 字段 | 状态 | 去向 | 证据 |
+|---|---|---|---|
+| `token` | `["动态","响应获取","可复用"]` | `请求A.response.token -> 请求B.header.x-token` | `响应包` |
+```
+
+### Evidence Reminder
+
+- Every request field entry must include status, source/target, and evidence.
+- The artifact is sufficient only when another reader can verify what is real now, what remains open, and whether the current sample is normal, risk, or still unresolved.
+
+## Handoff Block
+
+```markdown
+## 交接块
+
+- 当前阶段：
+- 最后更新时间：
+- 目标请求与关键字段：
+- 已确认链路：
+- 未闭环点：
+- 下一步建议：
+```
+
+## Connection Info (Optional)
 
 For `WebSocket`, `protobuf`, SSE, heartbeat, or renewal flows, add one compact connection section at the end:
 
@@ -147,12 +196,3 @@ For `WebSocket`, `protobuf`, SSE, heartbeat, or renewal flows, add one compact c
 | ack 规则 |  |
 | 续期条件 |  |
 ```
-
-## Quality Check
-
-- the target request is first
-- every field keeps a status array
-- every field has a concrete source chain or downstream target
-- every field has at least one evidence anchor
-- the file stays readable without extra summary prose
-- progress, forks, runtime notes, and recovery notes are not mixed into this file

@@ -1,4 +1,0 @@
-interface:
-  display_name: "JSR Locate"
-  short_description: "Reverse skill for proving write boundaries, source chains, upstream request dependencies, and state closure for dynamic fields"
-  default_prompt: "Use $jsr-locate only after collecting this input block: Target request, Target field, Final sink (if known), Trigger action, Current state, Known evidence, Constraints. Then prove the sink, source chain, upstream dependencies, and normal/risk fork of the target field."

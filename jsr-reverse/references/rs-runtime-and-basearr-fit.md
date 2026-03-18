@@ -2,7 +2,9 @@
 
 ## When to Use
 
-Use this reference when the current task matches RS-style runtime behavior:
+Use this file only as a `runtime` mount for RS-style targets.
+
+Mount it when the current runtime blocker involves one or more of the following:
 
 - generated cookies or tokens differ between browser and local execution
 - the target appears to have an extra-debugger or `hasDebug` variant
@@ -10,9 +12,29 @@ Use this reference when the current task matches RS-style runtime behavior:
 - output changes with time, randomness, or execution-window assumptions
 - first-hop state is produced correctly but second-hop consumption still fails
 
-Do not route here only because the target mentions cookies.
+Do not use this file as a general RS workflow or just because the target mentions cookies.
 
-## Classify the RS Blocker First
+## Owns
+
+This file owns only the RS-specific runtime refinement below:
+
+- blocker classification for RS runtime work
+- `basearr` closure items
+- preferred fixed runtime facts
+- acceptance and partial conditions for RS runtime fit
+
+## Does Not Own
+
+This file does not own:
+
+- RS locate collection or canonical-hop proof
+- RS anchor recovery
+- global runtime taxonomy outside RS-specific fit
+- final validation proof
+
+## Method inside this stage
+
+### 1. Classify the blocker first
 
 Classify the current blocker into exactly one primary class before widening patch scope:
 
@@ -23,9 +45,9 @@ Classify the current blocker into exactly one primary class before widening patc
 | fixed runtime facts | whether a small set of browser-shaped facts must be frozen before comparison |
 | second-hop consumption | whether produced state is accepted only on the next request |
 
-If the primary class is unclear, the route is still `partial`.
+If the primary class is unclear, keep runtime at `partial`.
 
-## Basearr Closure Items
+### 2. Close the basearr items explicitly
 
 For RS-style cookie generation, treat the following as closure items rather than optional notes:
 
@@ -37,9 +59,9 @@ For RS-style cookie generation, treat the following as closure items rather than
 
 If any item remains open, do not claim stable cookie reproduction.
 
-## Preferred Fixed Runtime Facts
+### 3. Freeze the preferred fixed runtime facts first
 
-Before broad browser-surface patching, first test the smaller RS-specific fact set:
+Before broad browser-surface patching, test the smaller RS-specific fact set:
 
 | Runtime fact | Why it matters |
 | --- | --- |
@@ -51,9 +73,11 @@ Before broad browser-surface patching, first test the smaller RS-specific fact s
 | `random` | encoded randomness and branch stability |
 | execution-window or loop-count surrogate | timing-derived encoded fields |
 
-This list is a first pass, not permission to ignore other dependencies.
+This is a first pass, not permission to ignore other dependencies.
 
-## Acceptance Rules
+### 4. Apply acceptance and partial conditions
+
+Acceptance rules:
 
 - no stable RS cookie claim without frozen time and randomness
 - no stable RS cookie claim without recorded `basearr` closure state
@@ -61,11 +85,16 @@ This list is a first pass, not permission to ignore other dependencies.
 - if output length or encrypted-array length fluctuates, classify it as a `basearr` or fixed-source problem before widening patch scope
 - treat extra-debugger variants as a route fork, not generic anti-debug noise
 
-## Partial Conditions
-
 Keep runtime at `partial` when:
 
 - `hasDebug` branch is still unresolved
 - `basearr`, `encryptLens`, `lastWord`, or `flag` is still unresolved
 - fixed runtime facts have not been frozen for comparison
 - second-hop validation is missing while produced state is consumed later
+
+## Stop / handoff rule
+
+- Stop using this file when the RS runtime blocker is classified and the minimum accepted fit set is concrete.
+- Hand off to `locate` when second-hop ownership or produced-state consumption is still unproven.
+- Hand off to `recover` when the real blocker is an unresolved RS shell branch rather than runtime fit.
+- Hand off to `validation` when runtime facts are stable enough and the remaining work is checkpoint or final-output proof.

@@ -1,4 +1,0 @@
-interface:
-  display_name: "JSR Runtime"
-  short_description: "Reverse skill for minimal runtime manifests, anti-debugging analysis, state closure, and risk-branch diagnosis"
-  default_prompt: "Use $jsr-runtime only after collecting this input block: Target chain or function, Browser behavior, Local behavior, Current blocker, Known evidence, Constraints. Then classify the gap, build the minimal runtime manifest, and report blocked or partial status if dependencies remain open."
