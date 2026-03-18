@@ -1,12 +1,25 @@
 # JSVMP and AST Recovery
 
-## 1. Select the VMP Recovery Level First
+## Purpose / Use Boundary
+
+Use this reference only to decide and document how far JSVMP / AST recovery must go for the current target. It is a mounted topic reference under `recover`, not a second recover core reference.
+
+Keep the file focused on:
+
+- choosing the JSVMP recovery depth
+- defining the required recovery artifacts
+- deciding when `recover` should hand off to `locate`, `runtime`, or `validation`
+- preserving the AST / control-flow flattening guidance that follows
+
+Do not expand this file into the full recover spine. The single entry remains `jsr-reverse`, and the spine remains `intake -> evidence -> locate -> recover -> runtime -> validation -> handoff`.
+
+## Recovery Levels
 
 ### Level A: extract only critical `opcode`
 
 Suitable when:
 
-- the target field闁炽儲鐛?write-back boundary is already known
+- the target field write-back boundary is already known
 - only a small set of `opcode` semantics is required to explain the field
 
 Focus:
@@ -41,12 +54,161 @@ Focus:
 - only a minimal verifiable decompilation or interpreted execution
 - no low-value full beautification
 
-Escalation rule:
+Hard escalation rules:
 
-- Start from `A` by default.
-- Escalate only when evidence proves the current level is insufficient.
+- Start from `A`; never jump to `C` just because code is ugly, flattened, or string-table-heavy.
+- `A -> B` only when one or more of the following is proven:
+  - a critical `opcode` cannot be interpreted without dispatcher semantics
+  - target-field explanation depends on register / stack / context flow
+  - key branches cannot be judged without state-carrier recovery
+- `B -> C` only when one or more of the following is proven:
+  - downstream work requires replay of multiple execution paths
+  - protocol rebuild or batch execution requires a minimal executable fragment
+  - levels `A` and `B` still cannot support runtime fit or validation checkpoints
 
-## 2. Basic Order for JSVMP
+## JSVMP Artifact Contract
+
+### Entry Card
+
+Required fields:
+
+- target field or target effect
+- VM entry function / closure
+- bytecode source or bytecode loader
+- dispatcher entry location
+- interpreter / execution function
+- relation to the target field or target write-back path
+- strongest observed anchor or evidence
+- entry call chain from observable trigger
+- entry input sample used for proof
+- browser-side evidence for entry
+- local recovered interpretation of entry
+- confidence and remaining unknowns
+
+### State Carrier Card
+
+Required fields:
+
+- state carrier name
+- carrier type: register array / stack object / context object / constant pool / string table / other
+- register arrays
+- stack objects
+- context objects
+- constant pool / string table
+- initialization site
+- read sites relevant to the target
+- write sites relevant to the target
+- transition rule or update rule
+- which carriers materially affect the target field
+- which carriers only transport state without affecting the decision
+- browser-side evidence for the carrier state
+- local recovered mapping of the carrier
+- why this carrier is critical to the target field
+- remaining gap
+
+### Critical Opcode / Branch Card
+
+Required fields:
+
+- opcode or branch identifier
+- dispatcher position or reachability condition
+- input
+- output
+- state mutation
+- dependency
+- evidence
+- relation to target field / hashing / encryption / serialization / packet assembly
+- local recovered semantics
+- equivalence result: match / diverge / unproven
+- remaining blocker
+
+### Recovery-Level Decision Card
+
+Required fields:
+
+- current chosen level: `A` / `B` / `C`
+- why the current level is sufficient
+- why a shallower stop depth is insufficient
+- why deeper opening is not yet justified, or why it has become necessary
+- proof that triggered escalation, if any
+- checkpoints already closed
+- checkpoints still open
+- next required handoff: `locate` / `runtime` / `validation` / stop
+- explicit stop depth
+
+## Stage Transition Criteria
+
+### `recover -> locate`
+
+Return to `locate` when one or more of the following remains true:
+
+- dispatcher entry relevance is still unproven
+- the supposed VM entry is still guessed rather than observed
+- the recovered VM slice still cannot be tied to the real target write-back path
+- deeper VM work would continue on an unproven boundary instead of closing evidence
+
+If the current blocker is still boundary identification rather than VM semantics, fall back to `locate` instead of extending VM recovery.
+
+### `recover -> runtime`
+
+Move to `runtime` only when one or more of the following is already true:
+
+- the bridge contract is already clear
+- the critical operator / `opcode` family already explains the algorithm boundary
+- the remaining divergence is caused by environment facts, lifecycle state, timing, or risk branches
+- deeper VM work would add code volume without explaining the execution divergence
+
+Only hand off to `runtime` after the proved link from VM behavior to the target field is already clear enough for the named checkpoints.
+
+### `recover -> validation`
+
+Move to `validation` only when all of the following are already true:
+
+- dispatcher entry is known
+- state carriers are known
+- critical `opcode` / branches related to the target field are extracted
+- the chosen stop level is justified
+- fixed samples exist for checkpoint comparison
+
+If the cards or checkpoints are still incomplete, do not hand off to `validation`; either stay in `recover` for the missing checkpoint or fall back to `locate` / forward to `runtime` based on the actual blocker.
+
+## Checkpoint Contract
+
+Required checkpoints:
+
+- dispatcher entry state
+- critical state-carrier transition
+- critical opcode input/output
+- pre-write-back intermediate result
+- final target field
+
+For each checkpoint, record:
+
+- fixed input sample
+- browser-side evidence
+- recovered/local-side evidence
+- conclusion: match / diverge / unproven
+- remaining gap
+
+## Common Misjudgments
+
+- treating dispatcher recovery as completion by itself
+- treating string-table recovery as algorithm recovery
+- selecting level `C` because the code style is unpleasant
+- continuing deeper VM recovery when the remaining blocker is clearly runtime divergence
+- claiming “pure algorithm” before state and runtime dependencies are actually excluded
+
+## Completion Standard
+
+Recovery is complete only when all of the following are explicit:
+
+- the stop depth at `A`, `B`, or `C` is justified by evidence
+- the required cards and checkpoints are recorded as artifacts, not implied by prose alone
+- the recovered result explains the target field, or clearly states the remaining gap
+- the next handoff is explicit: back to `locate`, forward to `runtime`, forward to `validation`, or stop
+- the handoff reason matches the actual blocker rather than preference for deeper VM expansion
+
+## Basic Order for JSVMP
 
 ### Step 1: locate the entry
 
@@ -79,7 +241,9 @@ Answer instead:
 
 After extracting each slice, compare input and output. Do not judge by appearance.
 
-## 3. Basic Order for AST and Control-Flow Flattening
+## Basic Order for AST and Control-Flow Flattening
+
+Do not rewrite or normalize the whole AST just for readability. Recover only the anchors, execution order, and side-effect-bearing branches needed for the current target and checkpoints.
 
 ### Step 1: recover readable anchors
 
@@ -108,19 +272,3 @@ Separate:
 
 - control-flow wrapping only
 - branches that really mutate state, request data, or return values
-
-## 4. Common Misjudgments
-
-- Treating the dispatcher as the core algorithm
-- Treating string-table recovery as completion
-- Treating one flattened case as the real main path
-- Jumping directly to level `C`
-- Skipping equivalence validation and judging only by appearance
-
-## 5. Completion Standard
-
-- Dispatcher entry is known.
-- State carriers are known.
-- Critical branches or `opcode` directly related to the target field are extracted.
-- The stopping level among `A / B / C` is justified.
-- The recovered result can explain the target field or support the next replay step.
