@@ -4,9 +4,6 @@ name: release-jsr-skills
   push:
     branches:
       - main
-    paths:
-      - 'jsr-reverse/**'
-      - '.github/workflows/release-jsr-skills.yml'
 
 permissions:
   contents: write
@@ -25,7 +22,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Prepare release metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          short_sha="${GITHUB_SHA::7}"
+          release_tag="jsr-skills-${GITHUB_RUN_NUMBER}-${short_sha}"
+          asset_name="${release_tag}.zip"
+          release_title="JSR Skills Build #${GITHUB_RUN_NUMBER} (${short_sha})"
+
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
+          echo "asset_name=${asset_name}" >> "$GITHUB_OUTPUT"
+          echo "release_title=${release_title}" >> "$GITHUB_OUTPUT"
+
       - name: Build skills archive
+        env:
+          ASSET_NAME: ${{ steps.meta.outputs.asset_name }}
         run: |
           set -euo pipefail
 
@@ -40,11 +54,14 @@ jobs:
 
           (
             cd dist
-            zip -r jsr-skills-latest.zip jsr-skills
+            zip -r "${ASSET_NAME}" jsr-skills
           )
 
       - name: Write release notes
         env:
+          RELEASE_TAG: ${{ steps.meta.outputs.release_tag }}
+          RELEASE_TITLE: ${{ steps.meta.outputs.release_title }}
+          ASSET_NAME: ${{ steps.meta.outputs.asset_name }}
           COMMIT_SHA: ${{ github.sha }}
           REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
@@ -52,39 +69,35 @@ jobs:
           SERVER_URL: ${{ github.server_url }}
         run: |
           cat > dist/release-notes.md <<EOF
-          Automatically updated JSR skills bundle.
+          Automatically published JSR skills bundle.
 
+          - Release: ${RELEASE_TITLE}
+          - Tag: ${RELEASE_TAG}
           - Commit: ${COMMIT_SHA}
           - Workflow: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}
           - Run number: ${RUN_NUMBER}
           - Included skills:
             - jsr-reverse
-          - Asset: jsr-skills-latest.zip
+          - Asset: ${ASSET_NAME}
           EOF
-
-      - name: Move latest tag
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -f skills-latest "${GITHUB_SHA}"
-          git push --force origin "refs/tags/skills-latest"
 
       - name: Create or update release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.meta.outputs.release_tag }}
+          RELEASE_TITLE: ${{ steps.meta.outputs.release_title }}
+          ASSET_NAME: ${{ steps.meta.outputs.asset_name }}
         run: |
           set -euo pipefail
 
-          if gh release view skills-latest >/dev/null 2>&1; then
-            gh release edit skills-latest \
-              --title "JSR Skills Latest" \
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release edit "${RELEASE_TAG}" \
+              --title "${RELEASE_TITLE}" \
               --notes-file dist/release-notes.md
 
-            gh release upload skills-latest dist/jsr-skills-latest.zip --clobber
+            gh release upload "${RELEASE_TAG}" "dist/${ASSET_NAME}" --clobber
           else
-            gh release create skills-latest dist/jsr-skills-latest.zip \
-              --title "JSR Skills Latest" \
+            gh release create "${RELEASE_TAG}" "dist/${ASSET_NAME}" \
+              --title "${RELEASE_TITLE}" \
               --notes-file dist/release-notes.md
           fi
