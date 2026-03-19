@@ -299,6 +299,7 @@ Protocol can appear in more than one stage. Add its reference only after the sta
 - If the evidence gate runs, update `reverse-records/请求链路.md` before routed-stage output.
 - Repeat the stage output only when the stage changes or the request evidence materially changes.
 - If a topic mount changes the current investigation path, repeat the stage output and update the current artifact before handoff.
+- Current artifact: `reverse-records/请求链路.md`.
 - Keep the handoff tied to the current artifact, not to a clue list.
 - Only reference `jsr-reverse/references/*`.
 
@@ -319,7 +320,7 @@ Requirements:
 - `Why this stage now` must explain the engineering state, not just clue words.
 - `Read now` must contain exactly 1 core reference plus at most 1-2 topic references.
 - `Required artifact` must point to the artifact or stage output that must be updated next.
-- If the evidence gate ran, the required artifact is usually `reverse-records/请求链路.md` before downstream stage artifacts.
+- If the evidence gate ran, keep `Required artifact` as `reverse-records/请求链路.md` and append the current stage conclusion there.
 
 ## Examples
 

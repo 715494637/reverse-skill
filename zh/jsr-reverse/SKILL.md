@@ -299,6 +299,7 @@ RS 线索不能代替阶段选择。
 - evidence gate 触发时，必须先更新 `reverse-records/请求链路.md`，再输出路由阶段。
 - 只有阶段变化，或请求证据发生实质变化时，才重复输出阶段块。
 - 如果 topic mount 改变了当前调查路径，交接前要重复阶段输出并更新当前工件。
+- 当前工件：`reverse-records/请求链路.md`。
 - handoff 必须绑定到当前工件，而不是绑定到线索词列表。
 - 只引用 `jsr-reverse/references/*`。
 
@@ -319,7 +320,7 @@ Exit condition:
 - `Why this stage now` 必须解释工程状态，不能只重复线索词。
 - `Read now` 必须包含恰好 1 份 core reference，再加至多 1-2 份 topic reference。
 - `Required artifact` 必须指出下一份必须更新的工件或阶段产出。
-- 如果 evidence gate 触发了，`Required artifact` 通常先是 `reverse-records/请求链路.md`，再轮到下游阶段工件。
+- 如果 evidence gate 触发了，`Required artifact` 保持 `reverse-records/请求链路.md`，并在其中追加当前阶段结论。
 
 ## Examples
 

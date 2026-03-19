@@ -6,7 +6,7 @@
 
 Use this reference when the main work is to prove checkpoints, record residual gaps, and separate validated conclusions from still-open recovery work.
 
-`恢复记录.md` and `验证记录.md` should stay compact, structural, and proof-oriented. They are not the place to re-explain request-chain capture or runtime diagnosis.
+Keep recovery and validation content as compact, structural supplements inside `请求链路.md`.
 
 ## What Validation Owns
 
@@ -15,12 +15,12 @@ Use this reference when the main work is to prove checkpoints, record residual g
 - define concrete checkpoints
 - state what proof confirms or rejects each checkpoint
 - record residual gaps explicitly
-- keep recovery records separate from validation records
+- keep recovery supplements separate from validation supplements
 - state the stop condition for a defensible proof claim
 
 ## Recovery Record Contract
 
-`恢复记录.md` is the recovery-side contract. It should contain only the recovered structure needed for later proof:
+The `恢复补充` section inside `请求链路.md` is the recovery-side contract. It should contain only the recovered structure needed for later proof:
 
 - layer cards
 - boundary cards
@@ -33,10 +33,10 @@ Keep layer names explicit, such as `外层容器`, `调度层`, `状态载体`, 
 
 Every key-function card must state `输入 / 输出 / 副作用 / 依赖 / 证据`.
 
-Suggested skeleton:
+Suggested skeleton when only `请求链路.md` is writable:
 
 ```markdown
-# 恢复记录
+## 恢复补充
 
 - 当前状态：🟡 待确认（部分完成）
 - 目标：
@@ -76,7 +76,7 @@ Suggested skeleton:
 
 ## Validation Proof Contract
 
-`验证记录.md` is the proof-side contract. Each equivalence check must answer:
+The `验证补充` section inside `请求链路.md` is the proof-side contract. Each equivalence check must answer:
 
 - which input sample is fixed
 - which checkpoint is being compared
@@ -90,10 +90,10 @@ Typical checkpoints include:
 - dispatcher or state-carrier transitions
 - extracted result before write-back
 
-Suggested skeleton:
+Suggested skeleton when only `请求链路.md` is writable:
 
 ```markdown
-# 验证记录
+## 验证补充
 
 - 当前状态：🔍 待验证 / ✅ 已确认 / ⛔ 阻塞
 - 验证目标：

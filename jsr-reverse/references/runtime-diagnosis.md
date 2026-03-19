@@ -120,7 +120,7 @@ The diagnosis output must stay minimal and handoff-ready. It should include:
 - problem class or combined classes
 - first confirmed divergence point
 - whether the blocker is `missing object`, `missing state`, `anti-debugging`, `unstable source`, or `risk branch`
-- which facts must be carried into `运行态清单.md`
+- which facts must be carried into the `运行时补充` section inside `请求链路.md`
 - what the next action is: patch objects, restore state, stabilize source, isolate anti-debug, or validate a branch difference
 
 For fingerprint-heavy targets such as `deviceId`, `blackbox`, `sensor_data`, challenge, slider, or risk-cookie paths, keep the diagnosis compact but explicit:
@@ -147,7 +147,7 @@ Minimal handoff signals:
 - unstable sources are either stabilized or explicitly listed as the current blocker
 - the next artifact update or validation action is clear
 
-At that point, hand off by updating `运行态清单.md` with the confirmed runtime facts and moving only the unresolved proof part into validation if needed.
+At that point, hand off by updating the `运行时补充` section inside `请求链路.md` with the confirmed runtime facts and marking any remaining proof gap in the same file.
 
 ## Does Not Own
 
@@ -155,6 +155,6 @@ At that point, hand off by updating `运行态清单.md` with the confirmed runt
 
 - proving the request chain from scratch
 - deeper shell recovery once the real blocker is still hidden logic
-- defining the full artifact template for `运行态清单.md`
+- defining the full template for the `运行时补充` section inside `请求链路.md`
 - re-explaining the global stage routing from `SKILL.md`
 - claiming equivalence based only on final output

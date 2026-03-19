@@ -2,13 +2,13 @@
 
 ## Purpose
 
-`运行态清单.md` is the canonical runtime workboard for the current chain.
+Keep runtime facts under a `## 运行时补充` section inside `请求链路.md`.
 
 Use it to record only the runtime facts that must be fitted, fixed, or ruled out for the current execution path. It should read like an execution-oriented workboard, not a routing memo or a generic reverse notebook.
 
 ## Artifact Boundary
 
-`运行态清单.md` owns only runtime-fit facts for the current chain, including:
+The `运行时补充` section inside `请求链路.md` owns only runtime-fit facts for the current chain, including:
 
 - target chain and observed browser/local behavior
 - execution mode and fit check
@@ -35,8 +35,10 @@ It does not own request-chain expansion, recovery notes, or generic reverse reas
 
 ## Runtime Skeleton
 
+When only `请求链路.md` is writable, embed the skeleton below as a `## 运行时补充` section inside that file.
+
 ```markdown
-# 运行态清单
+## 运行时补充
 
 - 当前状态：🟡 待确认（部分完成）
 - 目标链路 / 函数：
@@ -114,7 +116,7 @@ It does not own request-chain expansion, recovery notes, or generic reverse reas
 
 ## Required Coverage
 
-`运行态清单.md` must cover, when applicable:
+The `运行时补充` section inside `请求链路.md` must cover, when applicable:
 
 - target chain, browser behavior, and local behavior
 - fit check, execution mode, browser profile, injection point, state-close signal, and state carrier
@@ -134,9 +136,9 @@ Do not merge these two lists.
 
 ## Quality Check
 
-- the filename stays `运行态清单.md`
-- the document stays the canonical runtime workboard for the current chain
+- the section heading stays `## 运行时补充`
+- the section remains the canonical runtime workboard for the current chain
 - `必需对象` and `必需状态` are not mixed
 - each dependency item keeps executable evidence and removal symptoms
 - pure-compute migration is never claimed while a precheck class remains open
-- runtime facts stay here rather than being scattered into overview prose
+- runtime facts stay in this section rather than being scattered elsewhere

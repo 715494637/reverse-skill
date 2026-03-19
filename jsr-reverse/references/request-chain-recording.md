@@ -26,7 +26,7 @@ reverse-records/
 └─ 请求链路.md
 ```
 
-Keep a single `reverse-records/` directory per task. Keep updating the file in place and do not create per-session subfolders.
+Keep a single `reverse-records/` directory per task and keep updating this one file in place.
 
 ## Header Skeleton
 
@@ -179,6 +179,8 @@ Example:
 - 未闭环点：
 - 下一步建议：
 ```
+
+If runtime, recovery, or validation facts matter for handoff, append them here as compact supplements.
 
 ## Connection Info (Optional)
 

@@ -38,7 +38,7 @@ Do not combine multiple modes in one diagnosis block.
 
 ## 4. Required Runtime Facts
 
-When this route is used, the canonical templates `运行态清单.md` and `验证记录.md` must capture:
+When this route is used, the `运行时补充` / `验证补充` sections inside `请求链路.md` must capture:
 
 - fit-check conclusion
 - chosen execution mode
