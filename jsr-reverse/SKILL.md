@@ -253,6 +253,10 @@ After the stage is chosen, read:
 
 Do not reverse this order. Do not pick references first and infer the stage afterward.
 
+If new evidence closes `locate` and the next blocker becomes shell reduction, helper contracts, dispatcher flow, or opaque object structure, switch to `recover` immediately in the same turn.
+
+After every stage switch, reload the new stage's core reference and topic references before proposing the next debugging action. References from the previous stage do not satisfy the new stage.
+
 ## Topic Mount Rules
 
 Choose topic references after the stage is selected. Use the evidence artifact reference separately when the evidence gate runs.
@@ -281,6 +285,8 @@ Read the core ref first, then add at most 1-2 topic refs that match the current 
 - `references/anti-debug-and-risk-branches.md` for anti-debugging or branch flips during `runtime`
 - `references/minimal-env-design.md` for minimum environment design during `runtime`
 - `references/sdenv-fit-check-and-routing.md` for lifecycle-produced state, navigation-produced state, or replay routing during `runtime`
+
+Breakpoint-hit inspection belongs to `locate` only while the team is still proving the real write boundary. Once the active chain is already real and the next move is a targeted step-into across helpers such as `_$jR -> _$cg` to recover `_$_U`, `_$$j`, dispatcher, or bridge contracts, restage to `recover` first and mount `references/recover-strategy.md`, then the matching topic reference.
 
 ### RS / 瑞数 mount policy
 
@@ -357,5 +363,6 @@ Exit condition: The first divergence and minimum fit set are concrete enough to 
 - Do not fully decompile a shell when a bridge contract or operator slice is enough.
 - Do not treat RS first-hop material as complete until second-hop consumption is checked.
 - Do not treat a final output match as sufficient when intermediate checkpoints disagree.
+- Do not continue targeted step-into, helper-contract recovery, or object-structure补全 under a `locate` frame once the boundary is already proven; restage to `recover` first.
 - Update `reverse-records/请求链路.md` immediately after each request-chain capture or material change.
 - Keep topic refs minimal; do not turn this skill into a reference encyclopedia.
