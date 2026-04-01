@@ -89,3 +89,69 @@ When these signals appear, step back to a boundary closer to the sink.
 - One repeatable call order
 - One field status-label table
 - One complete dependency-chain record
+
+## 8. Observation Hit: Judgment Flow
+
+When an observation point (breakpoint, hook, trace) fires, follow this judgment sequence before taking the next action. This is about **thinking order**, not about any specific tool.
+
+### Step 1: Am I on the target chain?
+
+Read the call stack from top to bottom:
+
+- Does the stack pass through the known trigger path (e.g., the button click handler, the form submit, the timer callback)?
+- Does the stack reach the known sink or write boundary?
+- If neither: this hit is likely noise. Record it as "off-chain" and move the observation point closer to the sink.
+
+### Step 2: What role does this location play?
+
+Classify the current pause location:
+
+| Role | Signal | Next move |
+|---|---|---|
+| **Write point** (sink) | The target value is being assigned or sent here | Confirm the value matches the real request. This may be the boundary. |
+| **Builder** | The target value is being assembled from parts | Identify which parts are already known and which need upstream tracing. |
+| **Entry** | A caller dispatches into the target chain | Note the arguments passed in — they reveal what the caller already knows. |
+| **Relay** | The value passes through unchanged | Skip this layer — move observation to the caller or the callee, not here. |
+| **Irrelevant** | No visible connection to the target value | This hit is noise. Re-evaluate the observation point placement. |
+
+### Step 3: What do the scope variables tell me?
+
+At the current pause point, examine variables in scope:
+
+- **Arguments**: What was passed in? Do any arguments match known upstream values (response fields, cookie values, timestamps)?
+- **Local state**: Are there intermediate computation results? Do they correspond to known field formats (hex strings, base64, JSON structures)?
+- **Closure variables**: Is there captured state from an outer scope? This often reveals environment-dependent values or cached results.
+- **Return value** (if stepping out): Does the return value appear in the final request? If yes, this function is on the critical path.
+
+Do not guess variable meaning from names in minified code. Determine role from **value and data flow**.
+
+### Step 4: Decide the next direction
+
+Based on Steps 1-3:
+
+| Finding | Direction |
+|---|---|
+| At the write point, value is already complete | **Step out** — trace where the complete value came from |
+| At a builder, some inputs are unknown | **Step into** the unknown input's source, or trace its upstream |
+| At an entry, arguments reveal the full picture | **Record and move on** — this location is understood |
+| At a relay, value passes through unchanged | **Move observation** to a more meaningful layer |
+| The hit is off-chain or irrelevant | **Relocate** the observation point entirely |
+
+### Step 5: Record the conclusion
+
+After each meaningful hit, record:
+
+```text
+Location: {file/function or description}
+Role: {write point / builder / entry / relay / irrelevant}
+Key observation: {what was learned}
+Next action: {step into X / step out / move observation to Y / record and continue}
+```
+
+This record feeds into the artifact update and prevents re-investigating the same location.
+
+### Judgment Traps
+
+- **Trap**: The first hit looks relevant because it contains a crypto function. But the crypto function is called from many paths — only one of them is the target chain. Always confirm via call stack, not via function name.
+- **Trap**: A variable holds a value that looks like the target, but it was computed in a previous invocation and cached. Check whether the value is **fresh** (computed in this request cycle) or **stale** (leftover from a prior cycle).
+- **Trap**: Stepping into a deep call chain and losing track of the original question. Before each step-into, state what you expect to learn. If the answer is vague ("maybe something useful"), step out instead.

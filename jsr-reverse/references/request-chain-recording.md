@@ -17,6 +17,35 @@ This artifact does not own stage routing, runtime fit, recovery conclusions, or 
 
 A record is ready to hand off into locate when the target request is real, request metadata is concrete, upstream has been expanded or explicitly marked as none, evidence is verifiable, and the current sample state plus key open gaps are stated clearly.
 
+## Record Lifecycle
+
+`请求链路.md` progresses through a defined lifecycle. Each state has entry conditions and required fields. Use this to judge "what is still missing" at any point.
+
+### State Machine
+
+```text
+draft → evidence-partial → evidence-complete → recover-annotated → runtime-fitted → validated → handoff-ready
+```
+
+### State Definitions
+
+| State | Entry condition | Required content |
+|---|---|---|
+| `draft` | Intake done, target request stated but not yet captured | Header skeleton only; `当前样本状态` = `🟡 待确认` |
+| `evidence-partial` | At least one real request sample captured, but upstream chain or field status is incomplete | Header skeleton + at least one request block with partial field tables; open gaps listed in `关键未闭环` |
+| `evidence-complete` | Target request confirmed from real sample, all field statuses filled, upstream expanded or marked `无` | All request blocks complete; `当前样本状态` updated to `正常态` or `风控态`; `关键未闭环` is either empty or lists only non-evidence items |
+| `recover-annotated` | Recovery conclusions appended (layer cards, boundary cards, key-function cards) | `恢复补充` section present with at least one contract card |
+| `runtime-fitted` | Runtime dependency set recorded | `运行时补充` section present with `必需对象` and `必需状态` lists |
+| `validated` | Checkpoint comparison completed | `验证补充` section present with checkpoint table; all checkpoints have conclusions |
+| `handoff-ready` | All sections consistent, no contradictions between sections, residual gaps explicitly named | `交接块` filled; another reader can verify what is solved vs. open |
+
+### Transition Rules
+
+- Transitions are **forward-only** under normal flow. A record at `runtime-fitted` does not go back to `evidence-partial`.
+- **Exception — invalidation**: If a later stage disproves a prior conclusion (e.g., runtime reveals the write boundary was wrong), the record regresses to the earliest affected state. The invalidated fact must be struck through or removed, and the regression must be noted in `关键未闭环`.
+- Not every record reaches `handoff-ready`. Simple tasks (L1/L2) may go `draft → evidence-complete → validated → handoff-ready`, skipping recover and runtime annotations.
+- The current state should be inferable from which sections are present and complete. No explicit state field is needed in the artifact — the state machine is a judgment tool, not a metadata field.
+
 ## Record Path
 
 Write records under the current task working directory:

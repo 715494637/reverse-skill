@@ -48,6 +48,24 @@ Goal:
 Constraints:
 ```
 
+### Complexity Grading
+
+After intake, assign a complexity level to calibrate effort and expected stage coverage:
+
+| Level | Label | Characteristics | Expected stages |
+|---|---|---|---|
+| **L1** | Transparent chain | Parameters are visible concatenations or plain mappings; no obfuscation; no environment dependency | locate → validation |
+| **L2** | Single-layer shell | Simple obfuscation or webpack bundle wrapping; one crypto call; no environment checks | locate → recover → validation |
+| **L3** | Multi-layer shell + env | JSVMP / wasm / worker bridge + environment-dependent branching; anti-debug present | Full spine: locate → recover → runtime → validation |
+| **L4** | Adversarial protection | Multi-hop cookies + dynamic code generation + anti-debug + environment fingerprinting + risk branches (e.g., RS/瑞数, certain captcha SDKs) | Full spine with multiple iterations; expect stage regressions |
+
+Rules:
+
+- Grade at intake, but **revise upward** if later evidence reveals hidden complexity. Never revise downward without proof.
+- L1/L2 tasks may use compact handoff cards and skip recover/runtime annotations in the artifact.
+- L3/L4 tasks must use full handoff cards and full artifact lifecycle.
+- The grade is a calibration signal, not a routing override. Stage selection still follows engineering state, not the grade.
+
 After intake, summarize the engineering state in plain terms:
 
 - Is the target request real and captured, or still guessed?
@@ -255,7 +273,10 @@ Do not reverse this order. Do not pick references first and infer the stage afte
 
 If new evidence closes `locate` and the next blocker becomes shell reduction, helper contracts, dispatcher flow, or opaque object structure, switch to `recover` immediately in the same turn.
 
-After every stage switch, reload the new stage's core reference and topic references before proposing the next debugging action. References from the previous stage do not satisfy the new stage.
+After every stage switch:
+
+1. Output a handoff card per `references/stage-handoff-protocol.md` before the new stage's output contract.
+2. Reload the new stage's core reference and topic references before proposing the next debugging action. References from the previous stage do not satisfy the new stage.
 
 ## Topic Mount Rules
 
@@ -271,6 +292,11 @@ Choose topic references after the stage is selected. Use the evidence artifact r
 ### Evidence artifact support
 
 - `references/request-chain-recording.md` when the evidence gate runs or `reverse-records/请求链路.md` must be updated. This is the evidence artifact reference, not a topic mount.
+
+### Cross-stage references
+
+- `references/stage-handoff-protocol.md` at every stage boundary crossing — mandatory, not optional
+- `references/anti-patterns.md` when a wrong-path pattern is suspected or as a pre-check before committing to an investigation direction
 
 ### Topic mount policy
 
@@ -303,6 +329,7 @@ Protocol can appear in more than one stage. Add its reference only after the sta
 ## Record & Handoff Rules
 
 - If the evidence gate runs, update `reverse-records/请求链路.md` before routed-stage output.
+- At every stage switch, output a handoff card per `references/stage-handoff-protocol.md`. L1/L2 tasks may use compact mode; L3/L4 must use full format.
 - Repeat the stage output only when the stage changes or the request evidence materially changes.
 - If a topic mount changes the current investigation path, repeat the stage output and update the current artifact before handoff.
 - Current artifact: `reverse-records/请求链路.md`.
@@ -314,6 +341,7 @@ Protocol can appear in more than one stage. Add its reference only after the sta
 Always output this block after routing:
 
 ```text
+Complexity: L{1-4}
 Current stage:
 Why this stage now:
 Read now:
@@ -323,6 +351,7 @@ Exit condition:
 
 Requirements:
 
+- `Complexity` must be assigned at intake and revised upward if later evidence reveals hidden complexity.
 - `Why this stage now` must explain the engineering state, not just clue words.
 - `Read now` must contain exactly 1 core reference plus at most 1-2 topic references.
 - `Required artifact` must point to the artifact or stage output that must be updated next.
