@@ -1,5 +1,12 @@
 # RS Runtime and Basearr Fit
 
+## Coverage
+
+- **Applicable targets**: RS/瑞数 runtime divergence — `hasDebug`, `basearr` closure, time/randomness, second-hop acceptance
+- **Known basearr lengths covered**: 103, 123, 127, 133, 157, 163, 166 (with `encryptLens` variants)
+- **Last verified**: 2026-04
+- **Known gaps**: basearr lengths > 166 or new `encryptLens` patterns — record differences if encountered
+
 ## When to Use
 
 Use this file only as a `runtime` mount for RS-style targets.

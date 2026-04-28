@@ -1,5 +1,12 @@
 # RS Collection and Two-Hop Routing
 
+## Coverage
+
+- **Applicable targets**: RS/瑞数 with `$_ts`, `r2mKa`, `meta[r=m]`, first/second hop cookie chains
+- **Known basearr lengths covered**: 103, 123, 127, 133, 157, 163, 166
+- **Last verified**: 2026-04 (based on project reference materials)
+- **Known gaps**: basearr lengths > 166 may have different collection patterns — record and escalate if encountered
+
 ## When to Use
 
 Use this file only as a `locate` mount for RS-style targets.

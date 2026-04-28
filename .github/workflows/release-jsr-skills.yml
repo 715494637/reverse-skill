@@ -13,7 +13,95 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate reference consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          errors=0
+
+          echo "=== Checking SKILL.md reference links ==="
+          # Extract all references/*.md mentioned in SKILL.md
+          refs_in_skill=$(grep -oP 'references/[a-z0-9-]+\.md' jsr-reverse/SKILL.md | sort -u)
+          for ref in $refs_in_skill; do
+            if [ ! -f "jsr-reverse/$ref" ]; then
+              echo "ERROR: SKILL.md references '$ref' but file does not exist"
+              errors=$((errors + 1))
+            fi
+          done
+
+          echo "=== Checking for orphaned reference files ==="
+          # Find reference files not mentioned in SKILL.md
+          for file in jsr-reverse/references/*.md; do
+            basename=$(echo "$file" | sed 's|jsr-reverse/||')
+            if ! grep -q "$basename" jsr-reverse/SKILL.md; then
+              echo "WARNING: '$basename' exists but is not referenced in SKILL.md"
+            fi
+          done
+
+          echo "=== Checking zh/ sync ==="
+          # Compare file lists between en and zh
+          en_refs=$(ls jsr-reverse/references/*.md 2>/dev/null | xargs -I{} basename {} | sort)
+          zh_refs=$(ls zh/jsr-reverse/references/*.md 2>/dev/null | xargs -I{} basename {} | sort)
+          en_only=$(comm -23 <(echo "$en_refs") <(echo "$zh_refs"))
+          zh_only=$(comm -13 <(echo "$en_refs") <(echo "$zh_refs"))
+          if [ -n "$en_only" ]; then
+            echo "WARNING: Files in en/ but missing in zh/:"
+            echo "$en_only" | sed 's/^/  - /'
+          fi
+          if [ -n "$zh_only" ]; then
+            echo "WARNING: Files in zh/ but missing in en/:"
+            echo "$zh_only" | sed 's/^/  - /'
+          fi
+
+          # Check SKILL.md sync
+          if [ -f "zh/jsr-reverse/SKILL.md" ]; then
+            en_lines=$(wc -l < jsr-reverse/SKILL.md)
+            zh_lines=$(wc -l < zh/jsr-reverse/SKILL.md)
+            diff_pct=$(( (en_lines - zh_lines) * 100 / en_lines ))
+            if [ "${diff_pct#-}" -gt 20 ]; then
+              echo "WARNING: SKILL.md line count differs by ${diff_pct#-}% (en: $en_lines, zh: $zh_lines) — may be out of sync"
+            fi
+          fi
+
+          echo "=== Checking reference line counts ==="
+          total_lines=0
+          for file in jsr-reverse/references/*.md; do
+            lines=$(wc -l < "$file")
+            total_lines=$((total_lines + lines))
+            if [ "$lines" -gt 300 ]; then
+              echo "WARNING: $(basename $file) has $lines lines — consider splitting"
+            fi
+          done
+          echo "Total reference lines: $total_lines"
+          if [ "$total_lines" -gt 5000 ]; then
+            echo "WARNING: Total reference volume exceeds 5000 lines — risk of reference inflation"
+          fi
+
+          echo "=== Checking cross-references between reference files ==="
+          for file in jsr-reverse/references/*.md; do
+            refs_in_file=$(grep -oP 'references/[a-z0-9-]+\.md' "$file" 2>/dev/null || true)
+            for ref in $refs_in_file; do
+              if [ ! -f "jsr-reverse/$ref" ]; then
+                echo "ERROR: $(basename $file) references '$ref' but file does not exist"
+                errors=$((errors + 1))
+              fi
+            done
+          done
+
+          if [ "$errors" -gt 0 ]; then
+            echo "FAILED: $errors error(s) found"
+            exit 1
+          fi
+          echo "All consistency checks passed."
+
   release:
+    needs: validate
     runs-on: ubuntu-latest
 
     steps:
@@ -33,9 +121,15 @@ jobs:
           asset_name="${release_tag}.zip"
           release_title="JSR Skills Build #${GITHUB_RUN_NUMBER} (${short_sha})"
 
+          # Count references for release notes
+          ref_count=$(ls jsr-reverse/references/*.md | wc -l)
+          ref_lines=$(cat jsr-reverse/references/*.md | wc -l)
+
           echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
           echo "asset_name=${asset_name}" >> "$GITHUB_OUTPUT"
           echo "release_title=${release_title}" >> "$GITHUB_OUTPUT"
+          echo "ref_count=${ref_count}" >> "$GITHUB_OUTPUT"
+          echo "ref_lines=${ref_lines}" >> "$GITHUB_OUTPUT"
 
       - name: Build skills archive
         env:
@@ -67,6 +161,8 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           RUN_NUMBER: ${{ github.run_number }}
           SERVER_URL: ${{ github.server_url }}
+          REF_COUNT: ${{ steps.meta.outputs.ref_count }}
+          REF_LINES: ${{ steps.meta.outputs.ref_lines }}
         run: |
           cat > dist/release-notes.md <<EOF
           Automatically published JSR skills bundle.
@@ -77,7 +173,7 @@ jobs:
           - Workflow: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}
           - Run number: ${RUN_NUMBER}
           - Included skills:
-            - jsr-reverse
+            - jsr-reverse (${REF_COUNT} references, ${REF_LINES} total lines)
           - Asset: ${ASSET_NAME}
           EOF
 

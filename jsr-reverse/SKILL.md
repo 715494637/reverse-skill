@@ -76,12 +76,17 @@ After intake, summarize the engineering state in plain terms:
 
 ## Evidence Gate
 
-Run this gate before routed stage selection whenever any of the following is true:
+Run this gate before routed stage selection. Use the checklist below — if any item fails, the gate blocks stage routing.
 
-- the target request is not identified from a real sample
-- the upstream dependency chain is still guessed
-- the trigger action is known but the request evidence is not yet recorded
-- the current task mixes multiple hypotheses but no request-chain record resolves them
+### Evidence Gate Checklist
+
+```text
+[ ] Target request confirmed from a real captured sample (not guessed from URL or field name)
+[ ] Upstream dependency chain has at least one real evidence anchor (packet capture, response body, Set-Cookie)
+[ ] Trigger action is bound to request evidence (not just "click login" without a captured request)
+[ ] If multiple hypotheses exist, the request-chain record resolves or separates them
+→ Any unchecked item = update reverse-records/请求链路.md before choosing a routed stage
+```
 
 This gate stays inside `jsr-reverse`, not as a separate skill.
 
@@ -311,6 +316,8 @@ Read the core ref first, then add at most 1-2 topic refs that match the current 
 - `references/anti-debug-and-risk-branches.md` for anti-debugging or branch flips during `runtime`
 - `references/minimal-env-design.md` for minimum environment design during `runtime`
 - `references/sdenv-fit-check-and-routing.md` for lifecycle-produced state, navigation-produced state, or replay routing during `runtime`
+- `references/mcp-tool-integration.md` for MCP tool selection and usage patterns at any stage when browser instrumentation is the primary evidence source
+- `references/target-classification-guide.md` at intake for rapid complexity grading and first-stage selection by target type
 
 Breakpoint-hit inspection belongs to `locate` only while the team is still proving the real write boundary. Once the active chain is already real and the next move is a targeted step-into across helpers such as `_$jR -> _$cg` to recover `_$_U`, `_$$j`, dispatcher, or bridge contracts, restage to `recover` first and mount `references/recover-strategy.md`, then the matching topic reference.
 
@@ -342,6 +349,7 @@ Always output this block after routing:
 
 ```text
 Complexity: L{1-4}
+Progress: [evidence {✓|→|○}] [locate {✓|→|○}] [recover {✓|→|○}] [runtime {✓|→|○}] [validation {✓|→|○}]
 Current stage:
 Why this stage now:
 Read now:
@@ -349,9 +357,12 @@ Required artifact:
 Exit condition:
 ```
 
+Symbol key: `✓` = completed, `→` = current, `○` = not yet reached, `-` = skipped (L1/L2 may skip stages).
+
 Requirements:
 
 - `Complexity` must be assigned at intake and revised upward if later evidence reveals hidden complexity.
+- `Progress` must reflect the actual stage history, not a guess. Use `-` for stages that L1/L2 tasks legitimately skip.
 - `Why this stage now` must explain the engineering state, not just clue words.
 - `Read now` must contain exactly 1 core reference plus at most 1-2 topic references.
 - `Required artifact` must point to the artifact or stage output that must be updated next.
@@ -360,6 +371,8 @@ Requirements:
 ## Examples
 
 ```text
+Complexity: L2
+Progress: [evidence ✓] [locate →] [recover ○] [runtime -] [validation ○]
 Current stage: locate
 Why this stage now: The target request is still partly guessed, the upstream cookie dependency is not yet proven from a real capture, and the team does not have a stable write boundary for the token field.
 Read now: references/locate-workflow.md + references/request-chain-recording.md + references/crypto-entry-locating.md
@@ -368,6 +381,8 @@ Exit condition: The target request, upstream dependency chain, and token write b
 ```
 
 ```text
+Complexity: L3
+Progress: [evidence ✓] [locate ✓] [recover →] [runtime ○] [validation ○]
 Current stage: recover
 Why this stage now: The request chain and write boundary are already real, but the usable logic is still hidden behind a worker bootstrap and packed helper layer, so the next blocker is shell reduction rather than runtime fit.
 Read now: references/recover-strategy.md + references/wasm-worker-webpack.md
@@ -376,12 +391,86 @@ Exit condition: The shell is reduced enough that the next blocker is runtime fit
 ```
 
 ```text
+Complexity: L4
+Progress: [evidence ✓] [locate ✓] [recover ✓] [runtime →] [validation ○]
 Current stage: runtime
 Why this stage now: The sink and shell boundary are already clear, but local execution diverges at a fixed environment-dependent branch after browser lifecycle state is consumed.
 Read now: references/runtime-diagnosis.md + references/minimal-env-design.md + references/rs-runtime-and-basearr-fit.md
 Required artifact: first-divergence note and minimum runtime dependency set
 Exit condition: The first divergence and minimum fit set are concrete enough to move into validation.
 ```
+
+## Regression Triggers
+
+When evidence from a later stage invalidates an earlier conclusion, regress explicitly:
+
+| Trigger | Regress to | Required action |
+|---|---|---|
+| `recover` finds the write boundary was wrong | `locate` | Invalidate boundary in handoff card; update artifact |
+| `runtime` finds shell still blocks progress | `recover` | Record which shell layer; re-mount recover refs |
+| `runtime` finds the request chain was wrong | `evidence` gate | Strike prior chain; re-capture from real sample |
+| `validation` checkpoints disagree at intermediate steps | whichever stage owns the divergence | Record the divergent checkpoint; regress with handoff card |
+| any stage disproves a carried-forward fact | earliest affected stage | Update `Invalidated assumptions` in handoff card |
+
+Never continue building on a fact that has been disproven. The regression handoff card is mandatory.
+
+## SOP Relationship
+
+`docs/sop/reverse-engineering/` defines the planning-level process with 6 central templates and stage gates. This skill (`jsr-reverse`) is the **runtime authority** — it controls what the AI does during execution.
+
+Relationship:
+
+- SOP is the **planning reference** for human operators who need gate definitions, failure objects, and delivery prerequisites.
+- SKILL.md is the **execution authority** for AI agents during active reverse work.
+- When SOP and SKILL.md disagree on stage order or terminology, SKILL.md takes precedence during execution.
+- The 6 SOP templates (`任务卡`, `请求链路`, `运行态清单`, `恢复记录`, `验证记录`, `交付清单`) define the maximum artifact set. During execution, `reverse-records/请求链路.md` is the single consolidated artifact that absorbs all stage supplements (`运行时补充`, `恢复补充`, `验证补充`, `交接块`).
+- SOP gates can be consulted when deciding whether a stage exit condition is truly met, but they do not override the routing rules in this file.
+
+## Session Recovery Protocol
+
+Long sessions may be interrupted by context limits, compliance stops, or user breaks. Use this protocol to ensure continuity.
+
+### Automatic Checkpoints
+
+Update `reverse-records/请求链路.md` at every one of these events:
+
+- evidence gate produces new request-chain proof
+- stage switch (output handoff card + update artifact)
+- material evidence change within a stage
+- user requests a session break
+
+### Machine-Readable State
+
+Maintain `reverse-records/session-state.json` alongside the artifact:
+
+```json
+{
+  "current_stage": "recover",
+  "complexity": "L3",
+  "artifact_state": "recover-annotated",
+  "last_handoff": "locate -> recover",
+  "proven_facts": [
+    "target request: POST /api/xxx",
+    "write boundary: function buildSign()",
+    "upstream: response token from /api/init"
+  ],
+  "open_questions": [
+    "dispatcher structure inside JSVMP shell",
+    "key-material derivation path"
+  ],
+  "last_updated": "2026-04-28T10:30:00Z"
+}
+```
+
+### Session Resume
+
+When resuming from a prior session:
+
+1. Read `reverse-records/session-state.json` for machine state
+2. Read `reverse-records/请求链路.md` for full evidence context
+3. Re-run the routing rules from the recorded `current_stage`
+4. Mount the correct core + topic references for that stage
+5. Output the standard output contract before continuing work
 
 ## Guardrails
 

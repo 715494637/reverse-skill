@@ -1,5 +1,12 @@
 # RS Recovery Anchors
 
+## Coverage
+
+- **Applicable targets**: RS/瑞数 shell recovery — `r2mKa` dispatcher, `$_ts` cp fields, `$_ts.l__` appcode
+- **Known basearr lengths covered**: 103, 123, 127, 133, 157, 163, 166
+- **Last verified**: 2026-04
+- **Known gaps**: Newer RS versions with different cp field structures — record anchor differences if encountered
+
 ## When to Use
 
 Use this file only as a `recover` mount for RS-style targets.

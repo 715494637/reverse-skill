@@ -92,6 +92,8 @@ When these signals appear, step back to a boundary closer to the sink.
 
 ## 8. Observation Hit: Judgment Flow
 
+> **Note**: This judgment flow is also available as a cross-stage tool in `references/anti-patterns.md` (section "Observation Judgment Flow"). The version below is identical and kept here for convenience when this file is mounted during locate.
+
 When an observation point (breakpoint, hook, trace) fires, follow this judgment sequence before taking the next action. This is about **thinking order**, not about any specific tool.
 
 ### Step 1: Am I on the target chain?
